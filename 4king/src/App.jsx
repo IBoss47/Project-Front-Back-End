@@ -1,35 +1,33 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import './App.css';
+import './App.css'
 import './index.css';
-import Navbar from './components/Navbar';
 import SaleList from './components/SaleList';
-import Footer from './components/Footer';
 import FilterSidebar from './components/FilterSidebar';
 import Homepage from './pages/Homepage';
 import SellItem from './pages/SellItem';
 import React from 'react';
-import LoginPage from './pages/LoginPage';
 import SellListPage from './pages/SellListPage';
-import MyStorePage from './pages/MyStorePage';
+import Layout from './components/Layout';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 function App() {
-  return (  
-    // <Router>
-    //   <div className="App">
-    //     <Routes>
-    //         <Route path="/sellitem" element={<SellItem />} />
-    //         <Route path="/books" element={<SellListPage />} />
-    //     </Routes>
-    //   </div>
-    // </Router>
+  return (
     <Router>
-      <div className="App">
-        <Routes>
-            <Route path="/" element={<Homepage />} />
-            <Route path="/sellitem" element={<SellItem />} />
-            <Route path="/login" element={<LoginPage />} />
-        </Routes>
-      </div>
-      <Footer></Footer>
+       {/* <Navbar /> */}
+      <Routes>
+        {/* หน้าเว็บที่ใช้ Navbar Footer */}
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Homepage />} />
+          {/* <Route path="/books" element={<SellListPage />} /> */}
+          <Route path="/sellitem" element={<SellItem />} />
+        </Route>
+      
+        {/* <Route path="/" element={<Homepage />} /> */}
+       
+        หน้าเว็บที่ไม่ใช้ Navbar Footer
+        <Route path="/login" element={<SellItem />} />
+      </Routes>
+      {/* <Footer /> */}
     </Router>
     
   );
