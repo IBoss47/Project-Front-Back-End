@@ -1,0 +1,33 @@
+.sale-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.sale-item {
+  width: 220px;
+  background: #fff;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 0 4px #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sale-image {
+  width: 180px;
+  height: 240px;
+  object-fit: cover;
+  margin-bottom: 12px;
+}
+
+.sale-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.sale-type, .sale-price {
+  font-size: 14px;
+  margin-bottom: 4px;
+}

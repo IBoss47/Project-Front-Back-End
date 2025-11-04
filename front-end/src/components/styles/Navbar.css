@@ -1,0 +1,160 @@
+.navbar{
+    box-sizing: border-box;
+    width: 100%;
+    font-family: 'Kanit', sans-serif;
+    position: fixed;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: #FFFFFF;
+    transition: all 0.3s ease;
+}
+.navbar-top{
+    background-color: #F0F0F0;
+    height: 30px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding-right: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4F4F4F;
+    text-transform: uppercase;
+    gap: 15px;
+}
+.navbar-main-container{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: #FFFFFF;
+    height: 80px;
+    box-sizing: border-box;
+    position: sticky;
+    top: 0;
+}
+
+.navbar-logo img{
+    height: 150px;
+    width: auto;
+}
+.navbar-top-link{
+    text-decoration: none;
+    color: #4F4F4F;
+    padding: 15px;
+}
+.navbar-top-link:hover{
+    color: #000000;
+}
+.navbar-right{
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 16px;
+    font-weight: 500;
+}
+.navbar-right a{
+    text-decoration: none;
+    color: #4F4F4F;
+    padding: 10px 15px;
+    border-radius: 1px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+.navbar-right a:hover{
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #000000;
+}
+.navbar-icon_cart{
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+.navbar-icon_cart img{
+    height: 24px;
+    width: 24px;
+    object-fit: contain;
+}
+.navbar-user-dropdown{
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    user-select: none;
+    height: 40px;
+    width: 150px;
+}
+.navbar-user-toggle{
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: #4F4F4F;
+    padding: 10px 15px;
+    border-radius: 1px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+.navbar-user-toggle:hover{
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #000000;
+}
+.navbar-user-toggle.active{
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #000000;
+}
+.navbar-user-toggle img{
+    height: 24px;
+    width: 24px;
+    object-fit: contain;
+    border-radius: 50%;
+}
+.navbar-username{
+    font-size: 16px;
+    font-weight: 500;
+}
+.navbar-arrow{
+    font-size: 12px;
+    margin-left: 5px;
+    color: #4F4F4F;
+    transition: transform 0.3s ease;
+}
+.navbar-arrow.open{
+    transform: rotate(180deg);
+}
+.navbar-dropdown-menu{
+   position: absolute;
+   top: 100%;
+   right: -17px;
+   background: white;
+   border: 1px solid #ddd;
+   border-radius: 1px;
+   list-style: none;
+   padding: 6px 0;
+   margin: 4px 0 0 0;
+   min-width: 250px;
+   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.navbar-dropdown-item{
+    padding: 10px 20px;
+    font-size: 14px;
+    color: #4F4F4F;
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    justify-content: space-between;
+}
+.navbar-sell{
+    margin-left: 15px;
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 120px;
+    height: 40px;
+    border-radius: 1px;
+}
