@@ -17,9 +17,8 @@ function App() {
       <Routes>
         {/* หน้าเว็บที่ใช้ Navbar Footer */}
         <Route path="/" element={<Layout />}>
-          <Route index element={<Homepage />} />
-          <Route path="/books" element={<SellListPage />} />
-          <Route path="/sellitem" element={<SellItem />} />
+          <Route index element={<SellListPage />} />
+          
         </Route>
       
         {/* <Route path="/" element={<Homepage />} /> */}

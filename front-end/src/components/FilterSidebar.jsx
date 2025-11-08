@@ -1,27 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronDownIcon } from '@heroicons/react/24/solid';
+import { getCoursesByYear, getAllCourses } from '../data/mockBooksData';
 
-// วิชาแต่ละปี ตัวอย่าง
-const subjectOptions = {
-  "ปี 1": [
-    "511 110 : แคลคูลัสสําหรับการวิเคราะห์ข้อมูล 1", 
-    "515 104 : สถิติสําหรับคอมพิวเตอร์ ", 
-    "517 111 : การเขียนโปรแกรมคอมพิวเตอร์สําหรับนักวิทยาการข้อมูล",
-    "511 111 : แคลคูลัสสําหรับการวิเคราะห์ข้อมูล 2",
-    "515 271 : ความน่าจะเป็นสําหรับวิทยาการข้อมูล",
-    "522 151 : พื้นฐานวิทยาการข้อมูล"
-  ],
-  "ปี 2": ["สถิติ", "เคมีพื้นฐาน", "ภาษาอังกฤษ"],
-  "ปี 3": ["ชีววิทยา", "แคลคูลัส", "ประวัติศาสตร์"],
-  "ปี 4": ["วิจัย", "การออกแบบระบบ", "สัมมนา"]
-};
+export default function FilterSidebar({
+  onSemesterChange,
+  onYearChange,
+  onCourseChange,
+  onConditionChange,
+  onPriceRangeChange,
+  selectedSemester = 'all',
+  selectedYear = 'all',
+  selectedCourseId = 'all',
+  selectedCondition = 'all'
+}) {
+  const [openSection, setOpenSection] = useState({
+    semester: true,
+    year: true,
+    course: true,
+    condition: true,
+    price: true
+  });
+  const [priceMin, setPriceMin] = useState(0);
+  const [priceMax, setPriceMax] = useState(200);
+  const [availableCourses, setAvailableCourses] = useState([]);
 
-const yearList = ["ปี 1", "ปี 2", "ปี 3", "ปี 4"];
-
-export default function FilterSidebar() {
-  const [openSection, setOpenSection] = useState({ subject: true, course: true });
-  const [selectedYear, setSelectedYear] = useState("ปี 1");
-  const [selectedSubjects, setSelectedSubjects] = useState([]);
+  // อัพเดทรายการวิชาเมื่อเลือกชั้นปี
+  useEffect(() => {
+    if (selectedYear === 'all') {
+      // แสดงวิชาทั้งหมดแต่ disable ไว้
+      const allCourses = getAllCourses();
+      setAvailableCourses(allCourses);
+    } else {
+      const courses = getCoursesByYear(selectedYear);
+      setAvailableCourses(courses);
+    }
+  }, [selectedYear]);
 
   // Toggle section แสดง/ซ่อน
   const toggleSection = (section) => {
@@ -31,86 +44,277 @@ export default function FilterSidebar() {
     }));
   };
 
-  // อัปเดตปี และล้างรายวิชาเดิมเมื่อปีเปลี่ยน
-  const handleYearChange = (year) => {
-    setSelectedYear(year);
-    setSelectedSubjects([]); // ล้างรายวิชาเดิม
-  };
-
-  // อัปเดตรายวิชาที่เลือก
-  const handleSubjectChange = (subject) => {
-    setSelectedSubjects(prev =>
-      prev.includes(subject)
-        ? prev.filter(s => s !== subject)
-        : [...prev, subject]
-    );
+  const handlePriceChange = () => {
+    if (onPriceRangeChange) {
+      onPriceRangeChange(priceMin, priceMax);
+    }
   };
 
   return (
-    <aside className="w-64 bg-white shadow-lg rounded-2xl p-4 space-y-4">
-      <h2 className="text-lg font-semibold text-gray-700 mb-2">Filter</h2>
+    <aside className="bg-white shadow-lg rounded-2xl p-6 space-y-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-bold text-gray-800">🔍 ตัวกรอง</h3>
+      </div>
 
-      {/* Section ชั้นปี */}
-      <div className="border rounded-lg overflow-hidden">
+      {/* Semester Filter */}
+      {/* <div className="border-b border-gray-200 pb-4">
         <button
-          onClick={() => toggleSection("subject")}
-          className="w-full flex justify-between items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium"
+          onClick={() => toggleSection('semester')}
+          className="w-full flex items-center justify-between py-2 text-left font-semibold text-gray-700 hover:text-viridian-600 transition-colors"
         >
-          ชั้นปี
+          <span>📚 ประเภทการสอบ</span>
           <ChevronDownIcon
-            className={`h-5 w-5 transform transition-transform duration-300
-              ${openSection.subject ? 'rotate-180' : ''}
-            `}
+            className={`w-5 h-5 transition-transform ${openSection.semester ? 'rotate-180' : ''}`}
           />
         </button>
-        {openSection.subject && (
-          <div className="p-3 space-y-2">
-            {yearList.map((year) => (
-              <label key={year} className="flex items-center space-x-2">
+        {openSection.semester && (
+          <div className="mt-3 space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="radio"
+                name="semester"
+                value="all"
+                checked={selectedSemester === 'all'}
+                onChange={(e) => onSemesterChange && onSemesterChange(e.target.value)}
+                className="w-4 h-4 text-viridian-600 focus:ring-viridian-500"
+              />
+              <span className="text-gray-700 group-hover:text-viridian-600 transition-colors">
+                ทั้งหมด
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="radio"
+                name="semester"
+                value="Midterm"
+                checked={selectedSemester === 'Midterm'}
+                onChange={(e) => onSemesterChange && onSemesterChange(e.target.value)}
+                className="w-4 h-4 text-viridian-600 focus:ring-viridian-500"
+              />
+              <span className="text-gray-700 group-hover:text-viridian-600 transition-colors">
+                Midterm
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="radio"
+                name="semester"
+                value="Final"
+                checked={selectedSemester === 'Final'}
+                onChange={(e) => onSemesterChange && onSemesterChange(e.target.value)}
+                className="w-4 h-4 text-viridian-600 focus:ring-viridian-500"
+              />
+              <span className="text-gray-700 group-hover:text-viridian-600 transition-colors">
+                Final
+              </span>
+            </label>
+          </div>
+        )}
+      </div> */}
+
+      {/* Year Filter */}
+      <div className="border-b border-gray-200 pb-4">
+        <button
+          onClick={() => toggleSection('year')}
+          className="w-full flex items-center justify-between py-2 text-left font-semibold text-gray-700 hover:text-viridian-600 transition-colors"
+        >
+          <span>🎓 ชั้นปี</span>
+          <ChevronDownIcon
+            className={`w-5 h-5 transition-transform ${openSection.year ? 'rotate-180' : ''}`}
+          />
+        </button>
+        {openSection.year && (
+          <div className="mt-3 space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="radio"
+                name="year"
+                value="all"
+                checked={selectedYear === 'all'}
+                onChange={(e) => {
+                  onYearChange && onYearChange(e.target.value);
+                  onCourseChange && onCourseChange('all'); // รีเซ็ตการเลือกวิชาเมื่อเปลี่ยนปี
+                }}
+                className="w-4 h-4 text-viridian-600 focus:ring-viridian-500"
+              />
+              <span className="text-gray-700 group-hover:text-viridian-600 transition-colors">
+                ทุกชั้นปี
+              </span>
+            </label>
+            {[1, 2, 3, 4].map(year => (
+              <label key={year} className="flex items-center gap-2 cursor-pointer group">
                 <input
                   type="radio"
                   name="year"
-                  value={year}
-                  checked={selectedYear === year}
-                  onChange={() => handleYearChange(year)}
-                  className="w-4 h-4 text-blue-500"
+                  value={year.toString()}
+                  checked={selectedYear === year.toString()}
+                  onChange={(e) => {
+                    onYearChange && onYearChange(e.target.value);
+                    onCourseChange && onCourseChange('all'); // รีเซ็ตการเลือกวิชาเมื่อเปลี่ยนปี
+                  }}
+                  className="w-4 h-4 text-viridian-600 focus:ring-viridian-500"
                 />
-                <span>{year}</span>
+                <span className="text-gray-700 group-hover:text-viridian-600 transition-colors">
+                  ชั้นปี {year}
+                </span>
               </label>
             ))}
           </div>
         )}
       </div>
 
-      {/* Section รายวิชา */}
-      <div className="border rounded-lg overflow-hidden">
+      {/* Course Filter - แสดงเสมอ แต่ disable เมื่อเลือก "ทุกชั้นปี" */}
+      {availableCourses.length > 0 && (
+        <div className={`border-b border-gray-200 pb-4 ${selectedYear === 'all' ? 'opacity-60' : ''}`}>
+          <button
+            onClick={() => selectedYear !== 'all' && toggleSection('course')}
+            className={`w-full flex items-center justify-between py-2 text-left font-semibold transition-colors ${selectedYear === 'all'
+              ? 'text-gray-400 cursor-not-allowed'
+              : 'text-gray-700 hover:text-viridian-600'
+              }`}
+          >
+            <span>📖 รายวิชา</span>
+            <ChevronDownIcon
+              className={`w-5 h-5 transition-transform ${openSection.course ? 'rotate-180' : ''} ${selectedYear === 'all' ? 'text-gray-400' : ''
+                }`}
+            />
+          </button>
+          {openSection.course && (
+            <div className="mt-3 space-y-2 max-h-64 overflow-y-auto">
+              {/* แสดงข้อความเตือนเมื่อเลือก "ทุกชั้นปี" และไม่แสดงรายการวิชา */}
+              {selectedYear === 'all' ? (
+                <div className="p-3 bg-gray-50 border border-gray-300 rounded-lg">
+                  <p className="text-xs text-gray-500 text-center">
+                    กรุณาเลือกชั้นปีก่อนเพื่อกรองตามวิชา
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="course"
+                      value="all"
+                      checked={selectedCourseId === 'all'}
+                      onChange={(e) => onCourseChange && onCourseChange(e.target.value)}
+                      className="w-4 h-4 text-viridian-600 focus:ring-viridian-500"
+                    />
+                    <span className="text-gray-700 group-hover:text-viridian-600 transition-colors">
+                      ทุกวิชา
+                    </span>
+                  </label>
+                  {availableCourses.map(course => (
+                    <label
+                      key={course.id}
+                      className="flex items-start gap-2 cursor-pointer group"
+                    >
+                      <input
+                        type="radio"
+                        name="course"
+                        value={course.id.toString()}
+                        checked={selectedCourseId === course.id.toString()}
+                        onChange={(e) => onCourseChange && onCourseChange(e.target.value)}
+                        className="w-4 h-4 mt-1 text-viridian-600 focus:ring-viridian-500"
+                      />
+                      <span className="text-sm text-gray-700 group-hover:text-viridian-600 transition-colors">
+                        {course.course_code} - {course.course_name}
+                      </span>
+                    </label>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Condition Filter */}
+      {/* <div className="border-b border-gray-200 pb-4">
         <button
-          onClick={() => toggleSection("course")}
-          className="w-full flex justify-between items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium"
+          onClick={() => toggleSection('condition')}
+          className="w-full flex items-center justify-between py-2 text-left font-semibold text-gray-700 hover:text-viridian-600 transition-colors"
         >
-          รายวิชา
+          <span>⭐ สภาพหนังสือ</span>
           <ChevronDownIcon
-            className={`h-5 w-5 transform transition-transform duration-300
-              ${openSection.course ? 'rotate-180' : ''}
-            `}
+            className={`w-5 h-5 transition-transform ${openSection.condition ? 'rotate-180' : ''}`}
           />
         </button>
-        {openSection.course && (
-          <div className="p-3 space-y-2">
-            {(subjectOptions[selectedYear] || []).map((subject) => (
-              <label key={subject} className="flex items-center space-x-2">
+        {openSection.condition && (
+          <div className="mt-3 space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="radio"
+                name="condition"
+                value="all"
+                checked={selectedCondition === 'all'}
+                onChange={(e) => onConditionChange && onConditionChange(e.target.value)}
+                className="w-4 h-4 text-viridian-600 focus:ring-viridian-500"
+              />
+              <span className="text-gray-700 group-hover:text-viridian-600 transition-colors">
+                ทั้งหมด
+              </span>
+            </label>
+            {['ดีมาก', 'ดี', 'พอใช้'].map(condition => (
+              <label key={condition} className="flex items-center gap-2 cursor-pointer group">
                 <input
-                  type="checkbox"
-                  checked={selectedSubjects.includes(subject)}
-                  onChange={() => handleSubjectChange(subject)}
-                  className="w-4 h-4 text-blue-500"
+                  type="radio"
+                  name="condition"
+                  value={condition}
+                  checked={selectedCondition === condition}
+                  onChange={(e) => onConditionChange && onConditionChange(e.target.value)}
+                  className="w-4 h-4 text-viridian-600 focus:ring-viridian-500"
                 />
-                <span>{subject}</span>
+                <span className="text-gray-700 group-hover:text-viridian-600 transition-colors">
+                  {condition}
+                </span>
               </label>
             ))}
           </div>
         )}
+      </div> */}
+
+      {/* Price Range Filter */}
+      <div className="pb-4">
+        <button
+          onClick={() => toggleSection('price')}
+          className="w-full flex items-center justify-between py-2 text-left font-semibold text-gray-700 hover:text-viridian-600 transition-colors"
+        >
+          <span>💰 ช่วงราคา</span>
+          <ChevronDownIcon
+            className={`w-5 h-5 transition-transform ${openSection.price ? 'rotate-180' : ''}`}
+          />
+        </button>
+        {openSection.price && (
+          <div className="mt-3 space-y-4">
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                placeholder="Min"
+                value={priceMin}
+                onChange={(e) => setPriceMin(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-viridian-500"
+              />
+              <span className="text-gray-500">-</span>
+              <input
+                type="number"
+                placeholder="Max"
+                value={priceMax}
+                onChange={(e) => setPriceMax(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-viridian-500"
+              />
+            </div>
+            <button
+              onClick={handlePriceChange}
+              className="w-full px-4 py-2 bg-viridian-600 text-white rounded-lg hover:bg-viridian-700 transition-colors font-medium"
+            >
+              ใช้ตัวกรอง
+            </button>
+            <div className="text-sm text-gray-600 text-center">
+              ฿{priceMin} - ฿{priceMax}
+            </div>
+          </div>
+        )}
       </div>
-    </aside>
+    </aside >
   );
 }
