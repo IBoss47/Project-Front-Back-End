@@ -10,6 +10,7 @@ import SellListPage from './pages/SellListPage';
 import Layout from './components/Layout';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import LoginPage from './pages/LoginPage';
 function App() {
   return (
     <Router>
@@ -24,7 +25,7 @@ function App() {
         {/* <Route path="/" element={<Homepage />} /> */}
        
         หน้าเว็บที่ไม่ใช้ Navbar Footer
-        <Route path="/login" element={<SellItem />} />
+        <Route path="/login" element={<LoginPage />} />
       </Routes>
       {/* <Footer /> */}
     </Router>
