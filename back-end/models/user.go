@@ -40,23 +40,25 @@ type UserWithRoles struct {
 
 // LoginRequest - ข้อมูลสำหรับ login
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required,min=3"`
 }
 
 // RegisterRequest - ข้อมูลสำหรับสมัครสมาชิก
 type RegisterRequest struct {
 	Username string `json:"username" binding:"required,min=3,max=100"`
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+	Password string `json:"password" binding:"required,min=3"`
 	FullName string `json:"full_name"`
 	Phone    string `json:"phone"`
 }
 
 // LoginResponse - response หลัง login สำเร็จ
 type LoginResponse struct {
-	Token string        `json:"token"`
-	User  UserWithRoles `json:"user"`
+	AccessToken  string        `json:"access_token"`
+	RefreshToken string        `json:"refresh_token"`
+	ExpiresIn    int64         `json:"expires_in"` // วินาที
+	User         UserWithRoles `json:"user"`
 }
 
 // RefreshToken model

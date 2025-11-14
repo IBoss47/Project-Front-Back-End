@@ -53,6 +53,8 @@ func main() {
 	{
 		public.POST("/register", handlers.Register)
 		public.POST("/login", handlers.Login)
+		public.POST("/refresh", handlers.RefreshToken) // ขอ access token ใหม่
+		public.POST("/logout", handlers.Logout)        // Logout และ revoke refresh token
 	}
 
 	// Protected routes (ต้อง login)

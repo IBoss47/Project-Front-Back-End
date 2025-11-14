@@ -6,6 +6,7 @@ import (
 	"back-end/utils"
 	"database/sql"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,15 +24,15 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// ค้นหา user จาก email
+	// ค้นหา user จาก username หรือ email
 	var user models.User
 	query := `
 		SELECT id, username, email, password_hash, full_name, phone, 
 		       is_active, email_verified, created_at, updated_at
 		FROM users 
-		WHERE email = $1
+		WHERE username = $1 OR email = $1
 	`
-	err := config.DB.QueryRow(query, req.Email).Scan(
+	err := config.DB.QueryRow(query, req.Username).Scan(
 		&user.ID, &user.Username, &user.Email, &user.PasswordHash,
 		&user.FullName, &user.Phone, &user.IsActive, &user.EmailVerified,
 		&user.CreatedAt, &user.UpdatedAt,
@@ -40,7 +41,7 @@ func Login(c *gin.Context) {
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error":   "Login failed",
-			"message": "Invalid email or password",
+			"message": "Invalid username/email or password",
 		})
 		return
 	}
@@ -66,7 +67,7 @@ func Login(c *gin.Context) {
 	if !utils.CheckPasswordHash(req.Password, user.PasswordHash) {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error":   "Login failed",
-			"message": "Invalid email or password",
+			"message": "Invalid username/email or password",
 		})
 		return
 	}
@@ -81,11 +82,36 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// สร้าง JWT token
-	token, err := utils.GenerateJWT(user.ID, user.Email, roles)
+	// สร้าง JWT access token
+	accessToken, err := utils.GenerateJWT(user.ID, user.Email, roles)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to generate token",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// สร้าง Refresh Token
+	refreshToken, err := utils.GenerateRefreshToken()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to generate refresh token",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// บันทึก Refresh Token ลง database
+	expiresAt := time.Now().Add(7 * 24 * time.Hour) // 7 วัน
+	_, err = config.DB.Exec(`
+		INSERT INTO refresh_tokens (user_id, token, expires_at, is_revoked)
+		VALUES ($1, $2, $3, false)
+	`, user.ID, refreshToken, expiresAt)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to save refresh token",
 			"message": err.Error(),
 		})
 		return
@@ -98,8 +124,10 @@ func Login(c *gin.Context) {
 	}
 
 	response := models.LoginResponse{
-		Token: token,
-		User:  userWithRoles,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    15 * 60, // 15 นาที (เป็นวินาที)
+		User:         userWithRoles,
 	}
 
 	c.JSON(http.StatusOK, gin.H{

@@ -11,6 +11,8 @@ import Layout from './components/Layout';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+
 function App() {
   return (
     <Router>
@@ -24,8 +26,9 @@ function App() {
       
         {/* <Route path="/" element={<Homepage />} /> */}
        
-        หน้าเว็บที่ไม่ใช้ Navbar Footer
+        {/* หน้าเว็บที่ไม่ใช้ Navbar Footer */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
       </Routes>
       {/* <Footer /> */}
     </Router>
