@@ -1,6 +1,6 @@
-body{
-  background-color: rgb(216, 238, 201)
-}
+/* body{
+  background-color: aqua;
+} */
 .sell-item-com {
   display: flex;
   flex-direction: flex;
