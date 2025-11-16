@@ -18,7 +18,7 @@ const Navbar = () => {
     return (
         <nav className={`navbar ${isMenuOpen ? "active" : ""}` }>
             <div className="navbar-top">
-                <Link to = '/' className="navbar-top-link">
+                <Link to = '/Help' className="navbar-top-link">
                     <h7>HELP</h7>
                 </Link>
                 <h7>TH</h7>
@@ -28,7 +28,7 @@ const Navbar = () => {
             <div className ="navbar-main-container">
 
                 <div className="navbar-left">
-                    <Link to = '/' className="navbar-logo">
+                    <Link to = '/Homepage' className="navbar-logo">
                         <img className="navbar-logo" src="./Images/LOGO.png" alt=""/>
                     </Link>
                 </div>
@@ -54,22 +54,22 @@ const Navbar = () => {
                                 <ul className="navbar-dropdown-menu">
                                    <li> 
                                     <Link to = '/' className="navbar-dropdown-item">
-                                    Profile
+                                    ประวัติส่วนตัว
                                     </Link>
                                    </li>
                                    <li> 
                                     <Link to = '/' className="navbar-dropdown-item">
-                                    Profile
+                                    สรุปของฉัน
                                     </Link>
                                    </li>
                                    <li> 
                                     <Link to = '/' className="navbar-dropdown-item">
-                                    Profile
+                                    ข้อความเเจ้งเตือน
                                     </Link>
                                    </li>
                                    <li> 
                                     <Link to = '/' className="navbar-dropdown-item">
-                                    Profile
+                                        <h2 className="text-center text-red-600 w-25 h-15">ออกจากระบบ</h2>                                  
                                     </Link>
                                    </li>
                                 </ul>

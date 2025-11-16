@@ -7,14 +7,12 @@ import Homepage from './pages/Homepage';
 import React from 'react';
 import SellListPage from './pages/SellListPage';
 import Layout from './components/Layout';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Shopping_Cart from './pages/Shopping_Cart';
 import AdminDashboard from './pages/AdminDashboard';
 import { CartProvider } from './context/CartContext';
-
+import Help_page from './pages/Help_page';
 function App() {
   return (
     <CartProvider>
@@ -25,9 +23,9 @@ function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<SellListPage />} />
           </Route>
-          
           <Route path="/cart" element={<Layout><Shopping_Cart /></Layout>} />
-        
+          <Route path= "/Homepage" element={<Layout><Homepage /></Layout>} />
+          <Route path= "/Help" element={<Layout><Help_page /></Layout>} />
           {/* <Route path="/" element={<Homepage />} /> */}
          
           {/* หน้าเว็บที่ไม่ใช้ Navbar Footer */}
