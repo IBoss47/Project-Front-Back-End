@@ -4,7 +4,7 @@ import ImageUploader from "./ImageUploader";
 const Name = () => (
     <input type="text" placeholder=""/>
 );
-const Detail = () => (
+const Description = () => (
     <textarea  placeholder="พิมพ์ข้อความ..." className="large"></textarea>
 );
 const Field = () => (
@@ -33,7 +33,7 @@ const SellItemCom = () => {
                 <label>ชื่อสินค้า: </label><Name />
                 </div>
                 <div class="flexx">
-                    <label>ข้อมูลสินค้า:</label> <Detail />
+                    <label>ข้อมูลสินค้า:</label> <Description />
                 </div>
                 <div class="flexx">
                     <label>ชั้นปี:</label> <Year />

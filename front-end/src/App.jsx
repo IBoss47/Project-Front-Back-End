@@ -13,6 +13,7 @@ import Shopping_Cart from './pages/Shopping_Cart';
 import AdminDashboard from './pages/AdminDashboard';
 import { CartProvider } from './context/CartContext';
 import Help_page from './pages/Help_page';
+import SellItemPage from './pages/SellItemPage';
 function App() {
   return (
     <CartProvider>
@@ -32,6 +33,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/sell" element={<SellItemPage />} />
         </Routes>
         {/* <Footer /> */}
       </Router>
