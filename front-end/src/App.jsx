@@ -21,10 +21,10 @@ function App() {
         <Routes>
           {/* หน้าเว็บที่ใช้ Navbar Footer */}
           <Route path="/" element={<Layout />}>
-            <Route index element={<SellListPage />} />
+            <Route index element={<Homepage />} />
           </Route>
           <Route path="/cart" element={<Layout><Shopping_Cart /></Layout>} />
-          <Route path= "/Homepage" element={<Layout><Homepage /></Layout>} />
+          <Route path="/SellListPage" element={<Layout><SellListPage /></Layout>} />
           <Route path= "/Help" element={<Layout><Help_page /></Layout>} />
           {/* <Route path="/" element={<Homepage />} /> */}
          
