@@ -12,6 +12,7 @@ import { useCart } from '../context/CartContext';
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false); // เพิ่ม state เช็คการ login
     const { getTotalItems } = useCart();
     const cartCount = getTotalItems();
     
@@ -44,13 +45,20 @@ const Navbar = () => {
                        )}
                     </Link>
                     <div className="navbar-user-dropdown">
+                         {isLoggedIn ? (
                          <button className={`navbar-user-toggle ${isOpen ? "active" : ""}`} onClick={() => setIsOpen(!isOpen)}
                             >
                             <UserCircleIcon className="h-6 w-6 text-gray-800"/>
                                 <span className="navbar-username">Username</span>
                                     <ChevronDownIcon className={`h-5 w-5 navbar-arrow ${isOpen ? "open" : ""}`} />
                          </button>
-                            {isOpen && (
+                         ) : (
+                         <Link to="/login" className="navbar-user-toggle flex items-center justify-center">
+                            <UserCircleIcon className="h-6 w-6 text-gray-800"/>
+                                <span className="navbar-username">Login</span>
+                         </Link>
+                         )}
+                            {isOpen && isLoggedIn && (
                                 <ul className="navbar-dropdown-menu">
                                    <li> 
                                     <Link to = '/' className="navbar-dropdown-item">
