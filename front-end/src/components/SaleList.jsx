@@ -1,27 +1,20 @@
 import React, { useState } from 'react';
-import { HeartIcon, ShoppingCartIcon, StarIcon } from '@heroicons/react/24/outline';
-import { HeartIcon as HeartSolidIcon, StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
+import { StarIcon } from '@heroicons/react/24/outline';
+import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 import { getCourseById } from '../data/mockBooksData';
 import BookDetailModal from './BookDetailModal';
+import { useCart } from '../context/CartContext';
 
 const SaleList = ({ book }) => {
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isInCart, setIsInCart] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { addToCart, isInCart } = useCart();
 
   // ดึงข้อมูล course จาก course_id
   const course = getCourseById(book.course_id);
 
   const handleAddToCart = (e) => {
     e.stopPropagation();
-    setIsInCart(!isInCart);
-    // Add cart logic here
-  };
-
-  const handleToggleFavorite = (e) => {
-    e.stopPropagation();
-    setIsFavorite(!isFavorite);
-    // Add favorite logic here
+    addToCart(book);
   };
 
   const handleCardClick = () => {
@@ -47,8 +40,8 @@ const SaleList = ({ book }) => {
         className="bg-white rounded-xl shadow-lg overflow-hidden group 
           hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 h-full flex flex-col cursor-pointer"
       >
-        {/* Book Cover */}
-        <div className="relative h-80 bg-gradient-to-br from-viridian-50 to-blue-100 flex-shrink-0">
+        {/* Study Notes Cover */}
+        <div className="relative h-80 bg-gradient-to-br from-blue-100 to-indigo-100 flex-shrink-0 flex items-center justify-center">
           <img
             src={book.book_cover || book.book_image || '/images/book-placeholder.jpg'}
             alt={book.book_title}
@@ -57,6 +50,14 @@ const SaleList = ({ book }) => {
               e.target.src = 'https://via.placeholder.com/300x400/6366f1/ffffff?text=' + encodeURIComponent(book.book_title);
             }}
           />
+          
+          {/* File Icon Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clipRule="evenodd" />
+            </svg>
+          </div>
 
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-2">
@@ -64,14 +65,14 @@ const SaleList = ({ book }) => {
               rounded-full text-xs font-semibold shadow-md`}>
               {statusBadge.text}
             </span>
-            <span className="bg-viridian-600 text-white px-3 py-1 
-              rounded-full text-xs font-semibold shadow-md">
-              {book.semester}
+            <span className="bg-blue-600 text-white px-3 py-1 
+              rounded-full text-xs font-semibold shadow-md flex items-center gap-1">
+              📄 {book.semester}
             </span>
           </div>
 
           <div className="absolute top-3 right-3">
-            <span className="bg-blue-600 text-white px-3 py-1 
+            <span className="bg-indigo-600 text-white px-3 py-1 
               rounded-full text-xs font-semibold shadow-md">
               ปี {course?.course_year || '-'}
             </span>
@@ -82,72 +83,46 @@ const SaleList = ({ book }) => {
             transition-all duration-300 flex items-center justify-center">
             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 
               flex gap-3">
-              <button
-                onClick={handleToggleFavorite}
-                className="p-3 bg-white rounded-full hover:bg-red-50 transition-colors"
-              >
-                {isFavorite ? (
-                  <HeartSolidIcon className="h-6 w-6 text-red-500" />
-                ) : (
-                  <HeartIcon className="h-6 w-6 text-gray-700" />
-                )}
-              </button>
-              <button
-                onClick={handleAddToCart}
-                className="p-3 bg-white rounded-full hover:bg-viridian-50 transition-colors"
-              >
-                <ShoppingCartIcon className={`h-6 w-6 ${isInCart ? 'text-viridian-600' : 'text-gray-700'
-                  }`} />
-              </button>
+              {/* Removed heart and cart icons */}
             </div>
           </div>
         </div>
 
-        {/* Book Details */}
+        {/* Study Notes Details */}
         <div className="p-5 flex flex-col flex-grow">
           {/* Course Code */}
-          <p className="text-xs text-viridian-600 font-semibold uppercase tracking-wider mb-2 line-clamp-1">
+          <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-2 line-clamp-1">
             {course ? `${course.course_code} - ${course.course_name}` : 'ไม่ระบุวิชา'}
           </p>
 
           {/* Title */}
           <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-2 min-h-[3.5rem]
-            group-hover:text-viridian-600 transition-colors">
+            group-hover:text-blue-600 transition-colors">
             {book.book_title}
           </h3>
 
           {/* Seller */}
           <p className="text-sm text-gray-600 mb-2 line-clamp-1">
-            <span className="text-gray-500">ผู้ขาย:</span> {book.seller_name}
+            <span className="text-gray-500">ผู้สร้าง:</span> {book.seller_name}
           </p>
 
-          {/* Condition */}
+          {/* Type & Rating */}
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full font-medium whitespace-nowrap">
-              สภาพ: {book.condition}
+            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium whitespace-nowrap">
+              📋 {book.condition || 'สรุปเต็มบท'}
             </span>
-            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full font-medium whitespace-nowrap">
-              {book.reviews || 0} รีวิว
+            <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full font-medium whitespace-nowrap">
+              ⭐ {book.reviews || 5} คะแนน
             </span>
           </div>
 
           {/* Price */}
           <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
             <div>
-              <span className="text-2xl font-bold text-viridian-600">
+              <span className="text-2xl font-bold text-blue-600">
                 ฿{book.price}
               </span>
             </div>
-
-            <button
-              onClick={handleAddToCart}
-              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 
-                ${isInCart
-                  ? 'bg-green-500 text-white hover:bg-green-600'
-                  : 'bg-viridian-600 text-white hover:bg-viridian-700'
-                }`}>
-              {isInCart ? 'ในตะกร้า' : 'เพิ่มลงตะกร้า'}
-            </button>
           </div>
         </div>
       </div>

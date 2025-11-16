@@ -7,10 +7,13 @@ import {
   UserCircleIcon,
   ChevronDownIcon,
 } from "@heroicons/react/24/outline"
+import { useCart } from '../context/CartContext';
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const { getTotalItems } = useCart();
+    const cartCount = getTotalItems();
     
     return (
         <nav className={`navbar ${isMenuOpen ? "active" : ""}` }>
@@ -31,8 +34,14 @@ const Navbar = () => {
                 </div>
 
                 <div className="navbar-right">
-                    <Link to = '/' className="navbar-icon_cart">
+                    <Link to = '/cart' className="navbar-icon_cart relative">
                        <ShoppingCartIcon className="h-6 w-6 text-gray-800"/>
+                       {cartCount > 0 && (
+                         <span className="absolute -top-2 -right-2 bg-red-500 text-white 
+                           rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                           {cartCount}
+                         </span>
+                       )}
                     </Link>
                     <div className="navbar-user-dropdown">
                          <button className={`navbar-user-toggle ${isOpen ? "active" : ""}`} onClick={() => setIsOpen(!isOpen)}

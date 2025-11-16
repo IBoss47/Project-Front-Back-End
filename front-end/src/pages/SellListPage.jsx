@@ -121,10 +121,10 @@ const SellListPage = () => {
         {/* Header Section */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-gray-800 mb-3 animate-fade-in">
-            📚 ค้นหาหนังสือมือสอง
+            📝 ค้นหาสรุปวิชาเรียน
           </h1>
           <p className="text-gray-600 text-lg">
-            ค้นพบหนังสือคุณภาพดีในราคาที่คุ้มค่า
+            ค้นพบสรุปวิชาคุณภาพดี พร้อมไฟล์ PDF พร้อมดาวน์โหลด
           </p>
         </div>
 
@@ -195,8 +195,8 @@ const SellListPage = () => {
                     onChange={(e) => handleSemesterFilter(e.target.value)}
                   >
                     <option value="all">📚 ทั้งหมด</option>
-                    <option value="Midterm">📝 Midterm</option>
-                    <option value="Final">📖 Final</option>
+                    <option value="Midterm">📝 สอบกลางภาค</option>
+                    <option value="Final">📖 สอบปลายภาค</option>
                   </select>
                   <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                 </div>
@@ -250,7 +250,7 @@ const SellListPage = () => {
               <div className="flex items-center gap-3">
                 <div className="h-1 w-12 bg-gradient-to-r from-viridian-500 to-blue-500 rounded-full"></div>
                 <p className="text-lg font-semibold text-gray-700">
-                  พบหนังสือ <span className="text-viridian-600">{filteredBooks.length}</span> เล่ม
+                  พบสรุปวิชา <span className="text-viridian-600">{filteredBooks.length}</span> ชุด
                   <span className="flex flex-wrap gap-2 mt-2">
                     {selectedSemester !== 'all' && (
                       <span className="px-3 py-1 bg-viridian-100 text-viridian-700 rounded-full text-sm">
@@ -298,9 +298,9 @@ const SellListPage = () => {
               </div>
             ) : (
               <div className="text-center py-20">
-                <div className="mb-4 text-6xl">📚</div>
-                <p className="text-gray-500 text-xl font-medium mb-2">ไม่พบหนังสือที่ค้นหา</p>
-                <p className="text-gray-400">ลองค้นหาด้วยคำอื่นหรือเปลี่ยนตัวกรอง</p>
+                <div className="mb-4 text-6xl">📝</div>
+                <p className="text-gray-500 text-xl font-medium mb-2">ไม่พบสรุปวิชาที่ค้นหา</p>
+                <p className="text-gray-400">ลองค้นหาด้วยชื่อวิชาอื่นหรือเปลี่ยนตัวกรอง</p>
               </div>
             )}
 
