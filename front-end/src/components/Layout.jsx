@@ -4,12 +4,12 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import './styles/Layout.css'
 
-const Layout = () => {
+const Layout = ({ children }) => {
     return (
         <div className="layout-container">
             <Navbar />
             <main className="main-content">
-                <Outlet />
+                {children ? children : <Outlet />}
             </main>
             <Footer />
         </div>
