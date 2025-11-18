@@ -9,7 +9,7 @@ const RegisterPage = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    full_name: '',
+    fullname: '',
     phone: '',
   });
   const [errors, setErrors] = useState({});
@@ -61,8 +61,8 @@ const RegisterPage = () => {
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'รหัสผ่านไม่ตรงกัน';
     }
-    if (!formData.full_name.trim()) {
-      newErrors.full_name = 'กรุณากรอกชื่อ';
+    if (!formData.fullname.trim()) {
+      newErrors.fullname = 'กรุณากรอกชื่อ';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -98,9 +98,11 @@ const RegisterPage = () => {
       console.error('Register error:', error);
       
       if (error.response?.data?.message) {
-        setApiError(error.response.data.message);
+        console.log(error.response.data.message);
+        setApiError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
       } else if (error.response?.data?.error) {
-        setApiError(error.response.data.error);
+        console.log(error.response.data.message);
+        setApiError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
       } else {
         setApiError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
       }
@@ -248,23 +250,23 @@ const RegisterPage = () => {
 
             {/* Full Name (Optional) */}
             <div>
-              <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="fullname" className="block text-sm font-medium text-gray-700">
                 ชื่อ *
               </label>
               <input
-                id="full_name"
-                name="full_name"
+                id="fullname"
+                name="fullname"
                 type="text"
-                value={formData.full_name}
+                value={formData.fullname}
                 
                 onChange={handleChange}
                 className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  errors.full_name ? 'border-red-300' : 'border-gray-300'
+                  errors.fullname ? 'border-red-300' : 'border-gray-300'
                 } border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm `}
                 placeholder="ชื่อ"
               />
-              {errors.full_name && (
-                <p className="mt-1 text-sm text-red-600">{errors.full_name}</p>
+              {errors.fullname && (
+                <p className="mt-1 text-sm text-red-600">{errors.fullname}</p>
               )}
             </div>
 

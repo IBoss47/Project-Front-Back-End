@@ -34,8 +34,7 @@ func RefreshToken(c *gin.Context) {
 
 	query := `
 		SELECT rt.id, rt.user_id, rt.token, rt.expires_at, rt.is_revoked,
-		       u.id, u.username, u.email, u.password_hash, u.full_name, u.phone,
-		       u.is_active, u.email_verified, u.created_at, u.updated_at
+		       u.id, u.username, u.email, u.password_hash, u.fullname, u.phone, u.created_at
 		FROM refresh_tokens rt
 		INNER JOIN users u ON rt.user_id = u.id
 		WHERE rt.token = $1
@@ -44,7 +43,7 @@ func RefreshToken(c *gin.Context) {
 	err := config.DB.QueryRow(query, req.RefreshToken).Scan(
 		&tokenData.ID, &tokenData.UserID, &tokenData.Token, &tokenData.ExpiresAt, &tokenData.IsRevoked,
 		&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.FullName,
-		&user.Phone, &user.IsActive, &user.EmailVerified, &user.CreatedAt, &user.UpdatedAt,
+		&user.Phone, &user.CreatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -77,15 +76,6 @@ func RefreshToken(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error":   "Token expired",
 			"message": "Refresh token has expired",
-		})
-		return
-	}
-
-	// ตรวจสอบว่า user ยัง active อยู่หรือไม่
-	if !user.IsActive {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error":   "Account disabled",
-			"message": "Your account has been deactivated",
 		})
 		return
 	}

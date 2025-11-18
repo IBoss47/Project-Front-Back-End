@@ -75,17 +75,7 @@ func main() {
 		})
 	}
 
-	// Protected routes สำหรับ seller เท่านั้น
-	seller := r.Group("/api/seller")
-	seller.Use(middleware.AuthMiddleware())
-	seller.Use(middleware.RequireRole("seller", "admin"))
-	{
-		seller.GET("/dashboard", func(c *gin.Context) {
-			c.JSON(200, gin.H{
-				"message": "Welcome to seller dashboard!",
-			})
-		})
-	}
+
 
 	// Protected routes สำหรับ admin เท่านั้น
 	admin := r.Group("/api/admin")

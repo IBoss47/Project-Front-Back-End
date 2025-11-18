@@ -27,15 +27,13 @@ func Login(c *gin.Context) {
 	// ค้นหา user จาก username หรือ email
 	var user models.User
 	query := `
-		SELECT id, username, email, password_hash, full_name, phone, 
-		       is_active, email_verified, created_at, updated_at
+		SELECT id, username, email, password_hash, fullname, phone, created_at
 		FROM users 
 		WHERE username = $1 OR email = $1
 	`
 	err := config.DB.QueryRow(query, req.Username).Scan(
 		&user.ID, &user.Username, &user.Email, &user.PasswordHash,
-		&user.FullName, &user.Phone, &user.IsActive, &user.EmailVerified,
-		&user.CreatedAt, &user.UpdatedAt,
+		&user.FullName, &user.Phone, &user.CreatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -50,15 +48,6 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Database error",
 			"message": err.Error(),
-		})
-		return
-	}
-
-	// ตรวจสอบว่า account active หรือไม่
-	if !user.IsActive {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error":   "Account disabled",
-			"message": "Your account has been deactivated",
 		})
 		return
 	}

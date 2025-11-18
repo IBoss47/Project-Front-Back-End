@@ -84,8 +84,8 @@ func Register(c *gin.Context) {
 	// Insert user
 	var userID int
 	insertUserQuery := `
-		INSERT INTO users (username, email, password_hash, full_name, phone, is_active, email_verified)
-		VALUES ($1, $2, $3, $4, $5, true, false)
+		INSERT INTO users (username, email, password_hash, fullname, phone)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
 	`
 	err = tx.QueryRow(insertUserQuery, req.Username, req.Email, passwordHash, req.FullName, req.Phone).Scan(&userID)

@@ -4,16 +4,13 @@ import "time"
 
 // User model - ตาม schema จาก schematest.sql
 type User struct {
-	ID            int       `json:"id"`
-	Username      string    `json:"username"`
-	Email         string    `json:"email"`
-	PasswordHash  string    `json:"-"` // ไม่ส่งใน JSON response
-	FullName      string    `json:"full_name"`
-	Phone         string    `json:"phone"`
-	IsActive      bool      `json:"is_active"`
-	EmailVerified bool      `json:"email_verified"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ID           int       `json:"id"`
+	Username     string    `json:"username"`
+	Email        string    `json:"email"`
+	PasswordHash string    `json:"-"` // ไม่ส่งใน JSON response
+	FullName     string    `json:"fullname"`
+	Phone        string    `json:"phone"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 // Role model
@@ -49,7 +46,7 @@ type RegisterRequest struct {
 	Username string `json:"username" binding:"required,min=3,max=100"`
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=3"`
-	FullName string `json:"full_name"`
+	FullName string `json:"fullname"`
 	Phone    string `json:"phone"`
 }
 
