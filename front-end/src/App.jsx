@@ -27,6 +27,7 @@ function App() {
           <Route path="/cart" element={<Layout><Shopping_Cart /></Layout>} />
           <Route path="/SellListPage" element={<Layout><SellListPage /></Layout>} />
           <Route path= "/Help" element={<Layout><Help_page /></Layout>} />
+          <Route path= "/sell" element={<Layout><SellItemPage /></Layout>} />
           {/* <Route path="/" element={<Homepage />} /> */}
          
           {/* หน้าเว็บที่ไม่ใช้ Navbar Footer */}

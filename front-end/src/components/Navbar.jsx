@@ -29,7 +29,7 @@ const Navbar = () => {
             <div className ="navbar-main-container">
 
                 <div className="navbar-left">
-                    <Link to = '/Homepage' className="navbar-logo">
+                    <Link to = '/' className="navbar-logo">
                         <img className="navbar-logo" src="./Images/LOGO.png" alt=""/>
                     </Link>
                 </div>
@@ -84,10 +84,23 @@ const Navbar = () => {
                             )}
                     </div>
                     <div className="navbar-sell">
-                        <Link to = '/' 
+                        <Link to = '/SellListPage' 
                          className="navbar-sell-button"
-                        >ลงขายสินค้า
+                        >ซื้อสินค้า
                         </Link>    
+                    </div>
+                    <div className="navbar-sell">
+                        {isLoggedIn ? (
+                            <Link to = '/SellItemPage' 
+                             className="navbar-sell-button"
+                            >ลงขายสินค้า
+                            </Link>
+                        ) : (
+                            <Link to = '/login' 
+                             className="navbar-sell-button"
+                            >ลงขายสินค้า
+                            </Link>
+                        )}    
                     </div>
                 </div>
             </div>
