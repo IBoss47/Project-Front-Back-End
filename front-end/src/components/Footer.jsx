@@ -33,15 +33,13 @@ const Footer = () => {
             </div>
             <div className="footer-mid">
                 <h3>ศูนย์ช่วยเหลือ</h3>
-                <Link to = '/' className="footer-help">
+                <Link to = '/Help' className="footer-help">
                     <h4>คำถามที่พบบ่อย</h4>
                 </Link>
                 <Link to = '/' className="footer-help">
                     <h4>นโยบายความเป็นส่วนตัว</h4>
                 </Link>
-                <Link to = '/' className="footer-help">
-                    <h4>วิธีการสั่งซื้อ</h4>
-                </Link>
+
             </div>
             <div className="footer-right">
                <h3>ติดต่อ</h3>

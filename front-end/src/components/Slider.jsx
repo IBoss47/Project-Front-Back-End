@@ -1,4 +1,5 @@
 import {useEffect,useState,useRef}  from "react";
+import {Link} from "react-router-dom";
 import './styles/Slider.css';
 
 const Slider = ({slides,autoPlay = 5000}) => {
@@ -48,14 +49,21 @@ const Slider = ({slides,autoPlay = 5000}) => {
            <div className="arrow right-arrow" onClick={goToNext}>&#10095;
                
            </div>
-
-            <div className="slide" style={{backgroundImage: `url(${currentSlide.image})`}}>
-                <div className="slide-content">
-                    <h2>{currentSlide.title}</h2>
-                    <p>{currentSlide.subtitle}</p>
+            {currentSlide.link ? (
+                <Link to={currentSlide.link} className="slide" style={{backgroundImage: `url(${currentSlide.image})`}}>
+                    <div className="slide-content">
+                        <h2>{currentSlide.title}</h2>
+                        <p>{currentSlide.subtitle}</p>
+                    </div>
+                </Link>
+            ) : (
+                <div className="slide" style={{backgroundImage: `url(${currentSlide.image})`}}>
+                    <div className="slide-content">
+                        <h2>{currentSlide.title}</h2>
+                        <p>{currentSlide.subtitle}</p>
+                    </div>
                 </div>
-
-            </div>
+            )}
 
             <div className="dot-container">
                 {slides.map((slide, slideIndex) => (

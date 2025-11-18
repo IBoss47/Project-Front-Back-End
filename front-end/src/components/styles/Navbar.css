@@ -50,14 +50,14 @@
 .navbar-right{
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 12px;
     font-size: 16px;
     font-weight: 500;
 }
 .navbar-right a{
     text-decoration: none;
     color: #4F4F4F;
-    padding: 10px 15px;
+    padding: 8px 12px;
     border-radius: 1px;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -83,7 +83,7 @@
     cursor: pointer;
     user-select: none;
     height: 40px;
-    min-width: 150px;
+    min-width: 120px;
 }
 .navbar-user-toggle{
     background: none;
@@ -91,12 +91,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
     cursor: pointer;
     font-size: 16px;
     font-weight: 500;
     color: #4F4F4F;
-    padding: 10px 15px;
+    padding: 8px 12px;
     border-radius: 1px;
     transition: background-color 0.3s ease, color 0.3s ease;
     width: 100%;
@@ -152,12 +152,12 @@
     justify-content: space-between;
 }
 .navbar-sell{
-    margin-left: 15px;
-    margin-right: 15px;
+    margin-left: 0;
+    margin-right: 0;
     display: flex;
     align-items: center;
-    gap: 10px;
-    width: 120px;
+    gap: 8px;
+    width: auto;
     height: 40px;
     border-radius: 1px;
 }
