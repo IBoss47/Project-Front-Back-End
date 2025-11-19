@@ -1,6 +1,6 @@
 import React from "react";
 import {Link} from "react-router-dom";
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import './styles/Navbar.css'
 import {
   ShoppingCartIcon,
@@ -12,9 +12,29 @@ import { useCart } from '../context/CartContext';
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(false); // เพิ่ม state เช็คการ login
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [username, setUsername] = useState("");
     const { getTotalItems } = useCart();
     const cartCount = getTotalItems();
+
+    // เช็ค login status เมื่อโหลดหน้า
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        const storedUsername = localStorage.getItem('username');
+        if (token && storedUsername) {
+            setIsLoggedIn(true);
+            setUsername(storedUsername);
+        }
+    }, []);
+
+    // ฟังก์ชัน logout
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        setIsLoggedIn(false);
+        setUsername("");
+        setIsOpen(false);
+    };
     
     return (
         <nav className={`navbar ${isMenuOpen ? "active" : ""}` }>
@@ -49,7 +69,7 @@ const Navbar = () => {
                          <button className={`navbar-user-toggle ${isOpen ? "active" : ""}`} onClick={() => setIsOpen(!isOpen)}
                             >
                             <UserCircleIcon className="h-6 w-6 text-gray-800"/>
-                                <span className="navbar-username">Username</span>
+                                <span className="navbar-username">{username}</span>
                                     <ChevronDownIcon className={`h-5 w-5 navbar-arrow ${isOpen ? "open" : ""}`} />
                          </button>
                          ) : (
@@ -76,9 +96,9 @@ const Navbar = () => {
                                     </Link>
                                    </li>
                                    <li> 
-                                    <Link to = '/' className="navbar-dropdown-item">
+                                    <button onClick={handleLogout} className="navbar-dropdown-item w-full text-left">
                                         <h2 className="text-center text-red-600 w-25 h-15">ออกจากระบบ</h2>                                  
-                                    </Link>
+                                    </button>
                                    </li>
                                 </ul>
                             )}
