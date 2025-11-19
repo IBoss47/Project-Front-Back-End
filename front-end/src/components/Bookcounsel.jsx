@@ -17,19 +17,19 @@ const Bookcounsel = () => {
          }, 500);
        }, []);
 
-      useEffect(() => {
-        const loadBooks = async () =>{
-          setLoading(true);
-          try{
-            const res = await axios.get("http://localhost:3000/api/books");
-            setBooks(res.data);
-          }catch (err) {
-            console.error(err);
-          }
-          setLoading(false);
-        }
-      loadBooks();
-    }, []);
+    //   useEffect(() => {
+    //     const loadBooks = async () =>{
+    //       setLoading(true);
+    //       try{
+    //         const res = await axios.get("http://localhost:3000/api/books");
+    //         setBooks(res.data);
+    //       }catch (err) {
+    //         console.error(err);
+    //       }
+    //       setLoading(false);
+    //     }
+    //   loadBooks();
+    // }, []);
     return (
         
         <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-8">

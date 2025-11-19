@@ -50,6 +50,7 @@ const Login = () => {
         console.log('🔄 Refresh Token:', response.data.refresh_token ? 'Saved' : 'Missing');
         
         // เก็บข้อมูลเพิ่มเติม (tokens ถูกเก็บอัตโนมัติโดย authAPI.login แล้ว)
+        localStorage.setItem("token", response.data.access_token); // เพิ่ม token สำหรับ Navbar
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("username", user.username);
         localStorage.setItem("email", user.email);
