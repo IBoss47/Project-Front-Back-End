@@ -14,6 +14,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import { CartProvider } from './context/CartContext';
 import Help_page from './pages/Help_page';
 import SellItemPage from './pages/SellItemPage';
+import UserStorePage from './pages/UserStorePage';
+import UserProfilePage from './pages/UserProfilePage';
 function App() {
   return (
     <CartProvider>
@@ -22,7 +24,7 @@ function App() {
         <Routes>
           {/* หน้าเว็บที่ใช้ Navbar Footer */}
           <Route path="/" element={<Layout />}>
-            <Route index element={<Homepage />} />
+          <Route index element={<Homepage />} />
           </Route>
           <Route path="/cart" element={<Layout><Shopping_Cart /></Layout>} />
           <Route path="/SellListPage" element={<Layout><SellListPage /></Layout>} />
@@ -35,6 +37,9 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/sell" element={<SellItemPage />} />
+
+          <Route path="/profile" element={<Layout><UserProfilePage /></Layout>} />
+          <Route path="/test" element={<Layout><UserStorePage /></Layout>} />
         </Routes>
         {/* <Footer /> */}
       </Router>
