@@ -75,8 +75,6 @@ func main() {
 		})
 	}
 
-
-
 	// Protected routes สำหรับ admin เท่านั้น
 	admin := r.Group("/api/admin")
 	admin.Use(middleware.AuthMiddleware())
