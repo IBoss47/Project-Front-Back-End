@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import api from '../api/auth';
 
 // Component สำหรับรูปภาพที่ลากได้
 const DraggableImage = ({ image, index, moveImage, removeImage }) => {
@@ -71,6 +72,7 @@ const SellItemPage = () => {
   });
 
   const [images, setImages] = useState([]);
+  const [files, setFiles] = useState([]);
   const [errors, setErrors] = useState({});
 
   // ตัวเลือก Dropdown
@@ -120,12 +122,23 @@ const SellItemPage = () => {
 
   // Handle image upload
   const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
-    const newImages = files.map((file) => ({
+    const uploadedFiles = Array.from(e.target.files);
+    const newImages = uploadedFiles.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
     }));
     setImages((prev) => [...prev, ...newImages]);
+  };
+
+  // Handle file upload
+  const handleFileUpload = (e) => {
+    const uploadedFiles = Array.from(e.target.files);
+    const newFiles = uploadedFiles.map((file) => ({
+      file,
+      name: file.name,
+      size: (file.size / 1024).toFixed(2), // KB
+    }));
+    setFiles((prev) => [...prev, ...newFiles]);
   };
 
   // Move image (drag & drop)
@@ -141,6 +154,11 @@ const SellItemPage = () => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Remove file
+  const removeFile = (index) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Validate form
   const validate = () => {
     const newErrors = {};
@@ -154,6 +172,7 @@ const SellItemPage = () => {
       newErrors.price = 'กรุณากรอกราคาที่ถูกต้อง';
     }
     if (images.length === 0) newErrors.images = 'กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป';
+    if (files.length === 0) newErrors.files = 'กรุณาอัปโหลดไฟล์ PDF อย่างน้อย 1 ไฟล์';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -168,7 +187,7 @@ const SellItemPage = () => {
     setLoading(true);
 
     try {
-      // สร้าง FormData สำหรับส่งรูปภาพ
+      // สร้าง FormData สำหรับส่งรูปภาพและไฟล์
       const submitData = new FormData();
       submitData.append('faculty', formData.faculty);
       submitData.append('subject', formData.subject);
@@ -177,38 +196,42 @@ const SellItemPage = () => {
       submitData.append('description', formData.description);
       submitData.append('price', formData.price);
 
-      // เพิ่มรูปภาพทั้งหมด
-      images.forEach((image, index) => {
+      // เพิ่มรูปภาพทั้งหมดตามลำดับ
+      images.forEach((image) => {
         submitData.append('images', image.file);
-        submitData.append(`image_order_${index}`, index);
       });
+
+      // เพิ่มไฟล์ PDF
+      if (files.length > 0) {
+        submitData.append('pdf', files[0].file);
+      }
 
       console.log('📦 Submitting data:', {
         ...formData,
         images: images.length,
+        pdf: files.length > 0 ? files[0].name : null,
       });
 
-      // TODO: เรียก API
-      // const response = await api.post('/seller/products', submitData, {
-      //   headers: { 'Content-Type': 'multipart/form-data' }
-      // });
+      // เรียก API
+      const response = await api.post('/notes', submitData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
+      console.log('✅ Success:', response.data);
       alert('เพิ่มสินค้าสำเร็จ!');
       navigate('/my-store');
     } catch (error) {
       console.error('Error:', error);
-      alert('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+      const errorMessage = error.response?.data?.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="min-h-screen bg-gray-50 py-8">
+    <DndProvider backend={HTML5Backend} >
+      <div className="min-h-screen bg-gray-50 py-8 " >
         <div className="max-w-4xl mx-auto px-4">
           {/* Header */}
           <div className="mb-6">
@@ -352,6 +375,7 @@ const SellItemPage = () => {
                 name="price"
                 value={formData.price}
                 onChange={handleChange}
+                onWheel={(e) => e.target.blur()}
                 placeholder="0.00"
                 min="0"
                 step="0.01"
@@ -425,6 +449,99 @@ const SellItemPage = () => {
 
               {errors.images && (
                 <p className="text-red-500 text-xs mt-2">{errors.images}</p>
+              )}
+            </div>
+
+            {/* อัปโหลดไฟล์เอกสาร */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ไฟล์เอกสาร (PDF) <span className="text-red-500">*</span>
+              </label>
+              <div className="mb-4">
+                <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 ${
+                  errors.files ? 'border-red-500' : 'border-gray-300'
+                }`}>
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg
+                      className="w-10 h-10 text-gray-400 mb-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <p className="text-sm text-gray-500">คลิกเพื่ออัปโหลดไฟล์ PDF</p>
+                    <p className="text-xs text-gray-400 mt-1">PDF (MAX. 10MB)</p>
+                  </div>
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* File List */}
+              {files.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600 mb-2">ไฟล์ที่แนบ ({files.length} ไฟล์)</p>
+                  {files.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <svg
+                          className="w-8 h-8 text-blue-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">{file.name}</p>
+                          <p className="text-xs text-gray-500">{file.size} KB</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {errors.files && (
+                <p className="text-red-500 text-xs mt-2">{errors.files}</p>
               )}
             </div>
 

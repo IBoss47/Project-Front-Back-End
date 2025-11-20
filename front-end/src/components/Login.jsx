@@ -54,7 +54,7 @@ const Login = () => {
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("username", user.username);
         localStorage.setItem("email", user.email);
-        localStorage.setItem("name", user.full_name);
+        localStorage.setItem("name", user.fullname);
         localStorage.setItem("roles", JSON.stringify(roles));
 
         // Debug logs

@@ -8,6 +8,7 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline"
 import { useCart } from '../context/CartContext';
+import { authAPI } from '../api/auth';
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -19,21 +20,30 @@ const Navbar = () => {
 
     // เช็ค login status เมื่อโหลดหน้า
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        const storedUsername = localStorage.getItem('username');
-        if (token && storedUsername) {
+        const token = localStorage.getItem('access_token');
+        const user = localStorage.getItem('user');
+        if (token && user) {
             setIsLoggedIn(true);
-            setUsername(storedUsername);
+            const userData = JSON.parse(user);
+            setUsername(userData.username);
         }
     }, []);
 
     // ฟังก์ชัน logout
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
-        setIsLoggedIn(false);
-        setUsername("");
-        setIsOpen(false);
+    const handleLogout = async () => {
+        try {
+            await authAPI.logout();  // เรียก API logout และลบ tokens
+            setIsLoggedIn(false);
+            setUsername("");
+            setIsOpen(false);
+            window.location.reload();  
+            
+        } catch (error) {
+            console.error('Logout error:', error);
+            // ถ้า API fail ก็ยังลบ localStorage ได้
+            localStorage.clear();
+            window.location.reload();
+        }
     };
     
     return (

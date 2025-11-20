@@ -61,9 +61,7 @@ const RegisterPage = () => {
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'รหัสผ่านไม่ตรงกัน';
     }
-    if (!formData.fullname.trim()) {
-      newErrors.fullname = 'กรุณากรอกชื่อ';
-    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -82,6 +80,9 @@ const RegisterPage = () => {
     try {
       // Prepare data for API (exclude confirmPassword)
       const { confirmPassword, ...registerData } = formData;
+      
+      // ให้ fullname เท่ากับ username
+      registerData.fullname = formData.username;
       
       const response = await authAPI.register(registerData);
       
@@ -104,6 +105,7 @@ const RegisterPage = () => {
         console.log(error.response.data.message);
         setApiError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
       } else {
+        console.log(error.response.data.message);
         setApiError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
       }
     } finally {
@@ -249,26 +251,7 @@ const RegisterPage = () => {
             </div>
 
             {/* Full Name (Optional) */}
-            <div>
-              <label htmlFor="fullname" className="block text-sm font-medium text-gray-700">
-                ชื่อ *
-              </label>
-              <input
-                id="fullname"
-                name="fullname"
-                type="text"
-                value={formData.fullname}
-                
-                onChange={handleChange}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  errors.fullname ? 'border-red-300' : 'border-gray-300'
-                } border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm `}
-                placeholder="ชื่อ"
-              />
-              {errors.fullname && (
-                <p className="mt-1 text-sm text-red-600">{errors.fullname}</p>
-              )}
-            </div>
+            
 
             
           </div>

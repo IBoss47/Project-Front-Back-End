@@ -73,9 +73,10 @@ func main() {
 				"roles":   roles,
 			})
 		})
+
+		// Notes endpoints
+		protected.POST("/notes", handlers.CreateNote) // สร้างโน้ตขาย
 	}
-
-
 
 	// Protected routes สำหรับ admin เท่านั้น
 	admin := r.Group("/api/admin")
