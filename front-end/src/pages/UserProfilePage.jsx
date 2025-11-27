@@ -6,11 +6,32 @@ import DetailAutoReply from "../components/User/UserDetail/DetailAutoReply";
 import DetailMyReview from "../components/User/UserDetail/DetailMyReview";
 import DetailManageProfile from "../components/User/UserDetail/DetailManageProfile";
 import DetailAccount from "../components/User/UserDetail/DetailAccount";
+import axios from "axios";
 
 export default function UserProfilePage() {
 
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        const res = await axios.get("http://localhost:8080/api/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setUser(res.data);
+      } catch (err) {
+        console.error("Error loading profile:", err);
+      }
+    };
+
+    loadUser();
+  }, []);
+
   const detailComponent = {
-    "ข้อมูลส่วนตัว": <DetailProfile />,
+    "ข้อมูลส่วนตัว": <DetailProfile user={user}/>,
     "ข้อความตอบกลับอัตโนมัติ": <DetailAutoReply />,
     "รีวิวของฉัน": <DetailMyReview />,
     "จัดการโปรไฟล์": <DetailManageProfile />,
@@ -18,6 +39,10 @@ export default function UserProfilePage() {
   };
 
   const [activeMenu, setActiveMenu] = useState("ข้อมูลส่วนตัว");
+
+  if (!user) {
+    return <div>Loading...</div>;  // ⭐ ป้องกัน error
+  }
 
   return (
     <>
@@ -31,8 +56,8 @@ export default function UserProfilePage() {
 
           {/* Profile (full width) */}
           <UserProfile
-            name="User Test"
-            memberId="1212312121"
+            name={user.username}
+            memberId={user.id}
             avatar="/Images/cat.png"
           />
 

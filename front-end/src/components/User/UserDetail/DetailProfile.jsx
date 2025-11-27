@@ -1,6 +1,8 @@
+import { useState } from "react";
 
+export default function DetailProfile({ user }) {
 
-export default function DetailProfile() {
+	const [firstname, setFirstname] = useState(user.firstname || "");
 
 	return (
 		<div className="bg-white p-6 rounded-lg shadow-sm">
@@ -18,7 +20,7 @@ export default function DetailProfile() {
 						</label>
 						<input
 							type="text"
-							defaultValue="Jom Terry"
+							defaultValue={user.username || ""}
 							className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
 						/>
 					</div>
@@ -30,6 +32,7 @@ export default function DetailProfile() {
 						</label>
 						<input
 							type="text"
+							defaultValue={user.firstname || ""}
 							placeholder="ชื่อ"
 							className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
 						/>
@@ -42,6 +45,7 @@ export default function DetailProfile() {
 						</label>
 						<input
 							type="text"
+							defaultValue={user.lastname || ""}
 							placeholder="นามสกุล"
 							className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
 						/>
@@ -65,6 +69,7 @@ export default function DetailProfile() {
 						</label>
 						<input
 							type="text"
+							defaultValue={user.email || ""}
 							placeholder="Email"
 							className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
 						/>
@@ -76,6 +81,7 @@ export default function DetailProfile() {
 						</label>
 						<input
 							type="text"
+							defaultValue={user.phone || ""}
 							placeholder="Phone"
 							className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
 						/>
