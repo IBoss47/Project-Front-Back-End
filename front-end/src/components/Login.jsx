@@ -68,9 +68,27 @@ const Login = () => {
       })
       .catch((err) => {
         console.error('❌ Login error:', err);
+        
+        // แสดง error message ที่ชัดเจน
+        let errorMessage = 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ';
+        
+        if (err.response) {
+          // Server ตอบกลับมาพร้อม error status
+          if (err.response.status === 401) {
+            errorMessage = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+          } else if (err.response.status === 500) {
+            errorMessage = 'เกิดข้อผิดพลาดที่เซิร์ฟเวอร์';
+          } else if (err.response.data?.message) {
+            errorMessage = err.response.data.message;
+          }
+        } else if (err.request) {
+          // Request ถูกส่งไปแต่ไม่ได้รับ response
+          errorMessage = 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้';
+        }
+        
         setError({ 
           username: "", 
-          password: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' 
+          password: errorMessage
         });
       })
       .finally(() => {

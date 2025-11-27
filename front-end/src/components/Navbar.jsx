@@ -91,12 +91,12 @@ const Navbar = () => {
                             {isOpen && isLoggedIn && (
                                 <ul className="navbar-dropdown-menu">
                                    <li> 
-                                    <Link to = '/' className="navbar-dropdown-item">
+                                    <Link to = '/profile' className="navbar-dropdown-item">
                                     ประวัติส่วนตัว
                                     </Link>
                                    </li>
                                    <li> 
-                                    <Link to = '/' className="navbar-dropdown-item">
+                                    <Link to = '/store' className="navbar-dropdown-item">
                                     สรุปของฉัน
                                     </Link>
                                    </li>
@@ -121,7 +121,7 @@ const Navbar = () => {
                     </div>
                     <div className="navbar-sell">
                         {isLoggedIn ? (
-                            <Link to = '/SellItemPage' 
+                            <Link to = '/sell' 
                              className="navbar-sell-button"
                             >ลงขายสินค้า
                             </Link>

@@ -1,53 +1,90 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../api/auth';
 
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState(() => {
-    // โหลดตะกร้าจาก localStorage เมื่อ mount
-    const saved = localStorage.getItem('cart');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // บันทึกลง localStorage เมื่อ cartItems เปลี่ยน
+  // โหลดตะกร้าจาก API เมื่อ mount
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cartItems));
-  }, [cartItems]);
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      fetchCart();
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
-  const addToCart = (book) => {
-    setCartItems((prevItems) => {
-      const existingItem = prevItems.find((item) => item.id === book.id);
-      if (existingItem) {
-        return prevItems.map((item) =>
-          item.id === book.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
+  const fetchCart = async () => {
+    try {
+      const response = await api.get('/cart');
+      setCartItems(response.data);
+    } catch (error) {
+      // ไม่แสดง error ถ้าเป็น 401 (ยังไม่ได้ login หรือ token หมดอายุ)
+      if (error.response?.status === 401) {
+        setCartItems([]);
+      } else {
+        console.error('Error fetching cart:', error);
       }
-      return [...prevItems, { ...book, quantity: 1 }];
-    });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const removeFromCart = (bookId) => {
-    setCartItems((prevItems) =>
-      prevItems.filter((item) => item.id !== bookId)
-    );
+  const addToCart = async (book) => {
+    try {
+      await api.post('/cart', {
+        note_id: book.id,
+        quantity: 1
+      });
+      // Refresh cart from server
+      await fetchCart();
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      throw error;
+    }
   };
 
-  const updateQuantity = (bookId, quantity) => {
+  const removeFromCart = async (itemId) => {
+    try {
+      await api.delete(`/cart/${itemId}`);
+      // Update local state immediately
+      setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+      throw error;
+    }
+  };
+
+  const updateQuantity = async (itemId, quantity) => {
     if (quantity <= 0) {
-      removeFromCart(bookId);
+      await removeFromCart(itemId);
       return;
     }
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === bookId ? { ...item, quantity } : item
-      )
-    );
+    try {
+      await api.put(`/cart/${itemId}`, { quantity });
+      // Update local state immediately
+      setCartItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === itemId ? { ...item, quantity } : item
+        )
+      );
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      throw error;
+    }
   };
 
-  const clearCart = () => {
-    setCartItems([]);
+  const clearCart = async () => {
+    try {
+      await api.delete('/cart');
+      setCartItems([]);
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+      throw error;
+    }
   };
 
   const getTotalPrice = () => {
@@ -59,7 +96,7 @@ export const CartProvider = ({ children }) => {
   };
 
   const isInCart = (bookId) => {
-    return cartItems.some((item) => item.id === bookId);
+    return cartItems.some((item) => item.note_id === bookId);
   };
 
   return (
@@ -73,6 +110,8 @@ export const CartProvider = ({ children }) => {
         getTotalPrice,
         getTotalItems,
         isInCart,
+        loading,
+        refreshCart: fetchCart,
       }}
     >
       {children}
@@ -87,3 +126,4 @@ export const useCart = () => {
   }
   return context;
 };
+

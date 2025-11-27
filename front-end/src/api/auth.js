@@ -43,6 +43,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // ถ้าเป็น endpoint login หรือ register ให้ส่ง error กลับไปโดยตรง ไม่ redirect
+    if (originalRequest.url?.includes('/login') || originalRequest.url?.includes('/register')) {
+      return Promise.reject(error);
+    }
+
     // ถ้าได้ 401 และยังไม่ได้ retry
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
@@ -61,9 +66,8 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refresh_token');
       
       if (!refreshToken) {
-        // ไม่มี refresh token ให้ logout
+        // ไม่มี refresh token ให้ logout (แต่ไม่ redirect ทันที)
         authAPI.logout();
-        window.location.href = '/login';
         return Promise.reject(error);
       }
 
@@ -87,7 +91,6 @@ api.interceptors.response.use(
         // Refresh token หมดอายุหรือไม่ valid
         isRefreshing = false;
         authAPI.logout();
-        window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }

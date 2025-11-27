@@ -6,6 +6,7 @@ import FilterSidebar from './components/FilterSidebar';
 import Homepage from './pages/Homepage';
 import React from 'react';
 import SellListPage from './pages/SellListPage';
+import SellListPage2 from './pages/SellListPage2';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -28,6 +29,7 @@ function App() {
           </Route>
           <Route path="/cart" element={<Layout><Shopping_Cart /></Layout>} />
           <Route path="/SellListPage" element={<Layout><SellListPage /></Layout>} />
+          <Route path="/SellListPage2" element={<Layout><SellListPage2 /></Layout>} />
           <Route path= "/Help" element={<Layout><Help_page /></Layout>} />
           <Route path= "/sell" element={<Layout><SellItemPage /></Layout>} />
           {/* <Route path="/" element={<Homepage />} /> */}

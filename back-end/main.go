@@ -39,6 +39,9 @@ func main() {
 		c.Next()
 	})
 
+	// Serve static files (สำหรับรูปภาพและ PDF)
+	r.Static("/uploads", "./uploads")
+
 	// Health check endpoint
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -55,6 +58,12 @@ func main() {
 		public.POST("/login", handlers.Login)
 		public.POST("/refresh", handlers.RefreshToken) // ขอ access token ใหม่
 		public.POST("/logout", handlers.Logout)        // Logout และ revoke refresh token
+
+		// Notes - ดูได้โดยไม่ต้อง login
+		public.GET("/notes", handlers.GetAllNotes)                      // ดึงรายการ notes ทั้งหมด
+		public.GET("/notes/best-selling", handlers.GetBestSellingNotes) // ดึงหนังสือขายดี
+		public.GET("/notes/latest", handlers.GetLatestNotes)            // ดึงหนังสือมาใหม่ล่าสุด
+		public.GET("/notes/:id", handlers.GetNoteByID)                  // ดึง note เดียวตาม ID
 	}
 
 	// Protected routes (ต้อง login)
@@ -79,6 +88,12 @@ func main() {
 
 		protected.GET("/me", handlers.GetMe)
 		protected.GET("/users/:id", handlers.GetUserByID)
+		// Cart endpoints
+		protected.POST("/cart", handlers.AddToCart)            // เพิ่มสินค้าลงตะกร้า
+		protected.GET("/cart", handlers.GetCart)               // ดูสินค้าในตะกร้า
+		protected.PUT("/cart/:id", handlers.UpdateCartItem)    // อัพเดทจำนวนสินค้า
+		protected.DELETE("/cart/:id", handlers.RemoveFromCart) // ลบสินค้าออกจากตะกร้า
+		protected.DELETE("/cart", handlers.ClearCart)          // ล้างตะกร้าทั้งหมด
 	}
 
 	// Protected routes สำหรับ admin เท่านั้น
