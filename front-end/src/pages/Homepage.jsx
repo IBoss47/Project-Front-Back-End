@@ -1,16 +1,41 @@
 import React,{useEffect, useState} from "react";
 import {Link} from "react-router-dom";
 import Slider from "../components/Slider";
-import Bookcounsel from "../components/Bookcounsel";
+import SaleList2 from "../components/SaleList2";
 import { ArrowRightIcon, BookOpenIcon, TruckIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import api from '../api/auth';
+
 const Homepage = () => {
     const [loading, setLoading] = useState(true);
-    useEffect(()=>{
-        setTimeout(()=>{
-            setLoading(false);
-        },2000)
-    },[]);
-     const slideData = [
+    const [recommendedBooks, setRecommendedBooks] = useState([]);
+    const [latestBooks, setLatestBooks] = useState([]);
+    const [bestSellingBooks, setBestSellingBooks] = useState([]);
+    
+    useEffect(() => {
+        const fetchBooks = async () => {
+            setLoading(true);
+            try {
+                // Fetch all three types of books in parallel
+                const [recommended, latest, bestSelling] = await Promise.all([
+                    api.get('/notes'),
+                    api.get('/notes/latest'),
+                    api.get('/notes/best-selling')
+                ]);
+                
+                setRecommendedBooks(recommended.data.slice(0, 6));
+                setLatestBooks(latest.data);
+                setBestSellingBooks(bestSelling.data.slice(0, 6));
+            } catch (error) {
+                console.error('Error fetching books:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        fetchBooks();
+    }, []);
+    
+    const slideData = [
     {
       image: '/Images/board/home_board.jpg',
       link: '/Help'
@@ -31,18 +56,42 @@ const Homepage = () => {
         <div className="container mx-auto px-8">
 
             <h2 className="text-3xl font-bold text-center mb-12 mt-8">หนังสือแนะนำ</h2>
-            <Bookcounsel />
+            {loading ? (
+              <div className="text-center py-8">กำลังโหลด...</div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-8">
+                {recommendedBooks.map(book => (
+                  <SaleList2 key={book.id} book={book} />
+                ))}
+              </div>
+            )}
 
             <h2 className="text-3xl font-bold text-center mb-12 mt-8">หนังสือใหม่</h2>
-            <Bookcounsel />
+            {loading ? (
+              <div className="text-center py-8">กำลังโหลด...</div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-8">
+                {latestBooks.map(book => (
+                  <SaleList2 key={book.id} book={book} />
+                ))}
+              </div>
+            )}
 
             <h2 className="text-3xl font-bold text-center mb-12 mt-8 ">หนังสือขายดี</h2>
-            <Bookcounsel />
+            {loading ? (
+              <div className="text-center py-8">กำลังโหลด...</div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-8">
+                {bestSellingBooks.map(book => (
+                  <SaleList2 key={book.id} book={book} />
+                ))}
+              </div>
+            )}
 
           <div className="text-center mt-12">
               <div className="text-center mt-12">
                 <Link to="/SellListPage" className="inline-flex items-center text-viridian-600 
-                  hover:text-viridian-700 font-semibold text-lg group text-xl">
+                  hover:text-viridian-700 font-semibold text-xl group">
                     ดูหนังสือทั้งหมด
                   <ArrowRightIcon className="ml-2 h-5 w-5 group-hover:translate-x-2 
                     transition-transform" />

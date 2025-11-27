@@ -121,7 +121,7 @@ const Navbar = () => {
                     </div>
                     <div className="navbar-sell">
                         {isLoggedIn ? (
-                            <Link to = '/SellItemPage' 
+                            <Link to = '/sell' 
                              className="navbar-sell-button"
                             >ลงขายสินค้า
                             </Link>

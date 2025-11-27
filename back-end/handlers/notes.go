@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,9 +31,10 @@ func CreateNote(c *gin.Context) {
 	faculty := c.PostForm("faculty")
 	subject := c.PostForm("subject")
 	year := c.PostForm("year")
+	examTerm := c.PostForm("exam_term")
 
 	// Validate required fields
-	if bookTitle == "" || priceStr == "" || faculty == "" || subject == "" || year == "" {
+	if bookTitle == "" || priceStr == "" || faculty == "" || subject == "" || year == "" || examTerm == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Missing required fields",
 		})
@@ -150,8 +150,8 @@ func CreateNote(c *gin.Context) {
 	var noteID int
 	insertNoteQuery := `
 		INSERT INTO notes_for_sale 
-		(course_id, seller_id, book_title, price, description, pdf_file, status, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, 'available', NOW())
+		(course_id, seller_id, book_title, price, exam_term, description, pdf_file, status, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, 'available', NOW())
 		RETURNING id
 	`
 	err = tx.QueryRow(
@@ -160,6 +160,7 @@ func CreateNote(c *gin.Context) {
 		userID,
 		bookTitle,
 		price,
+		examTerm,
 		description,
 		pdfPath,
 	).Scan(&noteID)

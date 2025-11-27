@@ -66,6 +66,7 @@ const SellItemPage = () => {
     faculty: '',
     subject: '',
     year: '',
+    exam_term: '',
     title: '',
     description: '',
     price: '',
@@ -102,7 +103,9 @@ const SellItemPage = () => {
     'ภาษาไทย',
   ];
 
-  const years = ['ปี 1', 'ปี 2', 'ปี 3', 'ปี 4', 'ปี 5', 'ปี 6'];
+  const years = ['ปี 1', 'ปี 2', 'ปี 3', 'ปี 4'];
+
+  const examTerms = ['กลางภาค', 'ปลายภาค'];
 
   // Handle input change
   const handleChange = (e) => {
@@ -128,6 +131,7 @@ const SellItemPage = () => {
       preview: URL.createObjectURL(file),
     }));
     setImages((prev) => [...prev, ...newImages]);
+    e.target.value = ''; // Reset input เพื่อให้เลือกไฟล์เดิมได้อีก
   };
 
   // Handle file upload
@@ -139,6 +143,7 @@ const SellItemPage = () => {
       size: (file.size / 1024).toFixed(2), // KB
     }));
     setFiles((prev) => [...prev, ...newFiles]);
+    e.target.value = ''; // Reset input เพื่อให้เลือกไฟล์เดิมได้อีก
   };
 
   // Move image (drag & drop)
@@ -166,6 +171,7 @@ const SellItemPage = () => {
     if (!formData.faculty) newErrors.faculty = 'กรุณาเลือกสาขา';
     if (!formData.subject) newErrors.subject = 'กรุณาเลือกชื่อวิชา';
     if (!formData.year) newErrors.year = 'กรุณาเลือกชั้นปี';
+    if (!formData.exam_term) newErrors.exam_term = 'กรุณาเลือกภาคเรียน';
     if (!formData.title.trim()) newErrors.title = 'กรุณากรอกชื่อหนังสือ';
     if (!formData.description.trim()) newErrors.description = 'กรุณากรอกรายละเอียด';
     if (!formData.price || parseFloat(formData.price) <= 0) {
@@ -191,7 +197,8 @@ const SellItemPage = () => {
       const submitData = new FormData();
       submitData.append('faculty', formData.faculty);
       submitData.append('subject', formData.subject);
-      submitData.append('year', formData.year);
+      submitData.append('year', formData.year.replace('ปี ', '')); 
+      submitData.append('exam_term', formData.exam_term);
       submitData.append('title', formData.title);
       submitData.append('description', formData.description);
       submitData.append('price', formData.price);
@@ -219,7 +226,7 @@ const SellItemPage = () => {
 
       console.log('✅ Success:', response.data);
       alert('เพิ่มสินค้าสำเร็จ!');
-      navigate('/my-store');
+      navigate('/');
     } catch (error) {
       console.error('Error:', error);
       const errorMessage = error.response?.data?.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
@@ -248,7 +255,7 @@ const SellItemPage = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
             {/* Dropdowns Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* สาขา */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -321,6 +328,31 @@ const SellItemPage = () => {
                 </select>
                 {errors.year && (
                   <p className="text-red-500 text-xs mt-1">{errors.year}</p>
+                )}
+              </div>
+
+              {/* ภาคเรียน */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  ภาคเรียน <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="exam_term"
+                  value={formData.exam_term}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.exam_term ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">เลือกภาคเรียน</option>
+                  {examTerms.map((term) => (
+                    <option key={term} value={term}>
+                      {term}
+                    </option>
+                  ))}
+                </select>
+                {errors.exam_term && (
+                  <p className="text-red-500 text-xs mt-1">{errors.exam_term}</p>
                 )}
               </div>
             </div>

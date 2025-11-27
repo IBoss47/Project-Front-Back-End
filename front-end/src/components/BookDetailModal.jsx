@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { XMarkIcon, ShoppingCartIcon, HeartIcon, StarIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon, StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
-import { getCourseById } from '../data/mockBooksData';
 import { useCart } from '../context/CartContext';
 
 const BookDetailModal = ({ book, isOpen, onClose }) => {
@@ -24,15 +23,22 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
 
     if (!isOpen || !book) return null;
 
-    // ดึงข้อมูล course จาก course_id
-    const course = getCourseById(book.course_id);
+    const course = book.course;
 
-    const handleAddToCart = () => {
-        for (let i = 0; i < quantity; i++) {
-            addToCart(book);
+    const handleAddToCart = async () => {
+        try {
+            for (let i = 0; i < quantity; i++) {
+                await addToCart(book);
+            }
+            alert(`เพิ่ม "${book.book_title}" จำนวน ${quantity} ชุด เข้าตะกร้าแล้ว!`);
+            setQuantity(1);
+        } catch (error) {
+            if (error.response?.status === 401) {
+                alert('กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า');
+            } else {
+                alert('เกิดข้อผิดพลาดในการเพิ่มสินค้าลงตะกร้า');
+            }
         }
-        alert(`เพิ่ม "${book.book_title}" จำนวน ${quantity} ชุด เข้าตะกร้าแล้ว!`);
-        setQuantity(1);
     };
 
     const handleToggleFavorite = () => {
@@ -78,14 +84,23 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                             {/* Left: Study Notes Image */}
                             <div className="space-y-8">
                                 <div className="relative aspect-[3/4] bg-gradient-to-br from-blue-50 to-indigo-100 rounded-3xl overflow-hidden shadow-2xl border-8 border-white">
-                                    <img
-                                        src={book.book_cover || book.book_image || '/images/book-placeholder.jpg'}
-                                        alt={book.book_title}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            e.target.src = 'https://via.placeholder.com/400x600/6366f1/ffffff?text=' + encodeURIComponent(book.book_title);
-                                        }}
-                                    />
+                                    {book.cover_image ? (
+                                        <img
+                                            src={`http://localhost:8080/${book.cover_image}`}
+                                            alt={book.book_title}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                e.target.style.display = 'none';
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                                            <svg className="w-32 h-32 mb-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                            </svg>
+                                            <span className="text-xl">ไม่มีรูปภาพ</span>
+                                        </div>
+                                    )}
 
                                     {/* Status Badge */}
                                     <div className="absolute top-6 left-6">
@@ -95,11 +110,13 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                     </div>
 
                                     {/* Semester Badge */}
-                                    <div className="absolute top-6 right-6">
-                                        <span className="bg-blue-600 text-white px-5 py-2 rounded-full text-base font-bold shadow-lg flex items-center gap-2">
-                                            📄 {book.semester}
-                                        </span>
-                                    </div>
+                                    {book.exam_term && (
+                                        <div className="absolute top-6 right-6">
+                                            <span className="bg-blue-600 text-white px-5 py-2 rounded-full text-base font-bold shadow-lg flex items-center gap-2">
+                                                📄 {book.exam_term}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Favorite Button */}
@@ -126,11 +143,11 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                 {/* Course Info */}
                                 <div>
                                     <p className="text-xl text-blue-600 font-bold uppercase tracking-wider mb-4">
-                                        {course ? `${course.course_code} - ${course.course_name}` : 'ไม่ระบุวิชา'}
+                                        {course ? `${course.code} - ${course.name}` : 'ไม่ระบุวิชา'}
                                     </p>
                                     <div className="flex gap-4">
                                         <span className="inline-block bg-blue-100 text-blue-700 px-6 py-3 rounded-full text-lg font-bold">
-                                            ชั้นปี {course?.course_year || '-'}
+                                            ชั้นปี {course?.year || '-'}
                                         </span>
                                     </div>
                                 </div>
@@ -179,10 +196,10 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                     <p className="text-lg text-gray-700 mb-4 font-semibold">👤 ผู้สร้างสรุป</p>
                                     <div className="flex items-center gap-6">
                                         <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-700 text-white rounded-full flex items-center justify-center font-bold text-3xl shadow-md">
-                                            {book.seller_name?.charAt(0) || 'U'}
+                                            {book.seller?.fullname?.charAt(0) || 'U'}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-2xl text-gray-800">{book.seller_name}</p>
+                                            <p className="font-bold text-2xl text-gray-800">{book.seller?.fullname}</p>
                                             <p className="text-lg text-blue-600 font-semibold">✓ ผู้สร้างที่เชื่อถือได้</p>
                                         </div>
                                     </div>
