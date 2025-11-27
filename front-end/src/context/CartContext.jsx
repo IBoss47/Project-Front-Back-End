@@ -9,7 +9,12 @@ export const CartProvider = ({ children }) => {
 
   // โหลดตะกร้าจาก API เมื่อ mount
   useEffect(() => {
-    fetchCart();
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      fetchCart();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const fetchCart = async () => {
@@ -17,10 +22,11 @@ export const CartProvider = ({ children }) => {
       const response = await api.get('/cart');
       setCartItems(response.data);
     } catch (error) {
-      console.error('Error fetching cart:', error);
-      // ถ้า unauthorized ให้ cart ว่าง
+      // ไม่แสดง error ถ้าเป็น 401 (ยังไม่ได้ login หรือ token หมดอายุ)
       if (error.response?.status === 401) {
         setCartItems([]);
+      } else {
+        console.error('Error fetching cart:', error);
       }
     } finally {
       setLoading(false);

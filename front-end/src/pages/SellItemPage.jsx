@@ -75,6 +75,8 @@ const SellItemPage = () => {
   const [images, setImages] = useState([]);
   const [files, setFiles] = useState([]);
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   // ตัวเลือก Dropdown
   const faculties = [
@@ -191,6 +193,8 @@ const SellItemPage = () => {
     if (!validate()) return;
 
     setLoading(true);
+    setApiError('');
+    setSuccess(false);
 
     try {
       // สร้าง FormData สำหรับส่งรูปภาพและไฟล์
@@ -225,12 +229,33 @@ const SellItemPage = () => {
       });
 
       console.log('✅ Success:', response.data);
-      alert('เพิ่มสินค้าสำเร็จ!');
-      navigate('/');
+      setSuccess(true);
+      
+      // รอ 2 วินาทีแล้ว redirect
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
     } catch (error) {
-      console.error('Error:', error);
-      const errorMessage = error.response?.data?.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
-      alert(errorMessage);
+      console.error('❌ Error:', error);
+      
+      // แสดง error message ที่ชัดเจน
+      let errorMessage = 'เกิดข้อผิดพลาดในการเพิ่มสินค้า';
+      
+      if (error.response) {
+        if (error.response.status === 400) {
+          errorMessage = error.response.data?.error || 'ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
+        } else if (error.response.status === 401) {
+          errorMessage = 'กรุณาเข้าสู่ระบบก่อนลงขายสินค้า';
+        } else if (error.response.status === 500) {
+          errorMessage = 'เกิดข้อผิดพลาดที่เซิร์ฟเวอร์';
+        } else if (error.response.data?.error) {
+          errorMessage = error.response.data.error;
+        }
+      } else if (error.request) {
+        errorMessage = 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้';
+      }
+      
+      setApiError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -254,6 +279,40 @@ const SellItemPage = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
+            {/* Success Message */}
+            {success && (
+              <div className="rounded-md bg-green-50 p-4 border border-green-200">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-green-800">
+                      เพิ่มสินค้าสำเร็จ! กำลังนำคุณไปหน้าหลัก...
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {apiError && (
+              <div className="rounded-md bg-red-50 p-4 border border-red-200">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-red-800">{apiError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Dropdowns Row */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* สาขา */}
@@ -589,9 +648,9 @@ const SellItemPage = () => {
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || success}
                 className={`flex-1 px-6 py-3 rounded-lg text-white transition-colors ${
-                  loading
+                  loading || success
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700'
                 }`}
@@ -616,6 +675,8 @@ const SellItemPage = () => {
                     </svg>
                     กำลังบันทึก...
                   </span>
+                ) : success ? (
+                  'เพิ่มสินค้าสำเร็จ!'
                 ) : (
                   'ลงขาย'
                 )}

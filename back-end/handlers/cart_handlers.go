@@ -45,28 +45,13 @@ func AddToCart(c *gin.Context) {
 		request.Quantity = 1
 	}
 
-	// Get or create cart for user
-	var cartID int
-	err := config.DB.QueryRow("SELECT id FROM cart WHERE user_id = $1", userID).Scan(&cartID)
-	if err == sql.ErrNoRows {
-		// Create new cart
-		err = config.DB.QueryRow("INSERT INTO cart (user_id) VALUES ($1) RETURNING id", userID).Scan(&cartID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create cart"})
-			return
-		}
-	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
-		return
-	}
-
 	// Check if item already exists in cart
 	var existingQuantity int
-	err = config.DB.QueryRow("SELECT quantity FROM cart_items WHERE cart_id = $1 AND note_id = $2", cartID, request.NoteID).Scan(&existingQuantity)
+	err := config.DB.QueryRow("SELECT quantity FROM cart WHERE user_id = $1 AND note_id = $2", userID, request.NoteID).Scan(&existingQuantity)
 
 	if err == sql.ErrNoRows {
 		// Insert new item
-		_, err = config.DB.Exec("INSERT INTO cart_items (cart_id, note_id, quantity) VALUES ($1, $2, $3)", cartID, request.NoteID, request.Quantity)
+		_, err = config.DB.Exec("INSERT INTO cart (user_id, note_id, quantity) VALUES ($1, $2, $3)", userID, request.NoteID, request.Quantity)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add item to cart"})
 			return
@@ -77,7 +62,7 @@ func AddToCart(c *gin.Context) {
 	} else {
 		// Update existing item quantity
 		newQuantity := existingQuantity + request.Quantity
-		_, err = config.DB.Exec("UPDATE cart_items SET quantity = $1 WHERE cart_id = $2 AND note_id = $3", newQuantity, cartID, request.NoteID)
+		_, err = config.DB.Exec("UPDATE cart SET quantity = $1 WHERE user_id = $2 AND note_id = $3", newQuantity, userID, request.NoteID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update cart item"})
 			return
@@ -95,34 +80,23 @@ func GetCart(c *gin.Context) {
 		return
 	}
 
-	// Get cart ID
-	var cartID int
-	err := config.DB.QueryRow("SELECT id FROM cart WHERE user_id = $1", userID).Scan(&cartID)
-	if err == sql.ErrNoRows {
-		c.JSON(http.StatusOK, []CartItem{})
-		return
-	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
-		return
-	}
-
 	// Get cart items with note details
 	query := `
 		SELECT 
-			ci.id, ci.note_id, ci.quantity,
+			ct.id, ct.note_id, ct.quantity,
 			n.book_title, n.price, n.exam_term, n.status,
 			COALESCE((SELECT path FROM note_images WHERE note_id = n.id ORDER BY image_order LIMIT 1), '') as cover_image,
 			c.id, c.code, c.name, c.year, c.major,
 			u.id, u.username, u.fullname
-		FROM cart_items ci
-		JOIN notes_for_sale n ON ci.note_id = n.id
+		FROM cart ct
+		JOIN notes_for_sale n ON ct.note_id = n.id
 		LEFT JOIN courses c ON n.course_id = c.id
 		LEFT JOIN users u ON n.seller_id = u.id
-		WHERE ci.cart_id = $1
-		ORDER BY ci.id DESC
+		WHERE ct.user_id = $1
+		ORDER BY ct.id DESC
 	`
 
-	rows, err := config.DB.Query(query, cartID)
+	rows, err := config.DB.Query(query, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cart items"})
 		return
@@ -202,9 +176,9 @@ func UpdateCartItem(c *gin.Context) {
 
 	// Verify the cart item belongs to the user
 	query := `
-		UPDATE cart_items 
+		UPDATE cart 
 		SET quantity = $1 
-		WHERE id = $2 AND cart_id = (SELECT id FROM cart WHERE user_id = $3)
+		WHERE id = $2 AND user_id = $3
 	`
 	result, err := config.DB.Exec(query, request.Quantity, itemID, userID)
 	if err != nil {
@@ -237,8 +211,8 @@ func RemoveFromCart(c *gin.Context) {
 
 	// Verify the cart item belongs to the user and delete
 	query := `
-		DELETE FROM cart_items 
-		WHERE id = $1 AND cart_id = (SELECT id FROM cart WHERE user_id = $2)
+		DELETE FROM cart 
+		WHERE id = $1 AND user_id = $2
 	`
 	result, err := config.DB.Exec(query, itemID, userID)
 	if err != nil {
@@ -265,8 +239,8 @@ func ClearCart(c *gin.Context) {
 
 	// Delete all cart items for the user
 	query := `
-		DELETE FROM cart_items 
-		WHERE cart_id = (SELECT id FROM cart WHERE user_id = $1)
+		DELETE FROM cart 
+		WHERE user_id = $1
 	`
 	_, err := config.DB.Exec(query, userID)
 	if err != nil {

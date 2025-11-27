@@ -51,22 +51,15 @@ CREATE TABLE IF NOT EXISTS buyed_note (
     FOREIGN KEY (note_id) REFERENCES notes_for_sale(id) ON DELETE CASCADE
 );
 
--- ตารางตะกร้าสินค้า (cart)
+-- ตารางตะกร้าสินค้า (cart) - รวมกับ cart_items
 CREATE TABLE IF NOT EXISTS cart (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL UNIQUE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- ตารางรายการสินค้าในตะกร้า (cart_items)
-CREATE TABLE IF NOT EXISTS cart_items (
-    id SERIAL PRIMARY KEY,
-    cart_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
     note_id INTEGER NOT NULL,
     quantity INTEGER DEFAULT 1 CHECK (quantity > 0),
-    FOREIGN KEY (cart_id) REFERENCES cart(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (note_id) REFERENCES notes_for_sale(id) ON DELETE CASCADE,
-    UNIQUE(cart_id, note_id)
+    UNIQUE(user_id, note_id)
 );
 
 -- ตาราง roles

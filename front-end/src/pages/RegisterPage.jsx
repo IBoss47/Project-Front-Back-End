@@ -98,16 +98,36 @@ const RegisterPage = () => {
     } catch (error) {
       console.error('Register error:', error);
       
-      if (error.response?.data?.message) {
-        console.log(error.response.data.message);
-        setApiError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      } else if (error.response?.data?.error) {
-        console.log(error.response.data.message);
-        setApiError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      } else {
-        console.log(error.response.data.message);
-        setApiError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+      // แสดง error message ที่ชัดเจน
+      let errorMessage = 'เกิดข้อผิดพลาดในการสมัครสมาชิก';
+      
+      if (error.response) {
+        // Server ตอบกลับมาพร้อม error status
+        if (error.response.status === 400) {
+          // Bad Request - อาจเป็นข้อมูลไม่ครบหรือรูปแบบไม่ถูกต้อง
+          if (error.response.data?.message) {
+            errorMessage = error.response.data.message;
+          } else if (error.response.data?.error) {
+            errorMessage = error.response.data.error;
+          } else {
+            errorMessage = 'ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
+          }
+        } else if (error.response.status === 409) {
+          // Conflict - username หรือ email ซ้ำ
+          errorMessage = 'ชื่อผู้ใช้หรืออีเมลนี้มีอยู่ในระบบแล้ว';
+        } else if (error.response.status === 500) {
+          errorMessage = 'เกิดข้อผิดพลาดที่เซิร์ฟเวอร์';
+        } else if (error.response.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data?.error) {
+          errorMessage = error.response.data.error;
+        }
+      } else if (error.request) {
+        // Request ถูกส่งไปแต่ไม่ได้รับ response
+        errorMessage = 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้';
       }
+      
+      setApiError(errorMessage);
     } finally {
       setLoading(false);
     }
