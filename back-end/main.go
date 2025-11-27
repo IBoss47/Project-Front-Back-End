@@ -76,6 +76,9 @@ func main() {
 
 		// Notes endpoints
 		protected.POST("/notes", handlers.CreateNote) // สร้างโน้ตขาย
+
+		protected.GET("/me", handlers.GetMe)
+		protected.GET("/users/:id", handlers.GetUserByID)
 	}
 
 	// Protected routes สำหรับ admin เท่านั้น

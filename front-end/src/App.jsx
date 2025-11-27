@@ -39,7 +39,7 @@ function App() {
           <Route path="/sell" element={<SellItemPage />} />
 
           <Route path="/profile" element={<Layout><UserProfilePage /></Layout>} />
-          <Route path="/test" element={<Layout><UserStorePage /></Layout>} />
+          <Route path="/store" element={<Layout><UserStorePage /></Layout>} />
         </Routes>
         {/* <Footer /> */}
       </Router>
