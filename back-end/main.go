@@ -99,6 +99,9 @@ func main() {
 		protected.PUT("/cart/:id", handlers.UpdateCartItem)    // อัพเดทจำนวนสินค้า
 		protected.DELETE("/cart/:id", handlers.RemoveFromCart) // ลบสินค้าออกจากตะกร้า
 		protected.DELETE("/cart", handlers.ClearCart)          // ล้างตะกร้าทั้งหมด
+		
+		// Purchase endpoints
+		protected.POST("/purchase", handlers.PurchaseNotes) // ซื้อหนังสือ
 	}
 
 	// Protected routes สำหรับ admin เท่านั้น
