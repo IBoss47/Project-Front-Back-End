@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
+import axios from "axios";
 import BookCard from '../SaleList';
 import SearchBar from '../SearchBar';
 import FilterSidebar from '../FilterSidebar';
@@ -34,11 +35,12 @@ function ProductCard({ book }) {
 }
 
 // --- คอมโพเนนต์หลัก StoreProductsPanel ---
-export default function StoreProductsPanel() {
+export default function StoreProductsPanel({ userId }) {
   const [tab, setTab] = useState("listed"); // listed | reviews | sold
   const [q, setQ] = useState("");
 
   const [books, setBooks] = useState([]);
+  const [notes, setNotes] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
   const [selectedSemester, setSelectedSemester] = useState('all');
@@ -54,28 +56,41 @@ export default function StoreProductsPanel() {
   const booksPerPage = 12;
 
   useEffect(() => {
-    // Load books from data
-    setLoading(true);
-    setTimeout(() => {
-      const booksData = getAllBooks();
-      setBooks(booksData);
-      setFilteredBooks(booksData);
-      setLoading(false);
-    }, 500);
-  }, []);
+    // Load notes from API
+    const fetchNotes = async () => {
+      if (!userId) return;
+      
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("access_token");
+        const response = await axios.get(`http://localhost:8080/api/users/${userId}/notes`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setNotes(response.data);
+      } catch (error) {
+        console.error("Error fetching notes:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotes();
+  }, [userId]);
 
   const indexOfLastBook = currentPage * booksPerPage;
   const indexOfFirstBook = indexOfLastBook - booksPerPage;
   const currentBooks = filteredBooks.slice(indexOfFirstBook, indexOfLastBook);
   const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
 
-  const listed = useMemo(() => books, [books]);
+  const listed = useMemo(() => notes, [notes]);
 
   const filtered = useMemo(() => {
     const kw = q.trim().toLowerCase();
     if (!kw) return listed;
-    return listed.filter((b) =>
-      [b.title, b.author, b.category].join(" ").toLowerCase().includes(kw)
+    return listed.filter((n) =>
+      [n.book_title, n.description, n.course?.name].join(" ").toLowerCase().includes(kw)
     );
   }, [listed, q]);
 
@@ -136,11 +151,50 @@ export default function StoreProductsPanel() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-4 gap-8">
-        {books.map(book => (
-          <BookCard key={book.id} book={book} />
-        ))}
-      </div>
+      {/* แสดงข้อมูล Notes */}
+      {tab === "listed" && (
+        loading ? (
+          <div className="mt-4 text-center">
+            <LoadingSpinner />
+          </div>
+        ) : filtered.length > 0 ? (
+          <div className="mt-4 grid lg:grid-cols-4 gap-4">
+            {filtered.map(note => (
+              <div key={note.id} className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden border">
+                {note.cover_image ? (
+                  <img
+                    src={`http://localhost:8080/${note.cover_image}`}
+                    alt={note.book_title}
+                    className="h-40 w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-40 w-full bg-gray-200 flex items-center justify-center text-gray-400">
+                    No Image
+                  </div>
+                )}
+                <div className="p-4">
+                  <h3 className="text-sm font-bold mb-1 line-clamp-2">{note.book_title}</h3>
+                  <p className="text-xs text-gray-600 mb-1">{note.course?.name || 'ไม่ระบุวิชา'}</p>
+                  <p className="text-xs text-gray-500 mb-2">สอบ: {note.exam_term || '-'}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-indigo-600 font-semibold">฿{note.price}</p>
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      note.status === 'available' ? 'bg-green-100 text-green-700' :
+                      note.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {note.status === 'available' ? 'พร้อมขาย' :
+                       note.status === 'pending' ? 'รออนุมัติ' : note.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState title="ยังไม่มีประกาศขายโน้ต" />
+        )
+      )}
 
       {tab === "reviews" && (
         <EmptyState title="ยังไม่มีรีวิว" />

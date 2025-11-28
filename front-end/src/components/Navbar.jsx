@@ -97,6 +97,11 @@ const Navbar = () => {
                                    </li>
                                    <li> 
                                     <Link to = '/store' className="navbar-dropdown-item">
+                                    ร้านของฉัน
+                                    </Link>
+                                   </li>
+                                   <li> 
+                                    <Link to = '/' className="navbar-dropdown-item">
                                     สรุปของฉัน
                                     </Link>
                                    </li>

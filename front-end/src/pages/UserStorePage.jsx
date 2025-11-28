@@ -1,5 +1,6 @@
 // src/pages/MyStorePage.jsx
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 import StoreCover from "../components/Store/StoreCover";                 // ส่วนที่ 1 (การ์ด)
 import StoreOwnerBar from "../components/Store/StoreOwnerBar";           // ส่วนที่ 2 (การ์ด)
@@ -45,12 +46,28 @@ function EmptyState({ title, action }) {
 export default function MyStorePage() {
   const [store, setStore] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState(null);
 
   useEffect(() => {
     (async () => {
-      const s = await getMyStore().catch(() => null);
-      setStore(s);
-      setLoading(false);
+      try {
+        // ดึงข้อมูล user จาก API
+        const token = localStorage.getItem("access_token");
+        const userRes = await axios.get("http://localhost:8080/api/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setUserData(userRes.data);
+
+        // ดึงข้อมูลร้าน
+        const s = await getMyStore().catch(() => null);
+        setStore(s);
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -103,15 +120,16 @@ export default function MyStorePage() {
 
           {/* 2) แถบข้อมูลเจ้าของ (การ์ด) */}
           <StoreOwnerBar
-            ownerName={store.ownerName}
-            subtitle={store.subtitle}
+            ownerName={userData?.fullname || store.ownerName}
+            subtitle={userData?.email || store.subtitle}
+            memberId={userData?.id}
             avatarUrl={store.avatarUrl}
             shareUrl={`${window.location.origin}/store/${store.handle}`}
             canEdit={true}
           />
 
           {/* 3) พาเนลสินค้า: แท็บ + ค้นหา + กริด (การ์ด) */}
-          <StoreProductsPanel />
+          <StoreProductsPanel userId={userData?.id} />
         </div>
       </div>
     </div>

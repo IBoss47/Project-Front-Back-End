@@ -6,6 +6,7 @@ export default function StoreOwnerBar({
   ownerName = "Myshop",
   subtitle = "1150",
   avatarUrl = "",
+  memberId,           // หมายเลขสมาชิก
   shareUrl,           // ถ้าไม่ส่งมา จะใช้ window.location.href
   canEdit = true,     // ควบคุมการแสดงปุ่มแก้ไข
 }) {
@@ -48,7 +49,10 @@ export default function StoreOwnerBar({
           </div>
           <div>
             <h2 className="text-base font-semibold leading-5">{ownerName}</h2>
-            <p className="text-sm text-gray-600">{subtitle}</p>
+            {/* <p className="text-sm text-gray-600">{subtitle}</p> */}
+            {memberId && (
+              <p className="text-xs text-gray-500">สมาชิกหมายเลข {memberId}</p>
+            )}
           </div>
         </div>
 

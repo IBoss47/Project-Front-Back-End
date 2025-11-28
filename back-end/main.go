@@ -86,8 +86,9 @@ func main() {
 		// Notes endpoints
 		protected.POST("/notes", handlers.CreateNote) // สร้างโน้ตขาย
 
+		protected.GET("/users/:id/notes", handlers.GetNotesByUserID)      
 		protected.GET("/me", handlers.GetMe)
-		protected.GET("/users/:id", handlers.GetUserByID)
+		protected.GET("/users/:id/profile", handlers.GetUserByID)
 		// Cart endpoints
 		protected.POST("/cart", handlers.AddToCart)            // เพิ่มสินค้าลงตะกร้า
 		protected.GET("/cart", handlers.GetCart)               // ดูสินค้าในตะกร้า
