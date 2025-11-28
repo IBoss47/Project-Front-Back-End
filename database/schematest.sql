@@ -68,7 +68,37 @@ CREATE TABLE IF NOT EXISTS roles (
     name VARCHAR(50) NOT NULL UNIQUE     -- 'user', 'seller', 'admin', 'moderator'
 );
 
-INSERT INTO roles(name) VALUES('user'),('admin');
+INSERT INTO roles(name) VALUES('user'),('seller'),('admin') ON CONFLICT (name) DO NOTHING;
+
+-- เพิ่ม Mock Admin Account
+-- Username: admin, Password: admin123
+INSERT INTO users (username, email, password_hash, fullname, phone)
+VALUES ('admin', 'admin@noteshop.com', '$2a$10$b9cFEv4vEHJbOI45107YSuF4VEFDEubi5N8SGlXYAfBU9bVnkjGAG', 'Administrator', '0800000000')
+ON CONFLICT (username) DO NOTHING;
+
+-- กำหนด role admin ให้กับ admin user
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r
+WHERE u.username = 'admin' AND r.name = 'admin'
+ON CONFLICT (user_id, role_id) DO NOTHING;
+
+-- เพิ่ม Mock Seller Account
+-- Username: seller1, Password: admin123
+INSERT INTO users (username, email, password_hash, fullname, phone)
+VALUES ('seller1', 'seller1@noteshop.com', '$2a$10$b9cFEv4vEHJbOI45107YSuF4VEFDEubi5N8SGlXYAfBU9bVnkjGAG', 'ผู้ขายตัวอย่าง', '0811111111')
+ON CONFLICT (username) DO NOTHING;
+
+-- กำหนด role seller ให้กับ seller1 user
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r
+WHERE u.username = 'seller1' AND r.name = 'seller'
+ON CONFLICT (user_id, role_id) DO NOTHING;
+
+-- กำหนด role user ให้กับ seller1 ด้วย
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r
+WHERE u.username = 'seller1' AND r.name = 'user'
+ON CONFLICT (user_id, role_id) DO NOTHING;
 
 
 -- ตาราง user_roles (Many-to-Many: user สามารถมีหลาย role)

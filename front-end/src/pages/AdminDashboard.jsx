@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../api/auth';
 import {
   ChartBarIcon,
   UserGroupIcon,
@@ -14,91 +15,110 @@ import {
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock Data
-  const [dashboardStats] = useState({
-    totalUsers: 1250,
-    totalSellers: 85,
-    totalSummaries: 342,
-    totalRevenue: 125680,
-    monthlyRevenue: 34520,
-    activeOrders: 43,
-    pendingApprovals: 12,
-    reportedIssues: 5
+  // State for data from API
+  const [dashboardStats, setDashboardStats] = useState({
+    totalUsers: 0,
+    totalSellers: 0,
+    totalSummaries: 0,
+    totalRevenue: 0,
+    monthlyRevenue: 0,
+    activeOrders: 0,
+    pendingApprovals: 0,
+    reportedIssues: 0
   });
 
-  const [recentSummaries] = useState([
-    {
-      id: 1,
-      title: 'Final HCI',
-      seller: 'นายสมชาย ใจดี',
-      sellerId: 'SELLER001',
-      price: 89,
-      status: 'approved',
-      createdAt: '2567-11-15',
-      sales: 12,
-      views: 234
-    },
-    {
-      id: 2,
-      title: 'Midterm Data Structures',
-      seller: 'นางสาวสมหญิง ฉลาด',
-      sellerId: 'SELLER002',
-      price: 120,
-      status: 'pending',
-      createdAt: '2567-11-16',
-      sales: 0,
-      views: 0
-    },
-    {
-      id: 3,
-      title: 'Database Systems',
-      seller: 'ดร.สมหมาย ทดสอบ',
-      sellerId: 'SELLER003',
-      price: 150,
-      status: 'approved',
-      createdAt: '2567-11-14',
-      sales: 28,
-      views: 456
-    }
-  ]);
+  const [sellers, setSellers] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [notes, setNotes] = useState([]);
 
-  const [sellers] = useState([
-    {
-      id: 'SELLER001',
-      name: 'นายสมชาย ใจดี',
-      email: 'somchai@example.com',
-      totalSummaries: 15,
-      totalSales: 156,
-      revenue: 18920,
-      rating: 4.8,
-      joinDate: '2567-09-01',
-      status: 'active'
-    },
-    {
-      id: 'SELLER002',
-      name: 'นางสาวสมหญิง ฉลาด',
-      email: 'somying@example.com',
-      totalSummaries: 8,
-      totalSales: 42,
-      revenue: 4560,
-      rating: 4.5,
-      joinDate: '2567-10-15',
-      status: 'active'
-    },
-    {
-      id: 'SELLER003',
-      name: 'ดร.สมหมาย ทดสอบ',
-      email: 'sommai@example.com',
-      totalSummaries: 22,
-      totalSales: 234,
-      revenue: 45680,
-      rating: 4.9,
-      joinDate: '2567-08-20',
-      status: 'active'
-    }
-  ]);
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Fetch dashboard stats
+        const statsResponse = await api.get('/admin/stats');
+        if (statsResponse.data.success) {
+          const stats = statsResponse.data.data;
+          setDashboardStats(prev => ({
+            ...prev,
+            totalUsers: stats.total_users || 0,
+            totalSellers: stats.total_sellers || 0,
+            totalSummaries: stats.total_summaries || 0,
+            totalRevenue: stats.total_revenue || 0,
+            monthlyRevenue: stats.monthly_revenue || 0,
+            totalOrders: stats.total_orders || 0,
+            pendingApprovals: stats.pending_approvals || 0,
+            reportedIssues: stats.reported_issues || 0
+          }));
+        }
 
+        // Fetch sellers
+        const sellersResponse = await api.get('/admin/sellers');
+        if (sellersResponse.data.success) {
+          setSellers(sellersResponse.data.data || []);
+        }
+
+        // Fetch all users
+        const usersResponse = await api.get('/admin/users');
+        if (usersResponse.data.success) {
+          setUsers(usersResponse.data.data || []);
+        }
+
+        // Fetch all notes
+        const notesResponse = await api.get('/admin/notes');
+        if (notesResponse.data.success) {
+          setNotes(notesResponse.data.data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching admin data:', err);
+        setError(err.response?.data?.message || 'Failed to fetch data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Handle add seller role
+  const handleAddSellerRole = async (userId) => {
+    try {
+      const response = await api.post('/admin/seller/add', { user_id: userId });
+      if (response.data.success) {
+        alert('เพิ่ม role seller สำเร็จ!');
+        // Refresh data
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Error adding seller role:', err);
+      alert('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  // Handle remove seller role
+  const handleRemoveSellerRole = async (userId) => {
+    if (!window.confirm('คุณแน่ใจหรือไม่ที่จะลบ role seller ออกจากผู้ใช้นี้?')) {
+      return;
+    }
+    try {
+      const response = await api.post('/admin/seller/remove', { user_id: userId });
+      if (response.data.success) {
+        alert('ลบ role seller สำเร็จ!');
+        // Refresh data
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Error removing seller role:', err);
+      alert('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  // Mock Data for approvals and issues (can be replaced with API later)
   const [pendingApprovals] = useState([
     {
       id: 1,
@@ -140,6 +160,37 @@ const AdminDashboard = () => {
       createdAt: '2567-11-15'
     }
   ]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 pt-24 pb-16 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-white text-xl">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 pt-24 pb-16 flex items-center justify-center">
+        <div className="text-center bg-red-500/20 rounded-xl p-8 border border-red-500">
+          <ExclamationTriangleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <p className="text-white text-xl mb-2">เกิดข้อผิดพลาด</p>
+          <p className="text-gray-400">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          >
+            ลองใหม่
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 pt-24 pb-16">
@@ -235,51 +286,55 @@ const AdminDashboard = () => {
           <div className="flex border-b border-gray-700 overflow-x-auto">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${
-                activeTab === 'overview'
-                  ? 'bg-blue-600 text-white border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
+              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === 'overview'
+                ? 'bg-blue-600 text-white border-b-2 border-blue-400'
+                : 'text-gray-400 hover:text-gray-200'
+                }`}
             >
               📊 ภาพรวม
             </button>
             <button
               onClick={() => setActiveTab('summaries')}
-              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${
-                activeTab === 'summaries'
-                  ? 'bg-blue-600 text-white border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
+              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === 'summaries'
+                ? 'bg-blue-600 text-white border-b-2 border-blue-400'
+                : 'text-gray-400 hover:text-gray-200'
+                }`}
             >
               📚 สรุปวิชา
             </button>
             <button
               onClick={() => setActiveTab('sellers')}
-              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${
-                activeTab === 'sellers'
-                  ? 'bg-blue-600 text-white border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
+              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === 'sellers'
+                ? 'bg-blue-600 text-white border-b-2 border-blue-400'
+                : 'text-gray-400 hover:text-gray-200'
+                }`}
             >
-              👥 Seller
+              👥 Seller ({dashboardStats.totalSellers})
+            </button>
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === 'users'
+                ? 'bg-blue-600 text-white border-b-2 border-blue-400'
+                : 'text-gray-400 hover:text-gray-200'
+                }`}
+            >
+              👤 ผู้ใช้ ({dashboardStats.totalUsers})
             </button>
             <button
               onClick={() => setActiveTab('approvals')}
-              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${
-                activeTab === 'approvals'
-                  ? 'bg-blue-600 text-white border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
+              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === 'approvals'
+                ? 'bg-blue-600 text-white border-b-2 border-blue-400'
+                : 'text-gray-400 hover:text-gray-200'
+                }`}
             >
               ✓ อนุมัติ ({dashboardStats.pendingApprovals})
             </button>
             <button
               onClick={() => setActiveTab('reports')}
-              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${
-                activeTab === 'reports'
-                  ? 'bg-blue-600 text-white border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
+              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === 'reports'
+                ? 'bg-blue-600 text-white border-b-2 border-blue-400'
+                : 'text-gray-400 hover:text-gray-200'
+                }`}
             >
               ⚠️ รายงาน ({dashboardStats.reportedIssues})
             </button>
@@ -297,24 +352,27 @@ const AdminDashboard = () => {
                   <div className="bg-gray-700 rounded-xl p-6 border border-gray-600">
                     <h3 className="text-xl font-bold text-white mb-4">📚 สรุปล่าสุด</h3>
                     <div className="space-y-3">
-                      {recentSummaries.slice(0, 3).map((item) => (
-                        <div key={item.id} className="bg-gray-600 rounded-lg p-4 hover:bg-gray-500 transition-colors">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="font-bold text-white">{item.title}</p>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                              item.status === 'approved'
+                      {notes.length === 0 ? (
+                        <p className="text-gray-400 text-center py-4">ยังไม่มีสรุปในระบบ</p>
+                      ) : (
+                        notes.slice(0, 3).map((item) => (
+                          <div key={item.id} className="bg-gray-600 rounded-lg p-4 hover:bg-gray-500 transition-colors">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="font-bold text-white">{item.title}</p>
+                              <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.status === 'available'
                                 ? 'bg-green-500/30 text-green-300'
                                 : 'bg-yellow-500/30 text-yellow-300'
-                            }`}>
-                              {item.status === 'approved' ? '✓ อนุมัติ' : '⏳ รอ'}
-                            </span>
+                                }`}>
+                                {item.status === 'available' ? '✓ พร้อมขาย' : item.status}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-gray-300 text-sm">
+                              <span>{item.seller_name}</span>
+                              <span>฿{item.price} • {item.exam_term}</span>
+                            </div>
                           </div>
-                          <div className="flex justify-between text-gray-300 text-sm">
-                            <span>{item.seller}</span>
-                            <span>฿{item.price} • {item.sales} sales</span>
-                          </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </div>
 
@@ -343,96 +401,201 @@ const AdminDashboard = () => {
             {/* Summaries Tab */}
             {activeTab === 'summaries' && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-white mb-6">📚 จัดการสรุปวิชา</h2>
+                <h2 className="text-2xl font-bold text-white mb-6">📚 จัดการสรุปวิชา ({notes.length})</h2>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-gray-300">
-                    <thead>
-                      <tr className="border-b border-gray-600">
-                        <th className="px-4 py-3 text-left font-bold text-white">ชื่อสรุป</th>
-                        <th className="px-4 py-3 text-left font-bold text-white">Seller</th>
-                        <th className="px-4 py-3 text-left font-bold text-white">ราคา</th>
-                        <th className="px-4 py-3 text-left font-bold text-white">สถานะ</th>
-                        <th className="px-4 py-3 text-left font-bold text-white">ยอดขาย</th>
-                        <th className="px-4 py-3 text-left font-bold text-white">การดำเนินการ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentSummaries.map((item) => (
-                        <tr key={item.id} className="border-b border-gray-700 hover:bg-gray-700/50 transition-colors">
-                          <td className="px-4 py-3">{item.title}</td>
-                          <td className="px-4 py-3">{item.seller}</td>
-                          <td className="px-4 py-3">฿{item.price}</td>
-                          <td className="px-4 py-3">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                              item.status === 'approved'
-                                ? 'bg-green-500/30 text-green-300'
-                                : 'bg-yellow-500/30 text-yellow-300'
-                            }`}>
-                              {item.status === 'approved' ? '✓ อนุมัติ' : '⏳ รอ'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">{item.sales}</td>
-                          <td className="px-4 py-3 flex gap-2">
-                            <button className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors" title="ดู">
-                              <EyeIcon className="w-5 h-5 text-white" />
-                            </button>
-                            <button className="p-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors" title="แก้ไข">
-                              <PencilSquareIcon className="w-5 h-5 text-white" />
-                            </button>
-                            <button className="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors" title="ลบ">
-                              <TrashIcon className="w-5 h-5 text-white" />
-                            </button>
-                          </td>
+                {notes.length === 0 ? (
+                  <div className="bg-gray-700 rounded-xl p-8 text-center border border-gray-600">
+                    <DocumentTextIcon className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-400 text-lg">ยังไม่มีสรุปในระบบ</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-gray-300">
+                      <thead>
+                        <tr className="border-b border-gray-600">
+                          <th className="px-4 py-3 text-left font-bold text-white">ID</th>
+                          <th className="px-4 py-3 text-left font-bold text-white">ชื่อสรุป</th>
+                          <th className="px-4 py-3 text-left font-bold text-white">Seller</th>
+                          <th className="px-4 py-3 text-left font-bold text-white">ราคา</th>
+                          <th className="px-4 py-3 text-left font-bold text-white">สถานะ</th>
+                          <th className="px-4 py-3 text-left font-bold text-white">วันที่สร้าง</th>
+                          <th className="px-4 py-3 text-left font-bold text-white">การดำเนินการ</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {notes.map((item) => (
+                          <tr key={item.id} className="border-b border-gray-700 hover:bg-gray-700/50 transition-colors">
+                            <td className="px-4 py-3">#{item.id}</td>
+                            <td className="px-4 py-3">
+                              <div>
+                                <p className="font-semibold">{item.title}</p>
+                                <p className="text-xs text-gray-500">{item.exam_term} • {item.course_name}</p>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">{item.seller_name}</td>
+                            <td className="px-4 py-3">฿{item.price}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.status === 'available'
+                                ? 'bg-green-500/30 text-green-300'
+                                : item.status === 'sold'
+                                  ? 'bg-blue-500/30 text-blue-300'
+                                  : 'bg-yellow-500/30 text-yellow-300'
+                                }`}>
+                                {item.status === 'available' ? '✓ พร้อมขาย' : item.status === 'sold' ? '✓ ขายแล้ว' : item.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm">{item.created_at}</td>
+                            <td className="px-4 py-3 flex gap-2">
+                              <button className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors" title="ดู">
+                                <EyeIcon className="w-5 h-5 text-white" />
+                              </button>
+                              <button className="p-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors" title="แก้ไข">
+                                <PencilSquareIcon className="w-5 h-5 text-white" />
+                              </button>
+                              <button className="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors" title="ลบ">
+                                <TrashIcon className="w-5 h-5 text-white" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Sellers Tab */}
             {activeTab === 'sellers' && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-white mb-6">👥 จัดการ Seller</h2>
+                <h2 className="text-2xl font-bold text-white mb-6">👥 จัดการ Seller ({sellers.length})</h2>
 
-                <div className="space-y-4">
-                  {sellers.map((seller) => (
-                    <div key={seller.id} className="bg-gray-700 rounded-xl p-6 border border-gray-600 hover:border-blue-500 transition-colors">
-                      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-                        <div>
-                          <p className="text-gray-400 text-sm mb-1">ชื่อ</p>
-                          <p className="font-bold text-white">{seller.name}</p>
+                {sellers.length === 0 ? (
+                  <div className="bg-gray-700 rounded-xl p-8 text-center border border-gray-600">
+                    <UserGroupIcon className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-400 text-lg">ยังไม่มี Seller ในระบบ</p>
+                    <p className="text-gray-500 text-sm mt-2">เพิ่ม role seller ให้กับผู้ใช้ในแท็บ "ผู้ใช้ทั้งหมด"</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {sellers.map((seller) => (
+                      <div key={seller.id} className="bg-gray-700 rounded-xl p-6 border border-gray-600 hover:border-blue-500 transition-colors">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                          <div>
+                            <p className="text-gray-400 text-sm mb-1">ชื่อผู้ใช้</p>
+                            <p className="font-bold text-white">{seller.fullname || seller.username}</p>
+                            <p className="text-gray-500 text-xs">@{seller.username}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400 text-sm mb-1">อีเมล</p>
+                            <p className="text-gray-300">{seller.email}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400 text-sm mb-1">จำนวนสรุป</p>
+                            <p className="font-bold text-white text-lg">{seller.total_summaries || 0}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400 text-sm mb-1">ยอดขาย/รายได้</p>
+                            <p className="font-bold text-white">{seller.total_sales || 0} / ฿{seller.revenue || 0}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400 text-sm mb-1">เข้าร่วมเมื่อ</p>
+                            <p className="text-gray-300">{seller.join_date}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-gray-400 text-sm mb-1">อีเมล</p>
-                          <p className="text-gray-300">{seller.email}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-400 text-sm mb-1">จำนวนสรุป</p>
-                          <p className="font-bold text-white text-lg">{seller.totalSummaries}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-400 text-sm mb-1">ยอดขาย/รายได้</p>
-                          <p className="font-bold text-white">{seller.totalSales} / ฿{seller.revenue}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-400 text-sm mb-1">คะแนน</p>
-                          <p className="font-bold text-yellow-400">⭐ {seller.rating}</p>
+                        <div className="flex gap-3">
+                          <span className="px-4 py-2 bg-green-500/20 text-green-300 rounded-lg text-sm font-bold">
+                            ✓ {seller.status === 'active' ? 'ใช้งาน' : 'ปิดใช้งาน'}
+                          </span>
+                          <button
+                            onClick={() => handleRemoveSellerRole(seller.id)}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold transition-colors"
+                          >
+                            ลบ role seller
+                          </button>
                         </div>
                       </div>
-                      <div className="flex gap-3">
-                        <span className="px-4 py-2 bg-green-500/20 text-green-300 rounded-lg text-sm font-bold">
-                          ✓ {seller.status === 'active' ? 'ใช้งาน' : 'ปิดใช้งาน'}
-                        </span>
-                        <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors">
-                          ดูรายละเอียด
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Users Tab */}
+            {activeTab === 'users' && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-white mb-6">👤 ผู้ใช้ทั้งหมด ({users.length})</h2>
+
+                {users.length === 0 ? (
+                  <div className="bg-gray-700 rounded-xl p-8 text-center border border-gray-600">
+                    <UserGroupIcon className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-400 text-lg">ยังไม่มีผู้ใช้ในระบบ</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-gray-300">
+                      <thead>
+                        <tr className="border-b border-gray-600">
+                          <th className="px-4 py-3 text-left font-bold text-white">ID</th>
+                          <th className="px-4 py-3 text-left font-bold text-white">Username</th>
+                          <th className="px-4 py-3 text-left font-bold text-white">ชื่อ-นามสกุล</th>
+                          <th className="px-4 py-3 text-left font-bold text-white">อีเมล</th>
+                          <th className="px-4 py-3 text-left font-bold text-white">Roles</th>
+                          <th className="px-4 py-3 text-left font-bold text-white">เข้าร่วม</th>
+                          <th className="px-4 py-3 text-left font-bold text-white">การดำเนินการ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {users.map((user) => (
+                          <tr key={user.id} className="border-b border-gray-700 hover:bg-gray-700/50 transition-colors">
+                            <td className="px-4 py-3">#{user.id}</td>
+                            <td className="px-4 py-3 font-semibold">{user.username}</td>
+                            <td className="px-4 py-3">{user.fullname || '-'}</td>
+                            <td className="px-4 py-3">{user.email}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex gap-1 flex-wrap">
+                                {user.roles?.map((role, idx) => (
+                                  <span
+                                    key={idx}
+                                    className={`px-2 py-1 rounded-full text-xs font-bold ${role === 'admin'
+                                      ? 'bg-red-500/30 text-red-300'
+                                      : role === 'seller'
+                                        ? 'bg-purple-500/30 text-purple-300'
+                                        : 'bg-blue-500/30 text-blue-300'
+                                      }`}
+                                  >
+                                    {role}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm">{user.join_date}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex gap-2">
+                                {!user.roles?.includes('seller') && (
+                                  <button
+                                    onClick={() => handleAddSellerRole(user.id)}
+                                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors"
+                                  >
+                                    + Seller
+                                  </button>
+                                )}
+                                {user.roles?.includes('seller') && (
+                                  <button
+                                    onClick={() => handleRemoveSellerRole(user.id)}
+                                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
+                                  >
+                                    - Seller
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
@@ -480,19 +643,17 @@ const AdminDashboard = () => {
 
                 <div className="space-y-4">
                   {reportedIssues.map((issue) => (
-                    <div key={issue.id} className={`rounded-xl p-6 border ${
-                      issue.status === 'pending'
-                        ? 'bg-red-900/30 border-red-600/50'
-                        : 'bg-green-900/30 border-green-600/50'
-                    }`}>
+                    <div key={issue.id} className={`rounded-xl p-6 border ${issue.status === 'pending'
+                      ? 'bg-red-900/30 border-red-600/50'
+                      : 'bg-green-900/30 border-green-600/50'
+                      }`}>
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-3">
                           <h3 className="text-xl font-bold text-white">{issue.title}</h3>
-                          <span className={`px-3 py-1 rounded-full text-sm font-bold ${
-                            issue.status === 'pending'
-                              ? 'bg-red-500/30 text-red-300'
-                              : 'bg-green-500/30 text-green-300'
-                          }`}>
+                          <span className={`px-3 py-1 rounded-full text-sm font-bold ${issue.status === 'pending'
+                            ? 'bg-red-500/30 text-red-300'
+                            : 'bg-green-500/30 text-green-300'
+                            }`}>
                             {issue.status === 'pending' ? '⚠️ รอดำเนินการ' : '✓ แก้ไขแล้ว'}
                           </span>
                         </div>
