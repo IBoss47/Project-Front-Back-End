@@ -91,17 +91,20 @@ func main() {
 		// Notes endpoints
 		protected.POST("/notes", handlers.CreateNote) // สร้างโน้ตขาย
 
+		protected.GET("/users/:id/notes", handlers.GetNotesByUserID)      
 		protected.GET("/me", handlers.GetMe)
-		protected.GET("/users/:id", handlers.GetUserByID)
+		protected.GET("/users/:id/profile", handlers.GetUserByID)
+		
+		// Purchase endpoints
+		protected.POST("/purchase", handlers.PurchaseNotes)           // ซื้อหนังสือ
+		protected.GET("/my-purchases", handlers.GetMyPurchaseHistory) // ดึงประวัติการซื้อ
+		
 		// Cart endpoints
 		protected.POST("/cart", handlers.AddToCart)            // เพิ่มสินค้าลงตะกร้า
 		protected.GET("/cart", handlers.GetCart)               // ดูสินค้าในตะกร้า
 		protected.PUT("/cart/:id", handlers.UpdateCartItem)    // อัพเดทจำนวนสินค้า
 		protected.DELETE("/cart/:id", handlers.RemoveFromCart) // ลบสินค้าออกจากตะกร้า
 		protected.DELETE("/cart", handlers.ClearCart)          // ล้างตะกร้าทั้งหมด
-		
-		// Purchase endpoints
-		protected.POST("/purchase", handlers.PurchaseNotes) // ซื้อหนังสือ
 	}
 
 	// Protected routes สำหรับ admin เท่านั้น

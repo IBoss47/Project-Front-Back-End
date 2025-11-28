@@ -97,7 +97,7 @@ const Navbar = () => {
                                    </li>
                                    <li> 
                                     <Link to = '/store' className="navbar-dropdown-item">
-                                    สรุปของฉัน
+                                    ร้านของฉัน
                                     </Link>
                                    </li>
                                    <li> 

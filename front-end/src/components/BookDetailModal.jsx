@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { XMarkIcon, ShoppingCartIcon, HeartIcon, StarIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon, StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 import { useCart } from '../context/CartContext';
@@ -8,6 +9,7 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
     const [isFavorite, setIsFavorite] = useState(false);
     const [quantity, setQuantity] = useState(1);
     const { addToCart } = useCart();
+    const navigate = useNavigate();
 
     // ป้องกัน scroll เมื่อเปิด modal
     useEffect(() => {
@@ -194,15 +196,24 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                 {/* Creator Info */}
                                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl shadow-md border border-blue-100">
                                     <p className="text-sm text-gray-700 mb-2 font-semibold">👤 ผู้สร้างสรุป</p>
-                                    <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => {
+                                            navigate(`/store/${book.seller?.id}`);
+                                            onClose();
+                                        }}
+                                        className="w-full flex items-center gap-3 hover:bg-blue-100 p-2 rounded-xl transition-all"
+                                    >
                                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-700 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-sm">
                                             {book.seller?.fullname?.charAt(0) || 'U'}
                                         </div>
-                                        <div>
+                                        <div className="text-left flex-1">
                                             <p className="font-bold text-base text-gray-800">{book.seller?.fullname}</p>
                                             <p className="text-xs text-blue-600 font-semibold">✓ ผู้สร้างที่เชื่อถือได้</p>
                                         </div>
-                                    </div>
+                                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </button>
                                 </div>
 
                                 {/* Description */}

@@ -17,6 +17,7 @@ import Help_page from './pages/Help_page';
 import SellItemPage from './pages/SellItemPage';
 import UserStorePage from './pages/UserStorePage';
 import UserProfilePage from './pages/UserProfilePage';
+import PublicStorePage from './pages/PublicStorePage';
 function App() {
   return (
     <CartProvider>
@@ -41,6 +42,7 @@ function App() {
 
           <Route path="/profile" element={<Layout><UserProfilePage /></Layout>} />
           <Route path="/store" element={<Layout><UserStorePage /></Layout>} />
+          <Route path="/store/:userId" element={<Layout><PublicStorePage /></Layout>} />
         </Routes>
         {/* <Footer /> */}
       </Router>

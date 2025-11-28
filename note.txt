@@ -1,2 +1,0 @@
-- เพิ่มรายละเอียดร้านลง table user
-- สร้างตาราง order, order_item
