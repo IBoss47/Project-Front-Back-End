@@ -101,11 +101,14 @@ func main() {
 	admin.Use(middleware.AuthMiddleware())
 	admin.Use(middleware.RequireRole("admin"))
 	{
-		admin.GET("/users", handlers.GetAllUsers)           // ดึงรายการ Users ทั้งหมด
-		admin.GET("/sellers", handlers.GetAllSellers)       // ดึงรายการ Sellers ทั้งหมด
-		admin.GET("/stats", handlers.GetDashboardStats)     // ดึงสถิติ Dashboard
-		admin.GET("/notes", handlers.GetAllNotesAdmin)           // ดึงรายการ Notes ทั้งหมด
-		admin.POST("/seller/add", handlers.AddSellerRole)   // เพิ่ม role seller
+		admin.GET("/users", handlers.GetAllUsers)               // ดึงรายการ Users ทั้งหมด
+		admin.GET("/sellers", handlers.GetAllSellers)           // ดึงรายการ Sellers ทั้งหมด
+		admin.GET("/stats", handlers.GetDashboardStats)         // ดึงสถิติ Dashboard
+		admin.GET("/notes", handlers.GetAllNotesAdmin)          // ดึงรายการ Notes ทั้งหมด
+		admin.GET("/notes/pending", handlers.GetPendingNotes)   // ดึงรายการ Notes ที่รออนุมัติ
+		admin.POST("/notes/:id/approve", handlers.ApproveNote)  // อนุมัติ Note
+		admin.POST("/notes/:id/reject", handlers.RejectNote)    // ปฏิเสธ Note
+		admin.POST("/seller/add", handlers.AddSellerRole)       // เพิ่ม role seller
 		admin.POST("/seller/remove", handlers.RemoveSellerRole) // ลบ role seller
 	}
 

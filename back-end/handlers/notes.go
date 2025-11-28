@@ -146,12 +146,12 @@ func CreateNote(c *gin.Context) {
 		return
 	}
 
-	// Insert ข้อมูลลง notes_for_sale
+	// Insert ข้อมูลลง notes_for_sale (สถานะ pending รอ admin อนุมัติ)
 	var noteID int
 	insertNoteQuery := `
 		INSERT INTO notes_for_sale 
 		(course_id, seller_id, book_title, price, exam_term, description, pdf_file, status, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, 'available', NOW())
+		VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', NOW())
 		RETURNING id
 	`
 	err = tx.QueryRow(

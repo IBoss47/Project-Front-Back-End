@@ -33,6 +33,7 @@ const AdminDashboard = () => {
   const [sellers, setSellers] = useState([]);
   const [users, setUsers] = useState([]);
   const [notes, setNotes] = useState([]);
+  const [pendingNotes, setPendingNotes] = useState([]); // Notes ที่รออนุมัติจริง
 
   // Fetch data from API
   useEffect(() => {
@@ -74,6 +75,12 @@ const AdminDashboard = () => {
         if (notesResponse.data.success) {
           setNotes(notesResponse.data.data || []);
         }
+
+        // Fetch pending notes (รออนุมัติ)
+        const pendingResponse = await api.get('/admin/notes/pending');
+        if (pendingResponse.data.success) {
+          setPendingNotes(pendingResponse.data.data || []);
+        }
       } catch (err) {
         console.error('Error fetching admin data:', err);
         setError(err.response?.data?.message || 'Failed to fetch data');
@@ -100,6 +107,37 @@ const AdminDashboard = () => {
     }
   };
 
+  // Handle approve note
+  const handleApproveNote = async (noteId) => {
+    try {
+      const response = await api.post(`/admin/notes/${noteId}/approve`);
+      if (response.data.success) {
+        alert('อนุมัติสรุปสำเร็จ!');
+        // Refresh data
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Error approving note:', err);
+      alert('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  // Handle reject note
+  const handleRejectNote = async (noteId) => {
+    const reason = prompt('กรุณาระบุเหตุผลในการปฏิเสธ (ถ้ามี):');
+    try {
+      const response = await api.post(`/admin/notes/${noteId}/reject`, { reason });
+      if (response.data.success) {
+        alert('ปฏิเสธสรุปสำเร็จ!');
+        // Refresh data
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Error rejecting note:', err);
+      alert('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
   // Handle remove seller role
   const handleRemoveSellerRole = async (userId) => {
     if (!window.confirm('คุณแน่ใจหรือไม่ที่จะลบ role seller ออกจากผู้ใช้นี้?')) {
@@ -118,28 +156,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Mock Data for approvals and issues (can be replaced with API later)
-  const [pendingApprovals] = useState([
-    {
-      id: 1,
-      type: 'summary',
-      title: 'Advanced Database Design',
-      seller: 'นายประสิทธิ์ สมบูรณ์',
-      price: 199,
-      submittedAt: '2567-11-16 14:30',
-      reason: 'รอการตรวจสอบ'
-    },
-    {
-      id: 2,
-      type: 'seller',
-      title: 'ขอเป็น Seller',
-      seller: 'นางสาวนารี บางกอก',
-      email: 'nare@example.com',
-      submittedAt: '2567-11-16 10:15',
-      reason: 'รอการตรวจสอบเอกสาร'
-    }
-  ]);
-
+  // Mock Data for issues (can be replaced with API later)
   const [reportedIssues] = useState([
     {
       id: 1,
@@ -602,41 +619,63 @@ const AdminDashboard = () => {
             {/* Approvals Tab */}
             {activeTab === 'approvals' && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-white mb-6">✓ รอการอนุมัติ ({dashboardStats.pendingApprovals})</h2>
+                <h2 className="text-2xl font-bold text-white mb-6">✓ รอการอนุมัติ ({pendingNotes.length})</h2>
 
-                <div className="space-y-4">
-                  {pendingApprovals.map((item) => (
-                    <div key={item.id} className="bg-gray-700 rounded-xl p-6 border border-yellow-600/50">
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-xl font-bold text-white">{item.title}</h3>
-                          <span className="px-3 py-1 bg-yellow-500/30 text-yellow-300 rounded-full text-sm font-bold">
-                            ⏳ รอ
-                          </span>
+                {pendingNotes.length === 0 ? (
+                  <div className="bg-gray-700 rounded-xl p-8 text-center border border-gray-600">
+                    <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                    <p className="text-gray-400 text-lg">ไม่มีรายการรออนุมัติ</p>
+                    <p className="text-gray-500 text-sm mt-2">สรุปทั้งหมดได้รับการอนุมัติแล้ว</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {pendingNotes.map((item) => (
+                      <div key={item.id} className="bg-gray-700 rounded-xl p-6 border border-yellow-600/50">
+                        <div className="mb-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-xl font-bold text-white">{item.title}</h3>
+                            <span className="px-3 py-1 bg-yellow-500/30 text-yellow-300 rounded-full text-sm font-bold">
+                              ⏳ รอ
+                            </span>
+                          </div>
+                          <p className="text-gray-400">
+                            สรุปวิชา - ราคา: ฿{item.price}
+                          </p>
+                          <p className="text-gray-500 text-sm mt-2">
+                            จาก: {item.seller_name} | เมื่อ: {item.created_at}
+                          </p>
+                          {item.exam_term && (
+                            <p className="text-gray-500 text-sm">
+                              เทอม: {item.exam_term} {item.course_name && `| วิชา: ${item.course_name}`}
+                            </p>
+                          )}
+                          {item.description && (
+                            <p className="text-gray-400 text-sm mt-2 bg-gray-600 p-3 rounded-lg">
+                              📝 {item.description}
+                            </p>
+                          )}
                         </div>
-                        <p className="text-gray-400">
-                          {item.type === 'summary' ? `สรุปวิชา - ราคา: ฿${item.price}` : `ขอเป็น Seller - ${item.email}`}
-                        </p>
-                        <p className="text-gray-500 text-sm mt-2">
-                          จาก: {item.seller} | เมื่อ: {item.submittedAt}
-                        </p>
-                      </div>
 
-                      <div className="flex gap-3">
-                        <button className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors">
-                          ✓ อนุมัติ
-                        </button>
-                        <button className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors">
-                          ✕ ปฏิเสธ
-                        </button>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => handleApproveNote(item.id)}
+                            className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors"
+                          >
+                            ✓ อนุมัติ
+                          </button>
+                          <button
+                            onClick={() => handleRejectNote(item.id)}
+                            className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
+                          >
+                            ✕ ปฏิเสธ
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-
-            {/* Reports Tab */}
+            )}          {/* Reports Tab */}
             {activeTab === 'reports' && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-white mb-6">⚠️ รายงานปัญหา ({dashboardStats.reportedIssues})</h2>

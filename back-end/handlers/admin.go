@@ -206,15 +206,15 @@ func GetDashboardStats(c *gin.Context) {
 		stats.TotalSummaries = 0
 	}
 
-	// คำนวณรายได้รวมจากตาราง orders
-	err = config.DB.QueryRow("SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'completed'").Scan(&stats.TotalRevenue)
+	// คำนวณรายได้รวมจากตาราง orders (2% ของยอดขาย)
+	err = config.DB.QueryRow("SELECT COALESCE(SUM(total_amount) * 0.02, 0) FROM orders WHERE status = 'completed'").Scan(&stats.TotalRevenue)
 	if err != nil {
 		stats.TotalRevenue = 0
 	}
 
-	// คำนวณรายได้เดือนนี้
+	// คำนวณรายได้เดือนนี้ (2% ของยอดขาย)
 	err = config.DB.QueryRow(`
-		SELECT COALESCE(SUM(total_amount), 0) 
+		SELECT COALESCE(SUM(total_amount) * 0.02, 0) 
 		FROM orders 
 		WHERE status = 'completed' 
 		AND created_at >= DATE_TRUNC('month', CURRENT_DATE)
@@ -229,8 +229,13 @@ func GetDashboardStats(c *gin.Context) {
 		stats.TotalOrders = 0
 	}
 
-	// สำหรับ pending approvals และ reported issues (mock ไว้ก่อน)
-	stats.PendingApprovals = 0
+	// นับจำนวน notes ที่รออนุมัติ (pending)
+	err = config.DB.QueryRow("SELECT COUNT(*) FROM notes_for_sale WHERE status = 'pending'").Scan(&stats.PendingApprovals)
+	if err != nil {
+		stats.PendingApprovals = 0
+	}
+
+	// สำหรับ reported issues (mock ไว้ก่อน)
 	stats.ReportedIssues = 0
 
 	c.JSON(http.StatusOK, gin.H{
@@ -398,5 +403,167 @@ func GetAllNotesAdmin(c *gin.Context) {
 		"success": true,
 		"data":    notes,
 		"count":   len(notes),
+	})
+}
+
+// PendingNoteInfo - ข้อมูล Note ที่รออนุมัติ
+type PendingNoteInfo struct {
+	ID          int     `json:"id"`
+	Title       string  `json:"title"`
+	SellerID    int     `json:"seller_id"`
+	SellerName  string  `json:"seller_name"`
+	Price       float64 `json:"price"`
+	Status      string  `json:"status"`
+	ExamTerm    string  `json:"exam_term"`
+	CourseName  string  `json:"course_name"`
+	CreatedAt   string  `json:"created_at"`
+	Description string  `json:"description"`
+}
+
+// GetPendingNotes - ดึงรายการ Notes ที่รออนุมัติ
+func GetPendingNotes(c *gin.Context) {
+	query := `
+		SELECT 
+			n.id,
+			n.book_title,
+			n.seller_id,
+			COALESCE(u.fullname, u.username) as seller_name,
+			n.price,
+			COALESCE(n.status, 'pending') as status,
+			COALESCE(n.exam_term, '') as exam_term,
+			COALESCE(c.name, '') as course_name,
+			TO_CHAR(n.created_at, 'YYYY-MM-DD HH24:MI') as created_at,
+			COALESCE(n.description, '') as description
+		FROM notes_for_sale n
+		LEFT JOIN users u ON n.seller_id = u.id
+		LEFT JOIN courses c ON n.course_id = c.id
+		WHERE n.status = 'pending'
+		ORDER BY n.created_at ASC
+	`
+
+	rows, err := config.DB.Query(query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Database error",
+			"message": err.Error(),
+		})
+		return
+	}
+	defer rows.Close()
+
+	var notes []PendingNoteInfo
+	for rows.Next() {
+		var note PendingNoteInfo
+		err := rows.Scan(
+			&note.ID,
+			&note.Title,
+			&note.SellerID,
+			&note.SellerName,
+			&note.Price,
+			&note.Status,
+			&note.ExamTerm,
+			&note.CourseName,
+			&note.CreatedAt,
+			&note.Description,
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "Error scanning note data",
+				"message": err.Error(),
+			})
+			return
+		}
+		notes = append(notes, note)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    notes,
+		"count":   len(notes),
+	})
+}
+
+// ApproveNote - อนุมัติ Note ให้แสดงในหน้าขาย
+func ApproveNote(c *gin.Context) {
+	noteID := c.Param("id")
+	if noteID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Note ID is required",
+		})
+		return
+	}
+
+	// อัปเดตสถานะเป็น available
+	result, err := config.DB.Exec(`
+		UPDATE notes_for_sale 
+		SET status = 'available'
+		WHERE id = $1 AND status = 'pending'
+	`, noteID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Database error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Note not found or already processed",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Note approved successfully",
+	})
+}
+
+// RejectNote - ปฏิเสธ Note
+func RejectNote(c *gin.Context) {
+	noteID := c.Param("id")
+	if noteID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Note ID is required",
+		})
+		return
+	}
+
+	// รับเหตุผลในการปฏิเสธ (optional)
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	c.ShouldBindJSON(&req)
+
+	// อัปเดตสถานะเป็น rejected
+	result, err := config.DB.Exec(`
+		UPDATE notes_for_sale 
+		SET status = 'rejected'
+		WHERE id = $1 AND status = 'pending'
+	`, noteID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Database error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Note not found or already processed",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Note rejected successfully",
+		"reason":  req.Reason,
 	})
 }
