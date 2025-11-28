@@ -102,11 +102,6 @@ const Navbar = () => {
                                    </li>
                                    <li> 
                                     <Link to = '/' className="navbar-dropdown-item">
-                                    สรุปของฉัน
-                                    </Link>
-                                   </li>
-                                   <li> 
-                                    <Link to = '/' className="navbar-dropdown-item">
                                     ข้อความเเจ้งเตือน
                                     </Link>
                                    </li>

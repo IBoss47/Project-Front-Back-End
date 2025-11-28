@@ -92,8 +92,8 @@ export default function MyStorePage() {
 
   if (!store) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-24 pb-16">
-        <div className="mx-auto max-w-5xl px-4">
+      <div className="ทฟป-h-screen bg-gray-50 pt-24 pb-16">
+        <div className="mx-auto max-w-2xl px-4">
           <EmptyState
             title="คุณยังไม่มีร้าน เริ่มต้นสร้างร้านของคุณเลย"
             action={
@@ -111,10 +111,10 @@ export default function MyStorePage() {
   // const showcaseProducts = getAllBooks().slice(0, 5);
 
   return (
-    <div className="mx-auto ">
-      <div className="min-h-screen bg-gray-50 pt-10 ">
-        {/* คอนเทนต์กึ่งกลางจอตามไวร์เฟรม */}
-        <div className="mx-auto max-w-6xl px-4 space-y-4">
+    <div className="w-full min-h-screen pt-6">
+      {/* คอนเทนต์กึ่งกลางจอตามไวร์เฟรม */}
+      <div className="flex justify-center px-6">
+        <div className="w-full max-w-6xl px-20 space-y-4">
           {/* 1) รูปหน้าร้าน (การ์ด) */}
           <StoreCover coverUrl={store.coverUrl} onSave={handleSaveCover} />
 

@@ -3,7 +3,7 @@ import UserProfile from "../components/User/UserProfile";
 import UserSidebarMenu from "../components/User/UserSidebarMenu";
 import DetailProfile from "../components/User/UserDetail/DetailProfile";
 import DetailAutoReply from "../components/User/UserDetail/DetailAutoReply";
-import DetailMyReview from "../components/User/UserDetail/DetailMyReview";
+import MyPurchaseHistory from "../components/User/UserDetail/MyPurchaseHistory";
 import DetailManageProfile from "../components/User/UserDetail/DetailManageProfile";
 import DetailAccount from "../components/User/UserDetail/DetailAccount";
 import axios from "axios";
@@ -33,7 +33,7 @@ export default function UserProfilePage() {
   const detailComponent = {
     "ข้อมูลส่วนตัว": <DetailProfile user={user}/>,
     "ข้อความตอบกลับอัตโนมัติ": <DetailAutoReply />,
-    "รีวิวของฉัน": <DetailMyReview />,
+    "ประวัติการซื้อ": <MyPurchaseHistory />,
     "จัดการโปรไฟล์": <DetailManageProfile />,
     "จัดการบัญชี": <DetailAccount />,
   };

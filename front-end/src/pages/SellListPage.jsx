@@ -4,7 +4,7 @@ import SearchBar from '../components/SearchBar';
 import FilterSidebar from '../components/FilterSidebar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { ChevronDownIcon, FunnelIcon, Squares2X2Icon, ListBulletIcon } from '@heroicons/react/24/outline';
-import { getAllBooks, filterBooks } from '../data/mockBooksData';
+import api from '../api/auth';
 
 const SellListPage = () => {
   const [books, setBooks] = useState([]);
@@ -18,42 +18,72 @@ const SellListPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewMode, setViewMode] = useState('grid'); // grid or list
+  const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
   const booksPerPage = 12;
 
-  const categories = [
-    'all', 'fiction', 'non-fiction', 'science', 'history', 'art',
-    'psychology', 'business', 'technology', 'cooking'
-  ];
-
+  // Fetch books from API
   useEffect(() => {
-    // Load books from data
-    setLoading(true);
-    setTimeout(() => {
-      const booksData = getAllBooks();
-      setBooks(booksData);
-      setFilteredBooks(booksData);
-      setLoading(false);
-    }, 500);
+    fetchBooks();
   }, []);
 
-  // Apply all filters when any filter changes
+  const fetchBooks = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/notes');
+      console.log('API Response:', response.data);
+      setBooks(response.data);
+      setFilteredBooks(response.data);
+    } catch (error) {
+      console.error('Error fetching books:', error);
+      setBooks([]);
+      setFilteredBooks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Apply filters when filter values change
   useEffect(() => {
     applyFilters();
   }, [selectedSemester, selectedYear, selectedCourseId, selectedCondition, priceRange, searchTerm, books]);
 
   const applyFilters = () => {
-    const filtered = filterBooks({
-      semester: selectedSemester,
-      courseYear: selectedYear,
-      courseId: selectedCourseId,
-      condition: selectedCondition,
-      priceMin: priceRange.min,
-      priceMax: priceRange.max,
-      status: 'available', // แสดงเฉพาะหนังสือที่ยังขายได้
-      searchTerm: searchTerm
-    });
+    let filtered = [...books];
+
+    // Filter by semester (exam_term)
+    if (selectedSemester !== 'all') {
+      filtered = filtered.filter(book => book.exam_term === selectedSemester);
+    }
+
+    // Filter by year
+    if (selectedYear !== 'all') {
+      filtered = filtered.filter(book => 
+        book.course?.year === selectedYear || 
+        book.course?.year === `ปี ${selectedYear}`
+      );
+    }
+
+    // Filter by course ID
+    if (selectedCourseId !== 'all') {
+      filtered = filtered.filter(book => book.course?.id === parseInt(selectedCourseId));
+    }
+
+    // Filter by price range
+    filtered = filtered.filter(book => 
+      book.price >= priceRange.min && book.price <= priceRange.max
+    );
+
+    // Filter by search term
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(book => 
+        book.book_title?.toLowerCase().includes(searchLower) ||
+        book.description?.toLowerCase().includes(searchLower) ||
+        book.course?.name?.toLowerCase().includes(searchLower) ||
+        book.course?.code?.toLowerCase().includes(searchLower)
+      );
+    }
 
     setFilteredBooks(filtered);
     setCurrentPage(1);
@@ -94,11 +124,11 @@ const SellListPage = () => {
         sorted.sort((a, b) => b.price - a.price);
         break;
       case 'popular':
-        sorted.sort((a, b) => b.reviews - a.reviews);
+        sorted.sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
         break;
       case 'newest':
       default:
-        sorted.sort((a, b) => b.id - a.id);
+        sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
     setFilteredBooks(sorted);
   };
@@ -184,7 +214,7 @@ const SellListPage = () => {
                   <SearchBar onSearch={handleSearch} />
                 </div>
 
-                {/* Category Filter */}
+                {/* Semester Filter */}
                 <div className="relative">
                   <select
                     className="w-full lg:w-auto px-5 py-3 border-2 border-gray-200 rounded-xl 
@@ -195,8 +225,8 @@ const SellListPage = () => {
                     onChange={(e) => handleSemesterFilter(e.target.value)}
                   >
                     <option value="all">📚 ทั้งหมด</option>
-                    <option value="Midterm">📝 สอบกลางภาค</option>
-                    <option value="Final">📖 สอบปลายภาค</option>
+                    <option value="กลางภาค">📝 สอบกลางภาค</option>
+                    <option value="ปลายภาค">📖 สอบปลายภาค</option>
                   </select>
                   <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                 </div>
@@ -365,7 +395,7 @@ const SellListPage = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes fadeInUp {
           from {
             opacity: 0;

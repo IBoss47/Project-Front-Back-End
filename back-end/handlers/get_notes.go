@@ -24,14 +24,6 @@ type NoteResponse struct {
 	Seller      Seller   `json:"seller"`
 }
 
-type Course struct {
-	ID    int    `json:"id"`
-	Code  string `json:"code"`
-	Name  string `json:"name"`
-	Year  string `json:"year"`
-	Major string `json:"major"`
-}
-
 type Seller struct {
 	ID       int    `json:"id"`
 	Username string `json:"username"`
@@ -288,7 +280,7 @@ func GetNotesByUserID(c *gin.Context) {
 		FROM notes_for_sale n
 		LEFT JOIN courses c ON n.course_id = c.id
 		LEFT JOIN users u ON n.seller_id = u.id
-		WHERE n.seller_id = $1
+		WHERE n.seller_id = $1 AND n.status = 'available'
 		ORDER BY n.created_at DESC
 	`
 

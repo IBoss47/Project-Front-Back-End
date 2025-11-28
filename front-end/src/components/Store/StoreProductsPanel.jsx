@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import axios from "axios";
-import BookCard from '../SaleList';
+import SaleList from '../SaleList';
 import SearchBar from '../SearchBar';
 import FilterSidebar from '../FilterSidebar';
 import LoadingSpinner from '../LoadingSpinner';
@@ -12,24 +12,6 @@ function EmptyState({ title }) {
   return (
     <div className="rounded-xl border bg-gray-50 p-6 text-center text-gray-600">
       {title}
-    </div>
-  );
-}
-
-// --- การ์ดสินค้าแบบง่าย (แทน ProductCard/SaleList) ---
-function ProductCard({ book }) {
-  return (
-    <div className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden">
-      <img
-        src={book.coverImage || "/images/book-placeholder.jpg"}
-        alt={book.title}
-        className="h-40 w-full object-cover"
-      />
-      <div className="p-4">
-        <h3 className="text-sm font-bold mb-1">{book.title}</h3>
-        <p className="text-xs text-gray-600 mb-2">โดย {book.author}</p>
-        <p className="text-indigo-600 font-semibold">฿{book.price}</p>
-      </div>
     </div>
   );
 }
@@ -158,37 +140,9 @@ export default function StoreProductsPanel({ userId }) {
             <LoadingSpinner />
           </div>
         ) : filtered.length > 0 ? (
-          <div className="mt-4 grid lg:grid-cols-4 gap-4">
+          <div className="mt-4 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {filtered.map(note => (
-              <div key={note.id} className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden border">
-                {note.cover_image ? (
-                  <img
-                    src={`http://localhost:8080/${note.cover_image}`}
-                    alt={note.book_title}
-                    className="h-40 w-full object-cover"
-                  />
-                ) : (
-                  <div className="h-40 w-full bg-gray-200 flex items-center justify-center text-gray-400">
-                    No Image
-                  </div>
-                )}
-                <div className="p-4">
-                  <h3 className="text-sm font-bold mb-1 line-clamp-2">{note.book_title}</h3>
-                  <p className="text-xs text-gray-600 mb-1">{note.course?.name || 'ไม่ระบุวิชา'}</p>
-                  <p className="text-xs text-gray-500 mb-2">สอบ: {note.exam_term || '-'}</p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-indigo-600 font-semibold">฿{note.price}</p>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      note.status === 'available' ? 'bg-green-100 text-green-700' :
-                      note.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
-                      {note.status === 'available' ? 'พร้อมขาย' :
-                       note.status === 'pending' ? 'รออนุมัติ' : note.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <SaleList key={note.id} book={note} />
             ))}
           </div>
         ) : (

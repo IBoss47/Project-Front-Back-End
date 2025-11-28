@@ -7,7 +7,7 @@ export default function UserSidebarMenu({ active, onMenuClick }) {
 	const menus = [
 		{ label: "ข้อมูลส่วนตัว" },
 		// { label: "ข้อความตอบกลับอัตโนมัติ" },
-		{ label: "รีวิวของฉัน" },
+		{ label: "ประวัติการซื้อ" },
 		// { label: "จัดการโปรไฟล์" },
 		// { label: "จัดการบัญชี" },
 	];

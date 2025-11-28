@@ -6,7 +6,7 @@ import FilterSidebar from './components/FilterSidebar';
 import Homepage from './pages/Homepage';
 import React from 'react';
 import SellListPage from './pages/SellListPage';
-import SellListPage2 from './pages/SellListPage2';
+
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -17,6 +17,7 @@ import Help_page from './pages/Help_page';
 import SellItemPage from './pages/SellItemPage';
 import UserStorePage from './pages/UserStorePage';
 import UserProfilePage from './pages/UserProfilePage';
+import PublicStorePage from './pages/PublicStorePage';
 function App() {
   return (
     <CartProvider>
@@ -29,7 +30,6 @@ function App() {
           </Route>
           <Route path="/cart" element={<Layout><Shopping_Cart /></Layout>} />
           <Route path="/SellListPage" element={<Layout><SellListPage /></Layout>} />
-          <Route path="/SellListPage2" element={<Layout><SellListPage2 /></Layout>} />
           <Route path= "/Help" element={<Layout><Help_page /></Layout>} />
           <Route path= "/sell" element={<Layout><SellItemPage /></Layout>} />
           {/* <Route path="/" element={<Homepage />} /> */}
@@ -42,6 +42,7 @@ function App() {
 
           <Route path="/profile" element={<Layout><UserProfilePage /></Layout>} />
           <Route path="/store" element={<Layout><UserStorePage /></Layout>} />
+          <Route path="/store/:userId" element={<Layout><PublicStorePage /></Layout>} />
         </Routes>
         {/* <Footer /> */}
       </Router>

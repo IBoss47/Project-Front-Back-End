@@ -64,6 +64,11 @@ func main() {
 		public.GET("/notes/best-selling", handlers.GetBestSellingNotes) // ดึงหนังสือขายดี
 		public.GET("/notes/latest", handlers.GetLatestNotes)            // ดึงหนังสือมาใหม่ล่าสุด
 		public.GET("/notes/:id", handlers.GetNoteByID)                  // ดึง note เดียวตาม ID
+
+		// Courses - ดูได้โดยไม่ต้อง login
+		public.GET("/courses", handlers.GetAllCourses)     // ดึงรายการ courses ทั้งหมด
+		public.GET("/courses/majors", handlers.GetCourseMajors) // ดึงรายการสาขาทั้งหมด
+		public.GET("/courses/years", handlers.GetCourseYears)   // ดึงรายการชั้นปีทั้งหมด
 	}
 
 	// Protected routes (ต้อง login)
@@ -89,6 +94,11 @@ func main() {
 		protected.GET("/users/:id/notes", handlers.GetNotesByUserID)      
 		protected.GET("/me", handlers.GetMe)
 		protected.GET("/users/:id/profile", handlers.GetUserByID)
+		
+		// Purchase endpoints
+		protected.POST("/purchase", handlers.PurchaseNotes)           // ซื้อหนังสือ
+		protected.GET("/my-purchases", handlers.GetMyPurchaseHistory) // ดึงประวัติการซื้อ
+		
 		// Cart endpoints
 		protected.POST("/cart", handlers.AddToCart)            // เพิ่มสินค้าลงตะกร้า
 		protected.GET("/cart", handlers.GetCart)               // ดูสินค้าในตะกร้า
