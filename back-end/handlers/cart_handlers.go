@@ -45,9 +45,17 @@ func AddToCart(c *gin.Context) {
 		request.Quantity = 1
 	}
 
+	// Verify note exists
+	var noteExists bool
+	err := config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM notes_for_sale WHERE id = $1)", request.NoteID).Scan(&noteExists)
+	if err != nil || !noteExists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Note not found"})
+		return
+	}
+
 	// Check if item already exists in cart
 	var existingQuantity int
-	err := config.DB.QueryRow("SELECT quantity FROM cart WHERE user_id = $1 AND note_id = $2", userID, request.NoteID).Scan(&existingQuantity)
+	err = config.DB.QueryRow("SELECT quantity FROM cart WHERE user_id = $1 AND note_id = $2", userID, request.NoteID).Scan(&existingQuantity)
 
 	if err == sql.ErrNoRows {
 		// Insert new item

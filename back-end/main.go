@@ -101,11 +101,12 @@ func main() {
 	admin.Use(middleware.AuthMiddleware())
 	admin.Use(middleware.RequireRole("admin"))
 	{
-		admin.GET("/users", func(c *gin.Context) {
-			c.JSON(200, gin.H{
-				"message": "Admin users list",
-			})
-		})
+		admin.GET("/users", handlers.GetAllUsers)           // ดึงรายการ Users ทั้งหมด
+		admin.GET("/sellers", handlers.GetAllSellers)       // ดึงรายการ Sellers ทั้งหมด
+		admin.GET("/stats", handlers.GetDashboardStats)     // ดึงสถิติ Dashboard
+		admin.GET("/notes", handlers.GetAllNotesAdmin)           // ดึงรายการ Notes ทั้งหมด
+		admin.POST("/seller/add", handlers.AddSellerRole)   // เพิ่ม role seller
+		admin.POST("/seller/remove", handlers.RemoveSellerRole) // ลบ role seller
 	}
 
 	// เริ่ม server

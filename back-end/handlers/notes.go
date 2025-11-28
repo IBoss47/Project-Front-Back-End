@@ -223,6 +223,25 @@ func CreateNote(c *gin.Context) {
 		}
 	}
 
+	// เพิ่ม role "seller" ให้ user อัตโนมัติ (ถ้ายังไม่มี)
+	addSellerRoleQuery := `
+		INSERT INTO user_roles (user_id, role_id)
+		SELECT $1, r.id FROM roles r
+		WHERE r.name = 'seller'
+		AND NOT EXISTS (
+			SELECT 1 FROM user_roles ur 
+			WHERE ur.user_id = $1 AND ur.role_id = r.id
+		)
+	`
+	_, err = tx.Exec(addSellerRoleQuery, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to assign seller role",
+			"message": err.Error(),
+		})
+		return
+	}
+
 	// Commit transaction
 	if err := tx.Commit(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
