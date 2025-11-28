@@ -24,14 +24,6 @@ type NoteResponse struct {
 	Seller      Seller   `json:"seller"`
 }
 
-type Course struct {
-	ID    int    `json:"id"`
-	Code  string `json:"code"`
-	Name  string `json:"name"`
-	Year  string `json:"year"`
-	Major string `json:"major"`
-}
-
 type Seller struct {
 	ID       int    `json:"id"`
 	Username string `json:"username"`

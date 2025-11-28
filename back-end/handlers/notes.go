@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"back-end/config"
-	"database/sql"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,13 +27,11 @@ func CreateNote(c *gin.Context) {
 	bookTitle := c.PostForm("title")
 	description := c.PostForm("description")
 	priceStr := c.PostForm("price")
-	faculty := c.PostForm("faculty")
-	subject := c.PostForm("subject")
-	year := c.PostForm("year")
+	courseIDStr := c.PostForm("course_id")
 	examTerm := c.PostForm("exam_term")
 
 	// Validate required fields
-	if bookTitle == "" || priceStr == "" || faculty == "" || subject == "" || year == "" || examTerm == "" {
+	if bookTitle == "" || priceStr == "" || courseIDStr == "" || examTerm == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Missing required fields",
 		})
@@ -46,6 +43,15 @@ func CreateNote(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid price format",
+		})
+		return
+	}
+
+	// แปลง course_id เป็น int
+	courseID, err := strconv.Atoi(courseIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid course_id format",
 		})
 		return
 	}
@@ -116,32 +122,13 @@ func CreateNote(c *gin.Context) {
 	}
 	defer tx.Rollback()
 
-	// ค้นหา course_id (หรือสร้างใหม่ถ้ายังไม่มี)
-	var courseID sql.NullInt64
-	courseQuery := `
-		SELECT id FROM courses 
-		WHERE major = $1 AND name = $2 AND year = $3
-	`
-	err = tx.QueryRow(courseQuery, faculty, subject, year).Scan(&courseID)
-	if err == sql.ErrNoRows {
-		// สร้าง course ใหม่
-		insertCourseQuery := `
-			INSERT INTO courses (code, name, year, major)
-			VALUES ($1, $2, $3, $4)
-			RETURNING id
-		`
-		courseCode := fmt.Sprintf("%s-%s-%s", faculty, subject, year)
-		err = tx.QueryRow(insertCourseQuery, courseCode, subject, year, faculty).Scan(&courseID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error":   "Failed to create course",
-				"message": err.Error(),
-			})
-			return
-		}
-	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Database error",
+	// ตรวจสอบว่า course_id มีอยู่จริง
+	var courseExists bool
+	checkCourseQuery := `SELECT EXISTS(SELECT 1 FROM courses WHERE id = $1)`
+	err = tx.QueryRow(checkCourseQuery, courseID).Scan(&courseExists)
+	if err != nil || !courseExists {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid course_id: course not found",
 		})
 		return
 	}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -64,7 +64,7 @@ const SellItemPage = () => {
   // Form state
   const [formData, setFormData] = useState({
     faculty: '',
-    subject: '',
+    course_id: '',
     year: '',
     exam_term: '',
     title: '',
@@ -78,36 +78,66 @@ const SellItemPage = () => {
   const [apiError, setApiError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // ตัวเลือก Dropdown
-  const faculties = [
-    'วิทยาศาสตร์',
-    'วิศวกรรมศาสตร์',
-    'แพทยศาสตร์',
-    'ศึกษาศาสตร์',
-    'มนุษยศาสตร์และสังคมศาสตร์',
-    'บริหารธุรกิจ',
-    'นิติศาสตร์',
-    'เทคโนโลยีสารสนเทศ',
-  ];
+  // ข้อมูลจาก API
+  const [courses, setCourses] = useState([]);
+  const [majors, setMajors] = useState([]);
+  const [years, setYears] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
 
-  const subjects = [
-    'คณิตศาสตร์',
-    'ฟิสิกส์',
-    'เคมี',
-    'ชีววิทยา',
-    'วิศวกรรมไฟฟ้า',
-    'วิศวกรรมคอมพิวเตอร์',
-    'วิศวกรรมโยธา',
-    'การบัญชี',
-    'การตลาด',
-    'การจัดการ',
-    'ภาษาอังกฤษ',
-    'ภาษาไทย',
-  ];
-
-  const years = ['ปี 1', 'ปี 2', 'ปี 3', 'ปี 4'];
+  // ข้อมูลที่ถูก filter
+  const [filteredCourses, setFilteredCourses] = useState([]);
 
   const examTerms = ['กลางภาค', 'ปลายภาค'];
+
+  // Fetch ข้อมูล courses, majors, years จาก API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoadingData(true);
+        const [coursesRes, majorsRes, yearsRes] = await Promise.all([
+          api.get('/courses'),
+          api.get('/courses/majors'),
+          api.get('/courses/years'),
+        ]);
+
+        console.log('📚 Courses loaded:', coursesRes.data.data);
+        console.log('🎓 Majors loaded:', majorsRes.data.data);
+        console.log('📅 Years loaded:', yearsRes.data.data);
+
+        setCourses(coursesRes.data.data || []);
+        setMajors(majorsRes.data.data || []);
+        setYears(yearsRes.data.data || []);
+        setFilteredCourses(coursesRes.data.data || []);
+      } catch (error) {
+        console.error('❌ Error fetching data:', error);
+        setApiError('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Filter courses เมื่อเลือก major หรือ year
+  useEffect(() => {
+    let filtered = courses;
+
+    if (formData.faculty) {
+      filtered = filtered.filter(c => c.major === formData.faculty);
+    }
+
+    if (formData.year) {
+      filtered = filtered.filter(c => c.year === formData.year);
+    }
+
+    setFilteredCourses(filtered);
+
+    // ถ้า course ที่เลือกไว้ไม่อยู่ใน filter ใหม่ ให้ clear
+    if (formData.course_id && !filtered.find(c => c.id.toString() === formData.course_id)) {
+      setFormData(prev => ({ ...prev, course_id: '' }));
+    }
+  }, [formData.faculty, formData.year, courses]);
 
   // Handle input change
   const handleChange = (e) => {
@@ -171,7 +201,7 @@ const SellItemPage = () => {
     const newErrors = {};
 
     if (!formData.faculty) newErrors.faculty = 'กรุณาเลือกสาขา';
-    if (!formData.subject) newErrors.subject = 'กรุณาเลือกชื่อวิชา';
+    if (!formData.course_id) newErrors.course_id = 'กรุณาเลือกวิชา';
     if (!formData.year) newErrors.year = 'กรุณาเลือกชั้นปี';
     if (!formData.exam_term) newErrors.exam_term = 'กรุณาเลือกภาคเรียน';
     if (!formData.title.trim()) newErrors.title = 'กรุณากรอกชื่อหนังสือ';
@@ -199,9 +229,7 @@ const SellItemPage = () => {
     try {
       // สร้าง FormData สำหรับส่งรูปภาพและไฟล์
       const submitData = new FormData();
-      submitData.append('faculty', formData.faculty);
-      submitData.append('subject', formData.subject);
-      submitData.append('year', formData.year.replace('ปี ', '')); 
+      submitData.append('course_id', formData.course_id);
       submitData.append('exam_term', formData.exam_term);
       submitData.append('title', formData.title);
       submitData.append('description', formData.description);
@@ -324,44 +352,20 @@ const SellItemPage = () => {
                   name="faculty"
                   value={formData.faculty}
                   onChange={handleChange}
+                  disabled={loadingData}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     errors.faculty ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  } ${loadingData ? 'bg-gray-100' : ''}`}
                 >
-                  <option value="">เลือกสาขา</option>
-                  {faculties.map((faculty) => (
-                    <option key={faculty} value={faculty}>
-                      {faculty}
+                  <option value="">{loadingData ? 'กำลังโหลด...' : 'เลือกสาขา'}</option>
+                  {majors.map((major) => (
+                    <option key={major} value={major}>
+                      {major}
                     </option>
                   ))}
                 </select>
                 {errors.faculty && (
                   <p className="text-red-500 text-xs mt-1">{errors.faculty}</p>
-                )}
-              </div>
-
-              {/* ชื่อวิชา */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  ชื่อวิชา <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.subject ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                >
-                  <option value="">เลือกวิชา</option>
-                  {subjects.map((subject) => (
-                    <option key={subject} value={subject}>
-                      {subject}
-                    </option>
-                  ))}
-                </select>
-                {errors.subject && (
-                  <p className="text-red-500 text-xs mt-1">{errors.subject}</p>
                 )}
               </div>
 
@@ -374,14 +378,15 @@ const SellItemPage = () => {
                   name="year"
                   value={formData.year}
                   onChange={handleChange}
+                  disabled={loadingData}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     errors.year ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  } ${loadingData ? 'bg-gray-100' : ''}`}
                 >
-                  <option value="">เลือกชั้นปี</option>
+                  <option value="">{loadingData ? 'กำลังโหลด...' : 'เลือกชั้นปี'}</option>
                   {years.map((year) => (
                     <option key={year} value={year}>
-                      {year}
+                      ปี {year}
                     </option>
                   ))}
                 </select>
@@ -390,8 +395,46 @@ const SellItemPage = () => {
                 )}
               </div>
 
+              {/* ชื่อวิชา */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  ชื่อวิชา <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="course_id"
+                  value={formData.course_id}
+                  onChange={handleChange}
+                  disabled={loadingData || filteredCourses.length === 0}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.course_id ? 'border-red-500' : 'border-gray-300'
+                  } ${loadingData || filteredCourses.length === 0 ? 'bg-gray-100' : ''}`}
+                >
+                  <option value="">
+                    {loadingData 
+                      ? 'กำลังโหลด...' 
+                      : filteredCourses.length === 0 
+                        ? 'กรุณาเลือกสาขาและชั้นปีก่อน' 
+                        : 'เลือกวิชา'
+                    }
+                  </option>
+                  {filteredCourses.map((course) => (
+                    <option key={course.id} value={course.id}>
+                      {course.code} - {course.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.course_id && (
+                  <p className="text-red-500 text-xs mt-1">{errors.course_id}</p>
+                )}
+                {filteredCourses.length > 0 && (
+                  <p className="text-gray-500 text-xs mt-1">
+                    พบ {filteredCourses.length} วิชา
+                  </p>
+                )}
+              </div>
+
               {/* ภาคเรียน */}
-              <div>
+              <div className="md:col-span-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   ภาคเรียน <span className="text-red-500">*</span>
                 </label>

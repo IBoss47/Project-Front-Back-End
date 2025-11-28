@@ -64,6 +64,11 @@ func main() {
 		public.GET("/notes/best-selling", handlers.GetBestSellingNotes) // ดึงหนังสือขายดี
 		public.GET("/notes/latest", handlers.GetLatestNotes)            // ดึงหนังสือมาใหม่ล่าสุด
 		public.GET("/notes/:id", handlers.GetNoteByID)                  // ดึง note เดียวตาม ID
+
+		// Courses - ดูได้โดยไม่ต้อง login
+		public.GET("/courses", handlers.GetAllCourses)     // ดึงรายการ courses ทั้งหมด
+		public.GET("/courses/majors", handlers.GetCourseMajors) // ดึงรายการสาขาทั้งหมด
+		public.GET("/courses/years", handlers.GetCourseYears)   // ดึงรายการชั้นปีทั้งหมด
 	}
 
 	// Protected routes (ต้อง login)

@@ -1,7 +1,7 @@
 import React,{useEffect, useState} from "react";
 import {Link} from "react-router-dom";
 import Slider from "../components/Slider";
-import SaleList2 from "../components/SaleList2";
+import SaleList from "../components/SaleList";
 import { ArrowRightIcon, BookOpenIcon, TruckIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import api from '../api/auth';
 
@@ -61,7 +61,7 @@ const Homepage = () => {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-8">
                 {recommendedBooks.map(book => (
-                  <SaleList2 key={book.id} book={book} />
+                  <SaleList key={book.id} book={book} />
                 ))}
               </div>
             )}
@@ -72,7 +72,7 @@ const Homepage = () => {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-8">
                 {latestBooks.map(book => (
-                  <SaleList2 key={book.id} book={book} />
+                  <SaleList key={book.id} book={book} />
                 ))}
               </div>
             )}
@@ -83,7 +83,7 @@ const Homepage = () => {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-8">
                 {bestSellingBooks.map(book => (
-                  <SaleList2 key={book.id} book={book} />
+                  <SaleList key={book.id} book={book} />
                 ))}
               </div>
             )}
