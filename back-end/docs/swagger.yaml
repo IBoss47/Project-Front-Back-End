@@ -1573,6 +1573,27 @@ paths:
       summary: ดึงรายการสรุปทั้งหมด
       tags:
       - Notes
+  /notes/most-liked:
+    get:
+      consumes:
+      - application/json
+      description: ดึงสรุปที่มี is_like = true มากที่สุดจาก buyed_note
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: รายการสรุปที่ถูกใจมากที่สุด
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: ดึงสรุปที่ถูกใจมากที่สุด
+      tags:
+      - Notes
   /register:
     post:
       consumes:

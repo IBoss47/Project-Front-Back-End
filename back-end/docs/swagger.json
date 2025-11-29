@@ -2138,6 +2138,37 @@
                 }
             }
         },
+        "/notes/most-liked": {
+            "get": {
+                "description": "ดึงสรุปที่มี is_like = true มากที่สุดจาก buyed_note",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notes"
+                ],
+                "summary": "ดึงสรุปที่ถูกใจมากที่สุด",
+                "responses": {
+                    "200": {
+                        "description": "รายการสรุปที่ถูกใจมากที่สุด",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/register": {
             "post": {
                 "description": "สมัครสมาชิกใหม่ในระบบ",

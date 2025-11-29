@@ -22,6 +22,7 @@ type NoteResponse struct {
 	Images      []string `json:"images"`
 	Course      Course   `json:"course"`
 	Seller      Seller   `json:"seller"`
+	TotalSales  int      `json:"total_sales" example:"5"`
 }
 
 type Seller struct {
@@ -57,10 +58,12 @@ func GetAllNotes(c *gin.Context) {
 		SELECT 
 			n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
 			c.id, c.code, c.name, c.year, c.major,
-			u.id, u.username, u.fullname
+			u.id, u.username, u.fullname,
+			COALESCE(COUNT(b.id), 0) as total_sales
 		FROM notes_for_sale n
 		LEFT JOIN courses c ON n.course_id = c.id
 		LEFT JOIN users u ON n.seller_id = u.id
+		LEFT JOIN buyed_note b ON n.id = b.note_id
 		WHERE n.status = 'available'
 	`
 
@@ -94,8 +97,13 @@ func GetAllNotes(c *gin.Context) {
 		argCount++
 	}
 
-	// เพิ่ม ORDER BY (ไม่มี LIMIT/OFFSET)
-	query += ` ORDER BY n.created_at DESC`
+	// เพิ่ม GROUP BY และ ORDER BY
+	query += ` 
+		GROUP BY n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
+		         c.id, c.code, c.name, c.year, c.major,
+		         u.id, u.username, u.fullname
+		ORDER BY n.created_at DESC
+	`
 
 	// Execute query
 	rows, err := config.DB.Query(query, args...)
@@ -121,6 +129,7 @@ func GetAllNotes(c *gin.Context) {
 			&note.ID, &note.BookTitle, &note.Price, &examTerm, &note.Description, &note.Status, &note.CreatedAt,
 			&courseID, &courseCode, &courseName, &courseYear, &courseMajor,
 			&sellerID, &sellerUsername, &sellerFullname,
+			&note.TotalSales,
 		)
 		if err != nil {
 			continue
@@ -424,7 +433,9 @@ func GetBestSellingNotes(c *gin.Context) {
 		LEFT JOIN users u ON n.seller_id = u.id
 		LEFT JOIN buyed_note b ON n.id = b.note_id
 		WHERE n.status = 'available'
-		GROUP BY n.id, c.id, u.id
+		GROUP BY n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
+		         c.id, c.code, c.name, c.year, c.major,
+		         u.id, u.username, u.fullname
 		HAVING COUNT(b.id) > 0
 		ORDER BY sold_count DESC, n.created_at DESC
 		LIMIT 5
@@ -459,6 +470,8 @@ func GetBestSellingNotes(c *gin.Context) {
 		if err != nil {
 			continue
 		}
+
+		note.TotalSales = soldCount
 
 		// กำหนดค่า exam_term
 		if examTerm.Valid {
@@ -547,11 +560,16 @@ func GetLatestNotes(c *gin.Context) {
 		SELECT 
 			n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
 			c.id, c.code, c.name, c.year, c.major,
-			u.id, u.username, u.fullname
+			u.id, u.username, u.fullname,
+			COALESCE(COUNT(b.id), 0) as total_sales
 		FROM notes_for_sale n
 		LEFT JOIN courses c ON n.course_id = c.id
 		LEFT JOIN users u ON n.seller_id = u.id
+		LEFT JOIN buyed_note b ON n.id = b.note_id
 		WHERE n.status = 'available'
+		GROUP BY n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
+		         c.id, c.code, c.name, c.year, c.major,
+		         u.id, u.username, u.fullname
 		ORDER BY n.created_at DESC
 		LIMIT 5
 	`
@@ -579,10 +597,129 @@ func GetLatestNotes(c *gin.Context) {
 			&note.ID, &note.BookTitle, &note.Price, &examTerm, &note.Description, &note.Status, &note.CreatedAt,
 			&courseID, &courseCode, &courseName, &courseYear, &courseMajor,
 			&sellerID, &sellerUsername, &sellerFullname,
+			&note.TotalSales,
 		)
 		if err != nil {
 			continue
 		}
+
+		// กำหนดค่า exam_term
+		if examTerm.Valid {
+			note.ExamTerm = examTerm.String
+		}
+
+		// กำหนดค่า course
+		if courseID.Valid {
+			note.Course = Course{
+				ID:    int(courseID.Int64),
+				Code:  courseCode.String,
+				Name:  courseName.String,
+				Year:  courseYear.String,
+				Major: courseMajor.String,
+			}
+		}
+
+		// กำหนดค่า seller
+		if sellerID.Valid {
+			note.Seller = Seller{
+				ID:       int(sellerID.Int64),
+				Username: sellerUsername.String,
+				Fullname: sellerFullname.String,
+			}
+		}
+
+		// ดึงรูปภาพ
+		imageQuery := `
+			SELECT path FROM note_images 
+			WHERE note_id = $1 
+			ORDER BY image_order ASC
+		`
+		imageRows, err := config.DB.Query(imageQuery, note.ID)
+		if err == nil {
+			images := []string{}
+			for imageRows.Next() {
+				var path string
+				if err := imageRows.Scan(&path); err == nil {
+					images = append(images, path)
+				}
+			}
+			imageRows.Close()
+
+			note.Images = images
+			if len(images) > 0 {
+				note.CoverImage = images[0]
+			}
+		}
+
+		notes = append(notes, note)
+	}
+
+	if notes == nil {
+		notes = []NoteResponse{}
+	}
+
+	c.JSON(http.StatusOK, notes)
+}
+
+// GetMostLikedNotes godoc
+// @Summary ดึงสรุปที่ถูกใจมากที่สุด
+// @Description ดึงสรุปที่มี is_like = true มากที่สุดจาก buyed_note
+// @Tags Notes
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "รายการสรุปที่ถูกใจมากที่สุด"
+// @Failure 500 {object} map[string]interface{} "Server error"
+// @Router /notes/most-liked [get]
+func GetMostLikedNotes(c *gin.Context) {
+	query := `
+		SELECT 
+			n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
+			c.id, c.code, c.name, c.year, c.major,
+			u.id, u.username, u.fullname,
+			COUNT(CASE WHEN b.is_liked = true THEN 1 END) as like_count
+		FROM notes_for_sale n
+		LEFT JOIN courses c ON n.course_id = c.id
+		LEFT JOIN users u ON n.seller_id = u.id
+		LEFT JOIN buyed_note b ON n.id = b.note_id
+		WHERE n.status = 'available'
+		GROUP BY n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
+		         c.id, c.code, c.name, c.year, c.major,
+		         u.id, u.username, u.fullname
+		ORDER BY like_count DESC, n.created_at DESC
+		LIMIT 10
+	`
+
+	rows, err := config.DB.Query(query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Database error",
+			"message": err.Error(),
+		})
+		return
+	}
+	defer rows.Close()
+
+	notes := []NoteResponse{}
+
+	for rows.Next() {
+		var note NoteResponse
+		var courseID, sellerID sql.NullInt64
+		var courseCode, courseName, courseYear, courseMajor sql.NullString
+		var sellerUsername, sellerFullname sql.NullString
+		var examTerm sql.NullString
+		var likeCount int
+
+		err := rows.Scan(
+			&note.ID, &note.BookTitle, &note.Price, &examTerm, &note.Description, &note.Status, &note.CreatedAt,
+			&courseID, &courseCode, &courseName, &courseYear, &courseMajor,
+			&sellerID, &sellerUsername, &sellerFullname,
+			&likeCount,
+		)
+		if err != nil {
+			continue
+		}
+
+		note.TotalSales = likeCount
 
 		// กำหนดค่า exam_term
 		if examTerm.Valid {

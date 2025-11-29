@@ -20,7 +20,7 @@ const SellListPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
-  const booksPerPage = 12;
+  const booksPerPage = 15;
 
   // Fetch books from API
   useEffect(() => {
