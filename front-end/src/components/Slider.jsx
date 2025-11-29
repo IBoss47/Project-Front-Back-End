@@ -1,10 +1,44 @@
 import {useEffect,useState,useRef}  from "react";
 import {Link} from "react-router-dom";
+import api from '../api/auth';
 import './styles/Slider.css';
 
-const Slider = ({slides,autoPlay = 5000}) => {
+const Slider = ({slides: propSlides, autoPlay = 5000, useAPI = false}) => {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [slides, setSlides] = useState(propSlides || []);
+    const [loading, setLoading] = useState(useAPI);
     const slideTimeRef = useRef(null);
+
+    // Fetch slides from API if useAPI is true
+    useEffect(() => {
+        if (useAPI) {
+            const fetchSlides = async () => {
+                try {
+                    setLoading(true);
+                    const response = await api.get('/slider');
+                    if (response.data.success) {
+                        const apiSlides = response.data.data.map(img => ({
+                            image: `http://localhost:8080/${img.image_path}`,
+                            title: '',
+                            subtitle: '',
+                            link: null
+                        }));
+                        setSlides(apiSlides.length > 0 ? apiSlides : propSlides || []);
+                    }
+                } catch (error) {
+                    console.error('Error fetching slider images:', error);
+                    // Fallback to propSlides if API fails
+                    setSlides(propSlides || []);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchSlides();
+        } else {
+            setSlides(propSlides || []);
+        }
+    }, [useAPI, propSlides]);
+
     const goToPrevious = () => {
         const isFirstSlide = currentIndex === 0;
             const newIndex = isFirstSlide ? slides.length - 1 : currentIndex - 1;
@@ -26,6 +60,7 @@ const Slider = ({slides,autoPlay = 5000}) => {
         }
     }
     useEffect(()=>{
+        if (slides.length === 0) return; // Don't run if no slides
         resetTimeout();
         slideTimeRef.current = setTimeout
         (
@@ -35,7 +70,27 @@ const Slider = ({slides,autoPlay = 5000}) => {
         return () =>{
             resetTimeout();
         };
-    },[currentIndex,autoPlay]);
+    },[currentIndex,autoPlay,slides.length]);
+
+    if (loading) {
+        return (
+            <div className="slider-container" style={{height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6'}}>
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">กำลังโหลดรูปภาพ...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (slides.length === 0) {
+        return (
+            <div className="slider-container" style={{height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6'}}>
+                <p className="text-gray-600">ไม่มีรูปภาพสไลด์</p>
+            </div>
+        );
+    }
+
     const currentSlide = slides[currentIndex];
    return (
        <div className="slider-container"

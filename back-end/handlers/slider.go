@@ -1,0 +1,279 @@
+package handlers
+
+import (
+	"database/sql"
+	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
+	"back-end/config"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+// GetSliderImages - ดึงรายการรูปภาพ slider ทั้งหมด
+func GetSliderImages(c *gin.Context) {
+	rows, err := config.DB.Query(`
+		SELECT id, image_path, display_order
+		FROM slider_images
+		ORDER BY display_order ASC
+	`)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to fetch slider images",
+			"error":   err.Error(),
+		})
+		return
+	}
+	defer rows.Close()
+
+	type SliderImage struct {
+		ID           int    `json:"id"`
+		ImagePath    string `json:"image_path"`
+		DisplayOrder int    `json:"display_order"`
+	}
+
+	var images []SliderImage
+	for rows.Next() {
+		var img SliderImage
+		if err := rows.Scan(&img.ID, &img.ImagePath, &img.DisplayOrder); err != nil {
+			continue
+		}
+		images = append(images, img)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    images,
+	})
+}
+
+// UploadSliderImage - อัปโหลดรูปภาพ slider ใหม่
+func UploadSliderImage(c *gin.Context) {
+	// รับไฟล์จาก form
+	file, err := c.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "No image file provided",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	// ตรวจสอบประเภทไฟล์
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	allowedExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true}
+	if !allowedExts[ext] {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Invalid file type. Only jpg, jpeg, png, gif, webp allowed",
+		})
+		return
+	}
+
+	// สร้างชื่อไฟล์ unique
+	uniqueFilename := fmt.Sprintf("slider_%s%s", uuid.New().String(), ext)
+	uploadDir := "./uploads/images"
+	
+	// สร้างโฟลเดอร์ถ้ายังไม่มี
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to create upload directory",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	filePath := filepath.Join(uploadDir, uniqueFilename)
+
+	// บันทึกไฟล์
+	if err := c.SaveUploadedFile(file, filePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to save image file",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	// หา display_order ล่าสุด
+	var maxOrder sql.NullInt64
+	err = config.DB.QueryRow("SELECT MAX(display_order) FROM slider_images").Scan(&maxOrder)
+	if err != nil && err != sql.ErrNoRows {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to get max order",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	nextOrder := 0
+	if maxOrder.Valid {
+		nextOrder = int(maxOrder.Int64) + 1
+	}
+
+	// บันทึกข้อมูลลงฐานข้อมูล
+	var imageID int
+	err = config.DB.QueryRow(`
+		INSERT INTO slider_images (image_path, display_order)
+		VALUES ($1, $2)
+		RETURNING id
+	`, filePath, nextOrder).Scan(&imageID)
+
+	if err != nil {
+		// ลบไฟล์ถ้าบันทึก DB ไม่สำเร็จ
+		os.Remove(filePath)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to save image info to database",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "Image uploaded successfully",
+		"data": gin.H{
+			"id":            imageID,
+			"image_path":    filePath,
+			"display_order": nextOrder,
+		},
+	})
+}
+
+// UpdateSliderOrder - อัปเดตลำดับการแสดงของรูปภาพ slider
+func UpdateSliderOrder(c *gin.Context) {
+	type OrderUpdate struct {
+		ID    int `json:"id"`
+		Order int `json:"order"`
+	}
+
+	var updates []OrderUpdate
+	if err := c.ShouldBindJSON(&updates); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Invalid request body",
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	// Validate that we have data
+	if len(updates) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "No order updates provided",
+		})
+		return
+	}
+
+	// เริ่ม transaction
+	tx, err := config.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to start transaction",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	// อัปเดตลำดับแต่ละรายการ
+	for _, update := range updates {
+		_, err := tx.Exec(`
+			UPDATE slider_images 
+			SET display_order = $1
+			WHERE id = $2
+		`, update.Order, update.ID)
+		
+		if err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Failed to update order",
+				"error":   err.Error(),
+			})
+			return
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to commit transaction",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Slider order updated successfully",
+	})
+}
+
+// DeleteSliderImage - ลบรูปภาพ slider
+func DeleteSliderImage(c *gin.Context) {
+	idStr := c.Param("id")
+	imageID, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Invalid image ID",
+		})
+		return
+	}
+
+	// ดึงข้อมูลรูปเพื่อลบไฟล์
+	var imagePath string
+	err = config.DB.QueryRow("SELECT image_path FROM slider_images WHERE id = $1", imageID).Scan(&imagePath)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"message": "Image not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to fetch image info",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	// ลบข้อมูลจากฐานข้อมูล
+	_, err = config.DB.Exec("DELETE FROM slider_images WHERE id = $1", imageID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to delete image from database",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	// ลบไฟล์จริง
+	if err := os.Remove(imagePath); err != nil {
+		// ไม่ return error ถ้าลบไฟล์ไม่สำเร็จ (อาจถูกลบไปแล้ว)
+		fmt.Printf("Warning: Failed to delete image file: %v\n", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Image deleted successfully",
+	})
+}
+
+

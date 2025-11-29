@@ -8,6 +8,9 @@ import { useCart } from '../context/CartContext';
 const BookDetailModal = ({ book, isOpen, onClose }) => {
     const [isFavorite, setIsFavorite] = useState(false);
     const [quantity, setQuantity] = useState(1);
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const [showErrorPopup, setShowErrorPopup] = useState(false);
+    const [popupMessage, setPopupMessage] = useState('');
     const { addToCart } = useCart();
     const navigate = useNavigate();
 
@@ -32,14 +35,18 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
             for (let i = 0; i < quantity; i++) {
                 await addToCart(book);
             }
-            alert(`เพิ่ม "${book.book_title}" จำนวน ${quantity} ชุด เข้าตะกร้าแล้ว!`);
+            setPopupMessage(`เพิ่ม "${book.book_title}" จำนวน ${quantity} ชุด เข้าตะกร้าแล้ว!`);
+            setShowSuccessPopup(true);
             setQuantity(1);
+            setTimeout(() => setShowSuccessPopup(false), 3000);
         } catch (error) {
             if (error.response?.status === 401) {
-                alert('กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า');
+                setPopupMessage('กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า');
             } else {
-                alert('เกิดข้อผิดพลาดในการเพิ่มสินค้าลงตะกร้า');
+                setPopupMessage('เกิดข้อผิดพลาดในการเพิ่มสินค้าลงตะกร้า');
             }
+            setShowErrorPopup(true);
+            setTimeout(() => setShowErrorPopup(false), 3000);
         }
     };
 
@@ -64,6 +71,50 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
             className="fixed inset-0 z-50 bg-black bg-opacity-70 backdrop-blur-sm animate-fade-in flex items-center justify-center p-4"
             onClick={onClose}
         >
+            {/* Success Popup */}
+            {showSuccessPopup && (
+                <div className="fixed top-4 right-4 z-[60] animate-slide-in-right">
+                    <div className="bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 min-w-[300px]">
+                        <div className="flex-shrink-0">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-semibold text-sm">{popupMessage}</p>
+                        </div>
+                        <button 
+                            onClick={() => setShowSuccessPopup(false)}
+                            className="flex-shrink-0 hover:bg-green-600 rounded-full p-1 transition-colors"
+                        >
+                            <XMarkIcon className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Error Popup */}
+            {showErrorPopup && (
+                <div className="fixed top-4 right-4 z-[60] animate-slide-in-right">
+                    <div className="bg-red-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 min-w-[300px]">
+                        <div className="flex-shrink-0">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-semibold text-sm">{popupMessage}</p>
+                        </div>
+                        <button 
+                            onClick={() => setShowErrorPopup(false)}
+                            className="flex-shrink-0 hover:bg-red-600 rounded-full p-1 transition-colors"
+                        >
+                            <XMarkIcon className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div
                 className="bg-white w-full max-w-4xl max-h-[70vh] overflow-hidden flex flex-col animate-scale-up rounded-2xl shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
