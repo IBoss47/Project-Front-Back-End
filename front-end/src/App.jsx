@@ -18,6 +18,8 @@ import SellItemPage from './pages/SellItemPage';
 import UserStorePage from './pages/UserStorePage';
 import UserProfilePage from './pages/UserProfilePage';
 import PublicStorePage from './pages/PublicStorePage';
+import AboutPage from './pages/AboutPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 function App() {
   return (
     <CartProvider>
@@ -32,7 +34,8 @@ function App() {
           <Route path="/SellListPage" element={<Layout><SellListPage /></Layout>} />
           <Route path= "/Help" element={<Layout><Help_page /></Layout>} />
           <Route path= "/sell" element={<Layout><SellItemPage /></Layout>} />
-          {/* <Route path="/" element={<Homepage />} /> */}
+          <Route path= "/about" element={<Layout><AboutPage /></Layout>} />
+          <Route path= "/privacy" element={<Layout><PrivacyPolicyPage /></Layout>} />
          
           {/* หน้าเว็บที่ไม่ใช้ Navbar Footer */}
           <Route path="/login" element={<LoginPage />} />

@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { BookOpenIcon } from "@heroicons/react/24/outline";
 const Help_page = () => {
-    const [isOpen, setIsOpen] = useState(false);
+    const [openIndex, setOpenIndex] = useState(null);
+    
+    const toggleQuestion = (index) => {
+        setOpenIndex(openIndex === index ? null : index);
+    };
     
     return (
         <div className="help-page w-full h-full py-20">
@@ -13,17 +17,15 @@ const Help_page = () => {
                 <div className="border-b border-gray-300 pb-4">
                     <button 
                         className="flex items-center hover:text-red-600 transition-colors"
-                        onClick={() => setIsOpen(!isOpen)}
+                        onClick={() => toggleQuestion(0)}
                     >
                         <BookOpenIcon className="h-6 w-6 text-red-500 mr-3"/>
                         <h1>ลงขายกับ 4king ดีอย่างไร?</h1>
                     </button>
-                    {isOpen && (
+                    {openIndex === 0 && (
                         <div className="mt-4 ml-9 p-4 bg-gray-100 rounded-lg max-w-5xl">
                             <p className="text-gray-700">
-                                4king เป็นแพลตฟอร์มที่ให้คุณสามารถลงขายชีทได้อย่างง่ายดาย 
-                                มีระบบจัดการที่สะดวก ปลอดภัย และมีผู้ใช้งานจำนวนมาก 
-                                ช่วยให้คุณเข้าถึงลูกค้าได้มากขึ้น
+                               4king ทำให้ขายชีทได้ง่าย คนเห็นเยอะ ระบบชำระเงินชัดเจน และช่วยเพิ่มโอกาสให้ลูกค้าซื้อได้มากขึ้น
                             </p>
                         </div>
                     )}
@@ -32,17 +34,15 @@ const Help_page = () => {
                 <div className="border-b border-gray-300 pb-4">
                     <button 
                         className="flex items-center hover:text-red-600 transition-colors"
-                        onClick={() => setIsOpen(!isOpen)}
+                        onClick={() => toggleQuestion(1)}
                     >
                         <BookOpenIcon className="h-6 w-6 text-red-500 mr-3"/>
                         <h1>อยากลงขายชีทต้องทำอย่างไร?</h1>
                     </button>
-                    {isOpen && (
+                    {openIndex === 1 && (
                         <div className="mt-4 ml-9 p-4 bg-gray-100 rounded-lg max-w-5xl">
                             <p className="text-gray-700">
-                                4king เป็นแพลตฟอร์มที่ให้คุณสามารถลงขายชีทได้อย่างง่ายดาย 
-                                มีระบบจัดการที่สะดวก ปลอดภัย และมีผู้ใช้งานจำนวนมาก 
-                                ช่วยให้คุณเข้าถึงลูกค้าได้มากขึ้น
+                                แค่สมัครบัญชี อัปโหลดไฟล์ ใส่ข้อมูลให้ครบ ก็สามารถเริ่มขายชีทของคุณได้ทันทีบน 4king
                             </p>
                         </div>
                     )}
@@ -51,17 +51,15 @@ const Help_page = () => {
                 <div className="border-b border-gray-300 pb-4">
                     <button 
                         className="flex items-center hover:text-red-600 transition-colors"
-                        onClick={() => setIsOpen(!isOpen)}
+                        onClick={() => toggleQuestion(2)}
                     >
                         <BookOpenIcon className="h-6 w-6 text-red-500 mr-3"/>
                         <h1>การตั้งราคาชีทควรเป็นอย่างไร?</h1>
                     </button>
-                    {isOpen && (
+                    {openIndex === 2 && (
                         <div className="mt-4 ml-9 p-4 bg-gray-100 rounded-lg max-w-5xl">
                             <p className="text-gray-700">
-                                4king เป็นแพลตฟอร์มที่ให้คุณสามารถลงขายชีทได้อย่างง่ายดาย 
-                                มีระบบจัดการที่สะดวก ปลอดภัย และมีผู้ใช้งานจำนวนมาก 
-                                ช่วยให้คุณเข้าถึงลูกค้าได้มากขึ้น
+                                ตั้งราคาให้เหมาะกับเนื้อหา ดูคู่แข่งประกอบ และกำหนดให้ลูกค้ารู้สึกคุ้มค่ากับสิ่งที่ได้รับ
                             </p>
                         </div>
                     )}
@@ -70,36 +68,32 @@ const Help_page = () => {
                 <div className="border-b border-gray-300 pb-4">
                     <button 
                         className="flex items-center hover:text-red-600 transition-colors"
-                        onClick={() => setIsOpen(!isOpen)}
+                        onClick={() => toggleQuestion(3)}
                     >
                         <BookOpenIcon className="h-6 w-6 text-red-500 mr-3"/>
                         <h1>การตัดรอบรายได้เป็นอย่างไร?</h1>
                     </button>
-                    {isOpen && (
+                    {openIndex === 3 && (
                         <div className="mt-4 ml-9 p-4 bg-gray-100 rounded-lg max-w-5xl">
                             <p className="text-gray-700">
-                                4king เป็นแพลตฟอร์มที่ให้คุณสามารถลงขายชีทได้อย่างง่ายดาย 
-                                มีระบบจัดการที่สะดวก ปลอดภัย และมีผู้ใช้งานจำนวนมาก 
-                                ช่วยให้คุณเข้าถึงลูกค้าได้มากขึ้น
+                                ระบบจะสรุปรายได้ให้ตามรอบที่กำหนด แจ้งยอดชัดเจน และสามารถถอนเงินเข้าบัญชีได้ง่าย
                             </p>
                         </div>
                     )}
                 </div>
 
-                <div className="border-b border-gray-300 pd-4">
+                <div className="border-b border-gray-300 pb-4">
                     <button 
                         className="flex items-center hover:text-red-600 transition-colors"
-                        onClick={() => setIsOpen(!isOpen)}
+                        onClick={() => toggleQuestion(4)}
                     >
                         <BookOpenIcon className="h-6 w-6 text-red-500 mr-3"/>
                         <h1>ฉันจะโปรโมทชีทของฉันได้อย่างไร?</h1>
                     </button>
-                    {isOpen && (
+                    {openIndex === 4 && (
                         <div className="mt-4 ml-9 p-4 bg-gray-100 rounded-lg max-w-5xl">
                             <p className="text-gray-700">
-                                4king เป็นแพลตฟอร์มที่ให้คุณสามารถลงขายชีทได้อย่างง่ายดาย 
-                                มีระบบจัดการที่สะดวก ปลอดภัย และมีผู้ใช้งานจำนวนมาก 
-                                ช่วยให้คุณเข้าถึงลูกค้าได้มากขึ้น
+                                สามารถแชร์ลิงก์ในโซเชียล ทำปกให้สวย หรือโปรโมทในกลุ่มเรียนเพื่อเพิ่มยอดขาย
                             </p>
                         </div>
                     )}
