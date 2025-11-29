@@ -125,6 +125,7 @@ func main() {
 		admin.GET("/notes/:id/download", handlers.DownloadNoteForAdmin) // ดาวน์โหลด PDF (Admin)
 		admin.POST("/notes/:id/approve", handlers.ApproveNote)  // อนุมัติ Note
 		admin.POST("/notes/:id/reject", handlers.RejectNote)    // ปฏิเสธ Note
+		admin.DELETE("/notes/:id", handlers.DeleteNote)         // ลบ Note
 		admin.POST("/seller/add", handlers.AddSellerRole)       // เพิ่ม role seller
 		admin.POST("/seller/remove", handlers.RemoveSellerRole) // ลบ role seller
 
