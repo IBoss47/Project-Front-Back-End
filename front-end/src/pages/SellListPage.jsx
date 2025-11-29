@@ -147,7 +147,7 @@ const SellListPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pt-24">
-      <div className="container mx-auto px-4 py-8">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-gray-800 mb-3 animate-fade-in">
@@ -160,7 +160,7 @@ const SellListPage = () => {
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - Desktop */}
-          <div className="hidden lg:block lg:w-72">
+          <div className="hidden lg:block lg:w-72 flex-shrink-0">
             <div className="sticky top-24">
               <FilterSidebar
                 onSemesterChange={handleSemesterFilter}
@@ -204,13 +204,13 @@ const SellListPage = () => {
             )}
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {/* Search and Filter Controls */}
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-gray-100 
               hover:shadow-xl transition-shadow duration-300">
-              <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex flex-col lg:flex-row gap-4 items-stretch">
                 {/* Search */}
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <SearchBar onSearch={handleSearch} />
                 </div>
 
@@ -309,7 +309,7 @@ const SellListPage = () => {
             {currentBooks.length > 0 ? (
               <div className={`
                 ${viewMode === 'grid'
-                  ? 'grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-fr'
+                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 auto-rows-fr'
                   : 'flex flex-col gap-4'
                 }
                 animate-fade-in
@@ -317,7 +317,7 @@ const SellListPage = () => {
                 {currentBooks.map((book, index) => (
                   <div
                     key={book.id}
-                    className="transform transition-all duration-300 hover:scale-105 h-full"
+                    className="transform transition-all duration-300 hover:scale-[1.02] h-full"
                     style={{
                       animation: `fadeInUp 0.5s ease-out ${index * 0.05}s both`
                     }}

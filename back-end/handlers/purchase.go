@@ -12,7 +12,19 @@ type PurchaseRequest struct {
 	NoteIDs []int `json:"note_ids" binding:"required"`
 }
 
-// PurchaseNotes - สร้างรายการซื้อหนังสือ
+// PurchaseNotes godoc
+// @Summary Purchase notes
+// @Description Complete a purchase of one or more notes and remove them from cart
+// @Tags purchase
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body PurchaseRequest true "Purchase request with note IDs"
+// @Success 200 {object} map[string]interface{} "Purchase completed successfully"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/purchase [post]
 func PurchaseNotes(c *gin.Context) {
 	// ดึง user_id จาก JWT token
 	userID, exists := c.Get("user_id")

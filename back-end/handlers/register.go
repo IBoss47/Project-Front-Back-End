@@ -10,7 +10,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Register - API สำหรับสมัครสมาชิก
+// Register godoc
+// @Summary สมัครสมาชิก
+// @Description สมัครสมาชิกใหม่ในระบบ
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body models.RegisterRequest true "ข้อมูลการสมัครสมาชิก"
+// @Success 201 {object} map[string]interface{} "สมัครสมาชิกสำเร็จ"
+// @Failure 400 {object} map[string]interface{} "ข้อมูลไม่ถูกต้อง"
+// @Failure 409 {object} map[string]interface{} "Email หรือ Username ซ้ำ"
+// @Failure 500 {object} map[string]interface{} "Server error"
+// @Router /register [post]
 func Register(c *gin.Context) {
 	var req models.RegisterRequest
 

@@ -17,7 +17,17 @@ type Course struct {
 	Major string `json:"major"`
 }
 
-// GetAllCourses ดึงรายการ courses ทั้งหมด
+// GetAllCourses godoc
+// @Summary Get all courses
+// @Description Get a list of all courses with optional filtering by major and year
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param major query string false "Filter by major"
+// @Param year query string false "Filter by year"
+// @Success 200 {object} map[string]interface{} "List of courses with count"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/courses [get]
 func GetAllCourses(c *gin.Context) {
 	// Query parameters สำหรับ filter (optional)
 	major := c.Query("major")
@@ -79,7 +89,15 @@ func GetAllCourses(c *gin.Context) {
 	})
 }
 
-// GetCourseMajors ดึงรายการ major ทั้งหมด (ไม่ซ้ำกัน)
+// GetCourseMajors godoc
+// @Summary Get all majors
+// @Description Get a list of all unique majors
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "List of majors with count"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/courses/majors [get]
 func GetCourseMajors(c *gin.Context) {
 	query := `
 		SELECT DISTINCT major 
@@ -116,7 +134,15 @@ func GetCourseMajors(c *gin.Context) {
 	})
 }
 
-// GetCourseYears ดึงรายการ year ทั้งหมด (ไม่ซ้ำกัน)
+// GetCourseYears godoc
+// @Summary Get all years
+// @Description Get a list of all unique course years
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "List of years with count"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/courses/years [get]
 func GetCourseYears(c *gin.Context) {
 	query := `
 		SELECT DISTINCT year 

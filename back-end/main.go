@@ -2,6 +2,7 @@ package main
 
 import (
 	"back-end/config"
+	_ "back-end/docs" // Swagger docs
 	"back-end/handlers"
 	"back-end/middleware"
 	"log"
@@ -9,7 +10,28 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// @title NoteShop API
+// @version 1.0
+// @description API สำหรับระบบขายสรุปวิชา (Note Shop)
+// @description รองรับการลงทะเบียน, เข้าสู่ระบบ, จัดการสรุปวิชา, ตะกร้าสินค้า และระบบ Admin
+
+// @contact.name API Support
+// @contact.email support@noteshop.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /api
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description กรุณาใส่ Bearer token เช่น "Bearer {token}"
 
 func main() {
 	// โหลด .env file
@@ -42,6 +64,9 @@ func main() {
 	// Serve static files (สำหรับรูปภาพและ PDF)
 	r.Static("/uploads", "./uploads")
 
+	// Swagger documentation
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	// Health check endpoint
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -69,6 +94,9 @@ func main() {
 		public.GET("/courses", handlers.GetAllCourses)     // ดึงรายการ courses ทั้งหมด
 		public.GET("/courses/majors", handlers.GetCourseMajors) // ดึงรายการสาขาทั้งหมด
 		public.GET("/courses/years", handlers.GetCourseYears)   // ดึงรายการชั้นปีทั้งหมด
+
+		// Slider - ดูได้โดยไม่ต้อง login
+		public.GET("/slider", handlers.GetSliderImages) // ดึงรูปภาพ slider ที่ active
 	}
 
 	// Protected routes (ต้อง login)
@@ -88,16 +116,21 @@ func main() {
 			})
 		})
 
-		// Notes endpoints
-		protected.POST("/notes", handlers.CreateNote) // สร้างโน้ตขาย
-
-		protected.GET("/users/:id/notes", handlers.GetNotesByUserID)      
+		// User endpoints
 		protected.GET("/me", handlers.GetMe)
 		protected.GET("/users/:id/profile", handlers.GetUserByID)
+		protected.POST("/upload-avatar", handlers.UploadAvatar)   // อัปโหลด avatar
+		protected.DELETE("/delete-avatar", handlers.DeleteAvatar) // ลบ avatar
+
+		// Notes endpoints
+		protected.POST("/notes", handlers.CreateNote) // สร้างโน้ตขาย
+		protected.GET("/users/:id/notes", handlers.GetNotesByUserID)
 		
 		// Purchase endpoints
-		protected.POST("/purchase", handlers.PurchaseNotes)           // ซื้อหนังสือ
-		protected.GET("/my-purchases", handlers.GetMyPurchaseHistory) // ดึงประวัติการซื้อ
+		protected.POST("/purchase", handlers.PurchaseNotes)              // ซื้อหนังสือ
+		protected.GET("/my-purchases", handlers.GetMyPurchaseHistory)    // ดึงประวัติการซื้อ
+		protected.PUT("/my-purchases/:id", handlers.UpdatePurchaseReview) // อัพเดทรีวิว
+		protected.GET("/download/:id", handlers.DownloadPurchasedNote)   // ดาวน์โหลด PDF
 		
 		// Cart endpoints
 		protected.POST("/cart", handlers.AddToCart)            // เพิ่มสินค้าลงตะกร้า
@@ -117,10 +150,18 @@ func main() {
 		admin.GET("/stats", handlers.GetDashboardStats)         // ดึงสถิติ Dashboard
 		admin.GET("/notes", handlers.GetAllNotesAdmin)          // ดึงรายการ Notes ทั้งหมด
 		admin.GET("/notes/pending", handlers.GetPendingNotes)   // ดึงรายการ Notes ที่รออนุมัติ
+		admin.GET("/notes/:id/download", handlers.DownloadNoteForAdmin) // ดาวน์โหลด PDF (Admin)
 		admin.POST("/notes/:id/approve", handlers.ApproveNote)  // อนุมัติ Note
 		admin.POST("/notes/:id/reject", handlers.RejectNote)    // ปฏิเสธ Note
+		admin.DELETE("/notes/:id", handlers.DeleteNote)         // ลบ Note
 		admin.POST("/seller/add", handlers.AddSellerRole)       // เพิ่ม role seller
 		admin.POST("/seller/remove", handlers.RemoveSellerRole) // ลบ role seller
+
+		// Slider management
+		admin.GET("/slider", handlers.GetSliderImages)       // ดึงรูปภาพ slider ทั้งหมด
+		admin.POST("/slider/upload", handlers.UploadSliderImage) // อัปโหลดรูป slider
+		admin.PUT("/slider/order", handlers.UpdateSliderOrder)   // อัปเดตลำดับการแสดง
+		admin.DELETE("/slider/:id", handlers.DeleteSliderImage)  // ลบรูป slider
 	}
 
 	// เริ่ม server

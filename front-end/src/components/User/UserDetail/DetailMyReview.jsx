@@ -1,6 +1,6 @@
 import { ShoppingBagIcon } from "@heroicons/react/24/solid";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from '../../../api/auth';
 import SaleList from "../../SaleList";
 
 export default function DetailMyReview() {
@@ -11,12 +11,7 @@ export default function DetailMyReview() {
     const fetchPurchases = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("access_token");
-        const response = await axios.get("http://localhost:8080/api/my-purchases", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await api.get('/my-purchases');
         setPurchases(response.data);
       } catch (error) {
         console.error("Error fetching purchases:", error);

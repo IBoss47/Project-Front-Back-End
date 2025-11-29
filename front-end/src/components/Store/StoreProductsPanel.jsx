@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import axios from "axios";
+import api from '../../api/auth';
 import SaleList from '../SaleList';
 import SearchBar from '../SearchBar';
 import FilterSidebar from '../FilterSidebar';
@@ -44,12 +44,7 @@ export default function StoreProductsPanel({ userId }) {
       
       setLoading(true);
       try {
-        const token = localStorage.getItem("access_token");
-        const response = await axios.get(`http://localhost:8080/api/users/${userId}/notes`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await api.get(`/users/${userId}/notes`);
         setNotes(response.data);
       } catch (error) {
         console.error("Error fetching notes:", error);

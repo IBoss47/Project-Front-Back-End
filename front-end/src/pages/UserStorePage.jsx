@@ -1,6 +1,6 @@
 // src/pages/MyStorePage.jsx
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from '../api/auth';
 
 import StoreCover from "../components/Store/StoreCover";                 // ส่วนที่ 1 (การ์ด)
 import StoreOwnerBar from "../components/Store/StoreOwnerBar";           // ส่วนที่ 2 (การ์ด)
@@ -52,12 +52,7 @@ export default function MyStorePage() {
     (async () => {
       try {
         // ดึงข้อมูล user จาก API
-        const token = localStorage.getItem("access_token");
-        const userRes = await axios.get("http://localhost:8080/api/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const userRes = await api.get('/me');
         setUserData(userRes.data);
 
         // ดึงข้อมูลร้าน

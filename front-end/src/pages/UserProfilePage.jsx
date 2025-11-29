@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import UserProfile from "../components/User/UserProfile";
 import UserSidebarMenu from "../components/User/UserSidebarMenu";
 import DetailProfile from "../components/User/UserDetail/DetailProfile";
@@ -6,21 +7,18 @@ import DetailAutoReply from "../components/User/UserDetail/DetailAutoReply";
 import MyPurchaseHistory from "../components/User/UserDetail/MyPurchaseHistory";
 import DetailManageProfile from "../components/User/UserDetail/DetailManageProfile";
 import DetailAccount from "../components/User/UserDetail/DetailAccount";
-import axios from "axios";
+import api from '../api/auth';
 
 export default function UserProfilePage() {
 
   const [user, setUser] = useState(null);
+  const location = useLocation();
+  const tabFromState = location.state?.tab;
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const token = localStorage.getItem("access_token");
-        const res = await axios.get("http://localhost:8080/api/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await api.get('/me');
         setUser(res.data);
       } catch (err) {
         console.error("Error loading profile:", err);
@@ -38,7 +36,14 @@ export default function UserProfilePage() {
     "จัดการบัญชี": <DetailAccount />,
   };
 
-  const [activeMenu, setActiveMenu] = useState("ข้อมูลส่วนตัว");
+  const [activeMenu, setActiveMenu] = useState(tabFromState || "ข้อมูลส่วนตัว");
+
+  // Update activeMenu เมื่อมี state จาก navigation
+  useEffect(() => {
+    if (tabFromState && detailComponent[tabFromState]) {
+      setActiveMenu(tabFromState);
+    }
+  }, [tabFromState]);
 
   if (!user) {
     return <div>Loading...</div>;  // ⭐ ป้องกัน error

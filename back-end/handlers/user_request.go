@@ -11,6 +11,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetMe godoc
+// @Summary Get current user profile
+// @Description Get the profile of the currently authenticated user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} models.User "User profile"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "User not found"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/me [get]
 func GetMe(c *gin.Context){
 	v, exists := c.Get("user_id")
     if !exists {
@@ -20,9 +32,10 @@ func GetMe(c *gin.Context){
     userId := v.(int)
 
     var user models.User
+    var avatarURL sql.NullString
 
     query := `
-		SELECT id, username, email, fullname, phone, created_at 
+		SELECT id, username, email, fullname, phone, avatar_url, created_at 
 		FROM users 
 		WHERE id = $1
 	`
@@ -35,6 +48,7 @@ func GetMe(c *gin.Context){
         &user.Email,
         &user.FullName,
         &user.Phone,
+        &avatarURL,
         &user.CreatedAt,
     )
 
@@ -48,9 +62,26 @@ func GetMe(c *gin.Context){
         return
     }
 
+    // กำหนดค่า avatar_url
+    if avatarURL.Valid {
+        user.AvatarURL = avatarURL.String
+    }
+
     c.JSON(http.StatusOK, user)
 }
 
+// GetUserByID godoc
+// @Summary Get user by ID
+// @Description Get a user's public profile by their ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {object} models.User "User profile"
+// @Failure 400 {object} map[string]string "Invalid user ID"
+// @Failure 404 {object} map[string]string "User not found"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/users/{id} [get]
 func GetUserByID(c *gin.Context) {
 	// รับค่า id จาก URL params
 	idStr := c.Param("id")
@@ -61,9 +92,10 @@ func GetUserByID(c *gin.Context) {
 	}
 
 	var user models.User
+    var avatarURL sql.NullString
 
 	query := `
-		SELECT id, username, email, fullname, phone, created_at
+		SELECT id, username, email, fullname, phone, avatar_url, created_at
 		FROM users
 		WHERE id = $1
 	`
@@ -76,6 +108,7 @@ func GetUserByID(c *gin.Context) {
 		&user.Email,
 		&user.FullName,
 		&user.Phone,
+		&avatarURL,
 		&user.CreatedAt,
 	)
 
@@ -86,6 +119,11 @@ func GetUserByID(c *gin.Context) {
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
 		return
+	}
+
+	// กำหนดค่า avatar_url
+	if avatarURL.Valid {
+		user.AvatarURL = avatarURL.String
 	}
 
 	c.JSON(http.StatusOK, user)

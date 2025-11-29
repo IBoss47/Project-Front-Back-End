@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"back-end/config"
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -29,6 +30,7 @@ type UserInfo struct {
 	Email     string   `json:"email"`
 	FullName  string   `json:"fullname"`
 	Phone     string   `json:"phone"`
+	AvatarURL string   `json:"avatar_url"`
 	Roles     []string `json:"roles"`
 	JoinDate  string   `json:"join_date"`
 	Status    string   `json:"status"`
@@ -46,7 +48,17 @@ type DashboardStats struct {
 	ReportedIssues   int     `json:"reported_issues"`
 }
 
-// GetAllSellers - ดึงรายการ Sellers ทั้งหมด
+// GetAllSellers godoc
+// @Summary Get all sellers
+// @Description Get a list of all users with seller role including their sales statistics
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "List of sellers with count"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/sellers [get]
 func GetAllSellers(c *gin.Context) {
 	query := `
 		SELECT 
@@ -65,12 +77,13 @@ func GetAllSellers(c *gin.Context) {
 		INNER JOIN roles r ON ur.role_id = r.id
 		LEFT JOIN (
 			SELECT 
-				seller_id,
-				COUNT(*) as note_count,
-				0 as total_sales,
-				COALESCE(SUM(price), 0) as revenue
-			FROM notes_for_sale
-			GROUP BY seller_id
+				n.seller_id,
+				COUNT(DISTINCT n.id) as note_count,
+				COUNT(b.id) as total_sales,
+				COALESCE(SUM(n.price), 0) as revenue
+			FROM notes_for_sale n
+			LEFT JOIN buyed_note b ON n.id = b.note_id
+			GROUP BY n.seller_id
 		) ns ON u.id = ns.seller_id
 		WHERE r.name = 'seller'
 		ORDER BY u.created_at DESC
@@ -118,7 +131,17 @@ func GetAllSellers(c *gin.Context) {
 	})
 }
 
-// GetAllUsers - ดึงรายการ Users ทั้งหมด
+// GetAllUsers godoc
+// @Summary Get all users
+// @Description Get a list of all users with their roles
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "List of users with count"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/users [get]
 func GetAllUsers(c *gin.Context) {
 	query := `
 		SELECT 
@@ -127,12 +150,13 @@ func GetAllUsers(c *gin.Context) {
 			u.email,
 			COALESCE(u.fullname, '') as fullname,
 			COALESCE(u.phone, '') as phone,
+			COALESCE(u.avatar_url, '') as avatar_url,
 			TO_CHAR(u.created_at, 'YYYY-MM-DD') as join_date,
 			ARRAY_AGG(r.name) as roles
 		FROM users u
 		LEFT JOIN user_roles ur ON u.id = ur.user_id
 		LEFT JOIN roles r ON ur.role_id = r.id
-		GROUP BY u.id, u.username, u.email, u.fullname, u.phone, u.created_at
+		GROUP BY u.id, u.username, u.email, u.fullname, u.phone, u.avatar_url, u.created_at
 		ORDER BY u.created_at DESC
 	`
 
@@ -150,12 +174,14 @@ func GetAllUsers(c *gin.Context) {
 	for rows.Next() {
 		var user UserInfo
 		var roles pq.StringArray
+		var avatarURL sql.NullString
 		err := rows.Scan(
 			&user.ID,
 			&user.Username,
 			&user.Email,
 			&user.FullName,
 			&user.Phone,
+			&avatarURL,
 			&user.JoinDate,
 			&roles,
 		)
@@ -165,6 +191,10 @@ func GetAllUsers(c *gin.Context) {
 				"message": err.Error(),
 			})
 			return
+		}
+		// กำหนดค่า avatar_url
+		if avatarURL.Valid {
+			user.AvatarURL = avatarURL.String
 		}
 		user.Roles = []string(roles)
 		user.Status = "active"
@@ -178,7 +208,16 @@ func GetAllUsers(c *gin.Context) {
 	})
 }
 
-// GetDashboardStats - ดึงสถิติสำหรับ Admin Dashboard
+// GetDashboardStats godoc
+// @Summary Get dashboard statistics
+// @Description Get admin dashboard statistics including users, sellers, revenue (2% commission), and pending approvals
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "Dashboard statistics"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Router /api/admin/dashboard [get]
 func GetDashboardStats(c *gin.Context) {
 	var stats DashboardStats
 
@@ -206,19 +245,45 @@ func GetDashboardStats(c *gin.Context) {
 		stats.TotalSummaries = 0
 	}
 
-	// คำนวณรายได้รวมจากตาราง orders (2% ของยอดขาย)
-	err = config.DB.QueryRow("SELECT COALESCE(SUM(total_amount) * 0.02, 0) FROM orders WHERE status = 'completed'").Scan(&stats.TotalRevenue)
+	// คำนวณรายได้รวมจากตาราง buyed_note (เก็บ 2% ของราคาขาย)
+	err = config.DB.QueryRow(`
+		SELECT COALESCE(SUM(n.price) * 0.02, 0) 
+		FROM buyed_note b
+		INNER JOIN notes_for_sale n ON b.note_id = n.id
+	`).Scan(&stats.TotalRevenue)
 	if err != nil {
 		stats.TotalRevenue = 0
 	}
 
-	// คำนวณรายได้เดือนนี้ (2% ของยอดขาย)
+	// คำนวณรายได้เดือนนี้ (เก็บ 2% ของราคาขาย)
+	// หากตาราง buyed_note ไม่มี created_at ให้ใช้รายได้ทั้งหมดแทน
+	var monthlyRevenueQuery string
+	var hasCreatedAt bool
 	err = config.DB.QueryRow(`
-		SELECT COALESCE(SUM(total_amount) * 0.02, 0) 
-		FROM orders 
-		WHERE status = 'completed' 
-		AND created_at >= DATE_TRUNC('month', CURRENT_DATE)
-	`).Scan(&stats.MonthlyRevenue)
+		SELECT EXISTS (
+			SELECT 1 
+			FROM information_schema.columns 
+			WHERE table_name='buyed_note' AND column_name='created_at'
+		)
+	`).Scan(&hasCreatedAt)
+	
+	if hasCreatedAt {
+		monthlyRevenueQuery = `
+			SELECT COALESCE(SUM(n.price) * 0.02, 0) 
+			FROM buyed_note b
+			INNER JOIN notes_for_sale n ON b.note_id = n.id
+			WHERE b.created_at >= DATE_TRUNC('month', CURRENT_DATE)
+		`
+	} else {
+		// ถ้าไม่มี created_at ให้ใช้รายได้ทั้งหมด
+		monthlyRevenueQuery = `
+			SELECT COALESCE(SUM(n.price) * 0.02, 0) 
+			FROM buyed_note b
+			INNER JOIN notes_for_sale n ON b.note_id = n.id
+		`
+	}
+	
+	err = config.DB.QueryRow(monthlyRevenueQuery).Scan(&stats.MonthlyRevenue)
 	if err != nil {
 		stats.MonthlyRevenue = 0
 	}
@@ -244,7 +309,19 @@ func GetDashboardStats(c *gin.Context) {
 	})
 }
 
-// AddSellerRole - เพิ่ม role seller ให้กับ user
+// AddSellerRole godoc
+// @Summary Add seller role to user
+// @Description Assign the seller role to a specific user
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body object{user_id=int} true "User ID to add seller role"
+// @Success 200 {object} map[string]interface{} "Role assigned successfully"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/admin/users/seller [post]
 func AddSellerRole(c *gin.Context) {
 	var req struct {
 		UserID int `json:"user_id" binding:"required"`
@@ -289,7 +366,20 @@ func AddSellerRole(c *gin.Context) {
 	})
 }
 
-// RemoveSellerRole - ลบ role seller ออกจาก user
+// RemoveSellerRole godoc
+// @Summary Remove seller role from user
+// @Description Remove the seller role from a specific user
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body object{user_id=int} true "User ID to remove seller role"
+// @Success 200 {object} map[string]interface{} "Role removed successfully"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Seller role not found"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/admin/users/seller [delete]
 func RemoveSellerRole(c *gin.Context) {
 	var req struct {
 		UserID int `json:"user_id" binding:"required"`
@@ -344,7 +434,17 @@ type NoteInfo struct {
 	Sales       int     `json:"sales"`
 }
 
-// GetAllNotesAdmin - ดึงรายการ Notes ทั้งหมดสำหรับ Admin
+// GetAllNotesAdmin godoc
+// @Summary Get all notes (Admin)
+// @Description Get a list of all notes for admin management
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "List of notes with count"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/notes [get]
 func GetAllNotesAdmin(c *gin.Context) {
 	query := `
 		SELECT 
@@ -418,9 +518,20 @@ type PendingNoteInfo struct {
 	CourseName  string  `json:"course_name"`
 	CreatedAt   string  `json:"created_at"`
 	Description string  `json:"description"`
+	CoverImage  string  `json:"cover_image"`
 }
 
-// GetPendingNotes - ดึงรายการ Notes ที่รออนุมัติ
+// GetPendingNotes godoc
+// @Summary Get pending notes
+// @Description Get a list of notes waiting for admin approval
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "List of pending notes with count"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/notes/pending [get]
 func GetPendingNotes(c *gin.Context) {
 	query := `
 		SELECT 
@@ -433,7 +544,11 @@ func GetPendingNotes(c *gin.Context) {
 			COALESCE(n.exam_term, '') as exam_term,
 			COALESCE(c.name, '') as course_name,
 			TO_CHAR(n.created_at, 'YYYY-MM-DD HH24:MI') as created_at,
-			COALESCE(n.description, '') as description
+			COALESCE(n.description, '') as description,
+			COALESCE(
+				(SELECT path FROM note_images WHERE note_id = n.id ORDER BY image_order LIMIT 1),
+				''
+			) as cover_image
 		FROM notes_for_sale n
 		LEFT JOIN users u ON n.seller_id = u.id
 		LEFT JOIN courses c ON n.course_id = c.id
@@ -465,6 +580,7 @@ func GetPendingNotes(c *gin.Context) {
 			&note.CourseName,
 			&note.CreatedAt,
 			&note.Description,
+			&note.CoverImage,
 		)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -483,7 +599,20 @@ func GetPendingNotes(c *gin.Context) {
 	})
 }
 
-// ApproveNote - อนุมัติ Note ให้แสดงในหน้าขาย
+// ApproveNote godoc
+// @Summary Approve a note
+// @Description Approve a pending note to make it available for sale
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Note ID"
+// @Success 200 {object} map[string]interface{} "Note approved successfully"
+// @Failure 400 {object} map[string]string "Note ID is required"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Note not found or already processed"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/notes/{id}/approve [put]
 func ApproveNote(c *gin.Context) {
 	noteID := c.Param("id")
 	if noteID == "" {
@@ -522,7 +651,21 @@ func ApproveNote(c *gin.Context) {
 	})
 }
 
-// RejectNote - ปฏิเสธ Note
+// RejectNote godoc
+// @Summary Reject a note
+// @Description Reject a pending note with optional reason
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Note ID"
+// @Param request body object{reason=string} false "Rejection reason"
+// @Success 200 {object} map[string]interface{} "Note rejected successfully"
+// @Failure 400 {object} map[string]string "Note ID is required"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Note not found or already processed"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/notes/{id}/reject [put]
 func RejectNote(c *gin.Context) {
 	noteID := c.Param("id")
 	if noteID == "" {
@@ -565,5 +708,56 @@ func RejectNote(c *gin.Context) {
 		"success": true,
 		"message": "Note rejected successfully",
 		"reason":  req.Reason,
+	})
+}
+
+// DeleteNote godoc
+// @Summary Delete a note
+// @Description Delete a note from the system (Admin only)
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Note ID"
+// @Success 200 {object} map[string]interface{} "Note deleted successfully"
+// @Failure 400 {object} map[string]string "Note ID is required"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Note not found"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/notes/{id} [delete]
+func DeleteNote(c *gin.Context) {
+	noteID := c.Param("id")
+	if noteID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Note ID is required",
+		})
+		return
+	}
+
+	// ลบ note จาก database (note_images และ cart จะถูกลบอัตโนมัติเพราะ ON DELETE CASCADE)
+	result, err := config.DB.Exec(`
+		DELETE FROM notes_for_sale 
+		WHERE id = $1
+	`, noteID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Database error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Note not found",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Note deleted successfully",
 	})
 }

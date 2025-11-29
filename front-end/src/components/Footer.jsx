@@ -6,7 +6,7 @@ const Footer = () => {
         <div className="footer-container">
             <div className="footer-left">
                 <h3>เกี่ยวกับ ร้าน4KING</h3>
-                <Link to = '/' className="footer-about">
+                <Link to = '/about' className="footer-about">
                     <h4>เกี่ยวกับเรา</h4>
                 </Link>
 
@@ -36,7 +36,7 @@ const Footer = () => {
                 <Link to = '/Help' className="footer-help">
                     <h4>คำถามที่พบบ่อย</h4>
                 </Link>
-                <Link to = '/' className="footer-help">
+                <Link to = '/privacy' className="footer-help">
                     <h4>นโยบายความเป็นส่วนตัว</h4>
                 </Link>
 

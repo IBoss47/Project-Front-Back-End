@@ -10,23 +10,39 @@ const Homepage = () => {
     const [recommendedBooks, setRecommendedBooks] = useState([]);
     const [latestBooks, setLatestBooks] = useState([]);
     const [bestSellingBooks, setBestSellingBooks] = useState([]);
+    const [slideData, setSlideData] = useState([]);
     
     useEffect(() => {
         const fetchBooks = async () => {
             setLoading(true);
             try {
-                // Fetch all three types of books in parallel
-                const [recommended, latest, bestSelling] = await Promise.all([
+                // Fetch all data in parallel
+                const [recommended, latest, bestSelling, sliderRes] = await Promise.all([
                     api.get('/notes'),
                     api.get('/notes/latest'),
-                    api.get('/notes/best-selling')
+                    api.get('/notes/best-selling'),
+                    api.get('/slider')
                 ]);
                 
                 setRecommendedBooks(recommended.data.slice(0, 6));
                 setLatestBooks(latest.data);
                 setBestSellingBooks(bestSelling.data.slice(0, 6));
+                
+                // Set slider data from API
+                if (sliderRes.data.success && sliderRes.data.data) {
+                    const slides = sliderRes.data.data.map(slide => ({
+                        ...slide,
+                        image: `http://localhost:8080/${slide.image}`
+                    }));
+                    setSlideData(slides);
+                }
             } catch (error) {
-                console.error('Error fetching books:', error);
+                console.error('Error fetching data:', error);
+                // Fallback to default slides if API fails
+                setSlideData([
+                    { image: '/Images/board/home_board.jpg', link: '/Help' },
+                    { image: '/Images/board/sell_board.jpg', link: '/SellListPage' }
+                ]);
             } finally {
                 setLoading(false);
             }
@@ -34,22 +50,11 @@ const Homepage = () => {
         
         fetchBooks();
     }, []);
-    
-    const slideData = [
-    {
-      image: '/Images/board/home_board.jpg',
-      link: '/Help'
-    },
-    {
-      image: '/Images/board/sell_board.jpg',
-      link: '/SellListPage'
-    }
-  ];
 
 
     return (
      <div className="homepage w-full h-full">
-       <Slider slides={slideData} />
+       <Slider useAPI={true} autoPlay={5000} slides={slideData} />
        
       <section className="py-8 bg-gray-50">
 

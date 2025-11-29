@@ -1,0 +1,228 @@
+2025/11/29 15:27:46 ✅ Connected to PostgreSQL database successfully!
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /uploads/*filepath        --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] HEAD   /uploads/*filepath        --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] GET    /swagger/*any             --> github.com/swaggo/gin-swagger.CustomWrapHandler.func1 (4 handlers)
+[GIN-debug] GET    /                         --> main.main.func2 (4 handlers)
+[GIN-debug] POST   /api/register             --> back-end/handlers.Register (4 handlers)
+[GIN-debug] POST   /api/login                --> back-end/handlers.Login (4 handlers)
+[GIN-debug] POST   /api/refresh              --> back-end/handlers.RefreshToken (4 handlers)
+[GIN-debug] POST   /api/logout               --> back-end/handlers.Logout (4 handlers)
+[GIN-debug] GET    /api/notes                --> back-end/handlers.GetAllNotes (4 handlers)
+[GIN-debug] GET    /api/notes/best-selling   --> back-end/handlers.GetBestSellingNotes (4 handlers)
+[GIN-debug] GET    /api/notes/latest         --> back-end/handlers.GetLatestNotes (4 handlers)
+[GIN-debug] GET    /api/notes/:id            --> back-end/handlers.GetNoteByID (4 handlers)
+[GIN-debug] GET    /api/courses              --> back-end/handlers.GetAllCourses (4 handlers)
+[GIN-debug] GET    /api/courses/majors       --> back-end/handlers.GetCourseMajors (4 handlers)
+[GIN-debug] GET    /api/courses/years        --> back-end/handlers.GetCourseYears (4 handlers)
+[GIN-debug] GET    /api/slider               --> back-end/handlers.GetSliderImages (4 handlers)
+[GIN-debug] GET    /api/profile              --> main.main.func3 (5 handlers)
+[GIN-debug] GET    /api/me                   --> back-end/handlers.GetMe (5 handlers)
+[GIN-debug] GET    /api/users/:id/profile    --> back-end/handlers.GetUserByID (5 handlers)
+[GIN-debug] POST   /api/upload-avatar        --> back-end/handlers.UploadAvatar (5 handlers)
+[GIN-debug] DELETE /api/delete-avatar        --> back-end/handlers.DeleteAvatar (5 handlers)
+[GIN-debug] POST   /api/notes                --> back-end/handlers.CreateNote (5 handlers)
+[GIN-debug] GET    /api/users/:id/notes      --> back-end/handlers.GetNotesByUserID (5 handlers)
+[GIN-debug] POST   /api/purchase             --> back-end/handlers.PurchaseNotes (5 handlers)
+[GIN-debug] GET    /api/my-purchases         --> back-end/handlers.GetMyPurchaseHistory (5 handlers)
+[GIN-debug] PUT    /api/my-purchases/:id     --> back-end/handlers.UpdatePurchaseReview (5 handlers)
+[GIN-debug] GET    /api/download/:id         --> back-end/handlers.DownloadPurchasedNote (5 handlers)
+[GIN-debug] POST   /api/cart                 --> back-end/handlers.AddToCart (5 handlers)
+[GIN-debug] GET    /api/cart                 --> back-end/handlers.GetCart (5 handlers)
+[GIN-debug] PUT    /api/cart/:id             --> back-end/handlers.UpdateCartItem (5 handlers)
+[GIN-debug] DELETE /api/cart/:id             --> back-end/handlers.RemoveFromCart (5 handlers)
+[GIN-debug] DELETE /api/cart                 --> back-end/handlers.ClearCart (5 handlers)
+[GIN-debug] GET    /api/admin/users          --> back-end/handlers.GetAllUsers (6 handlers)
+[GIN-debug] GET    /api/admin/sellers        --> back-end/handlers.GetAllSellers (6 handlers)
+[GIN-debug] GET    /api/admin/stats          --> back-end/handlers.GetDashboardStats (6 handlers)
+[GIN-debug] GET    /api/admin/notes          --> back-end/handlers.GetAllNotesAdmin (6 handlers)
+[GIN-debug] GET    /api/admin/notes/pending  --> back-end/handlers.GetPendingNotes (6 handlers)
+[GIN-debug] GET    /api/admin/notes/:id/download --> back-end/handlers.DownloadNoteForAdmin (6 handlers)
+[GIN-debug] POST   /api/admin/notes/:id/approve --> back-end/handlers.ApproveNote (6 handlers)
+[GIN-debug] POST   /api/admin/notes/:id/reject --> back-end/handlers.RejectNote (6 handlers)
+[GIN-debug] DELETE /api/admin/notes/:id      --> back-end/handlers.DeleteNote (6 handlers)
+[GIN-debug] POST   /api/admin/seller/add     --> back-end/handlers.AddSellerRole (6 handlers)
+[GIN-debug] POST   /api/admin/seller/remove  --> back-end/handlers.RemoveSellerRole (6 handlers)
+[GIN-debug] GET    /api/admin/slider         --> back-end/handlers.GetSliderImages (6 handlers)
+[GIN-debug] POST   /api/admin/slider/upload  --> back-end/handlers.UploadSliderImage (6 handlers)
+[GIN-debug] PUT    /api/admin/slider/order   --> back-end/handlers.UpdateSliderOrder (6 handlers)
+[GIN-debug] DELETE /api/admin/slider/:id     --> back-end/handlers.DeleteSliderImage (6 handlers)
+2025/11/29 15:27:46 🚀 Server is running on port 8080
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+[GIN] 2025/11/29 - 15:28:10 | 200 |  107.975238ms |             ::1 | POST     "/api/login"
+[GIN] 2025/11/29 - 15:28:20 | 204 |      28.202µs |             ::1 | OPTIONS  "/api/login"
+[GIN] 2025/11/29 - 15:28:20 | 200 |   70.263808ms |             ::1 | POST     "/api/login"
+[GIN] 2025/11/29 - 15:28:21 | 204 |       4.688µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:28:21 | 204 |       4.318µs |             ::1 | OPTIONS  "/api/notes/latest"
+[GIN] 2025/11/29 - 15:28:21 | 204 |      31.729µs |             ::1 | OPTIONS  "/api/notes"
+[GIN] 2025/11/29 - 15:28:21 | 204 |       3.717µs |             ::1 | OPTIONS  "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:28:21 | 204 |       3.988µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:28:21 | 204 |       3.747µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:28:21 | 204 |       3.547µs |             ::1 | OPTIONS  "/api/notes"
+[GIN] 2025/11/29 - 15:28:21 | 204 |       3.507µs |             ::1 | OPTIONS  "/api/notes/latest"
+[GIN] 2025/11/29 - 15:28:21 | 204 |       4.218µs |             ::1 | OPTIONS  "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:28:21 | 204 |       3.437µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:28:21 | 200 |    2.135714ms |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:28:21 | 200 |   17.032983ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:28:21 | 200 |      347.95µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:28:21 | 200 |   24.961051ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:28:21 | 200 |   33.604945ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:28:21 | 200 |   33.539943ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:28:21 | 200 |     339.143µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:28:21 | 200 |    2.067957ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:28:21 | 200 |   16.472597ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:28:21 | 200 |     346.767µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:30:44 | 204 |       8.566µs |             ::1 | OPTIONS  "/api/logout"
+[GIN] 2025/11/29 - 15:30:44 | 200 |    1.915796ms |             ::1 | POST     "/api/logout"
+[GIN] 2025/11/29 - 15:30:44 | 200 |     782.811µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:30:44 | 200 |   23.317834ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:30:44 | 200 |   37.869605ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:30:44 | 200 |    1.117575ms |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:30:44 | 200 |   57.608439ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:30:44 | 200 |    2.159161ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:30:44 | 200 |     4.52709ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:30:44 | 200 |    7.372531ms |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:30:44 | 200 |   13.804654ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:30:44 | 200 |     587.725µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:30:53 | 204 |       6.953µs |             ::1 | OPTIONS  "/api/login"
+[GIN] 2025/11/29 - 15:30:54 | 200 |  272.821574ms |             ::1 | POST     "/api/login"
+[GIN] 2025/11/29 - 15:30:54 | 204 |       7.354µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:30:54 | 204 |       4.027µs |             ::1 | OPTIONS  "/api/notes"
+[GIN] 2025/11/29 - 15:30:54 | 204 |       3.105µs |             ::1 | OPTIONS  "/api/notes/latest"
+[GIN] 2025/11/29 - 15:30:54 | 204 |       4.077µs |             ::1 | OPTIONS  "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:30:54 | 204 |      11.301µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:30:54 | 204 |       3.616µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:30:54 | 204 |       3.707µs |             ::1 | OPTIONS  "/api/notes"
+[GIN] 2025/11/29 - 15:30:54 | 204 |       4.739µs |             ::1 | OPTIONS  "/api/notes/latest"
+[GIN] 2025/11/29 - 15:30:54 | 204 |       3.327µs |             ::1 | OPTIONS  "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:30:54 | 204 |       3.436µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:30:54 | 200 |     553.363µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:30:54 | 200 |   18.349771ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:30:54 | 200 |   21.453401ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:30:54 | 200 |    3.728429ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:30:54 | 200 |     280.477µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:30:54 | 200 |   13.302223ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:30:54 | 200 |    1.093622ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:30:54 | 200 |    4.077764ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:30:54 | 200 |     7.43475ms |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:30:54 | 200 |     270.532µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:30:55 | 204 |       6.161µs |             ::1 | OPTIONS  "/api/me"
+[GIN] 2025/11/29 - 15:30:55 | 204 |       4.328µs |             ::1 | OPTIONS  "/api/me"
+[GIN] 2025/11/29 - 15:30:55 | 200 |     954.915µs |             ::1 | GET      "/api/me"
+[GIN] 2025/11/29 - 15:30:55 | 200 |     684.631µs |             ::1 | GET      "/api/me"
+[GIN] 2025/11/29 - 15:31:18 | 204 |       6.903µs |             ::1 | OPTIONS  "/api/logout"
+[GIN] 2025/11/29 - 15:31:18 | 200 |    2.041729ms |             ::1 | POST     "/api/logout"
+[GIN] 2025/11/29 - 15:31:19 | 401 |      43.742µs |             ::1 | GET      "/api/me"
+[GIN] 2025/11/29 - 15:31:19 | 401 |      12.023µs |             ::1 | GET      "/api/me"
+[GIN] 2025/11/29 - 15:31:23 | 200 |     559.064µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:23 | 200 |    2.079478ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:23 | 200 |   13.935274ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:23 | 200 |   28.039066ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:31:23 | 200 |     306.672µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:23 | 200 |    1.063172ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:23 | 200 |    2.889403ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:23 | 200 |   12.957836ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:31:23 | 200 |     291.724µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:23 | 200 |     242.399µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:26 | 200 |   14.140915ms |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:26 | 200 |   33.895545ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:31:26 | 200 |   32.741103ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:26 | 200 |   44.617892ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:26 | 200 |     793.829µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:26 | 200 |   18.301798ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:31:26 | 200 |    4.150126ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:26 | 200 |     351.997µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:26 | 200 |    3.399779ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:27 | 200 |     418.504µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:28 | 200 |    2.393698ms |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:28 | 200 |   46.699674ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:31:28 | 200 |     767.643µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:28 | 200 |   48.694939ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:28 | 200 |    46.21884ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:29 | 200 |   13.233912ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:31:29 | 200 |     548.855µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:29 | 200 |    2.967308ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:29 | 200 |    1.604766ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:30 | 200 |     522.716µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:36 | 204 |       6.282µs |             ::1 | OPTIONS  "/api/login"
+[GIN] 2025/11/29 - 15:31:36 | 200 |   80.366244ms |             ::1 | POST     "/api/login"
+[GIN] 2025/11/29 - 15:31:36 | 204 |       4.498µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:31:36 | 204 |       3.687µs |             ::1 | OPTIONS  "/api/notes"
+[GIN] 2025/11/29 - 15:31:36 | 204 |       3.657µs |             ::1 | OPTIONS  "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:36 | 204 |       3.546µs |             ::1 | OPTIONS  "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:36 | 204 |      30.156µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:31:36 | 204 |       3.326µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:31:36 | 204 |       3.427µs |             ::1 | OPTIONS  "/api/notes"
+[GIN] 2025/11/29 - 15:31:36 | 204 |       3.406µs |             ::1 | OPTIONS  "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:36 | 204 |      11.862µs |             ::1 | OPTIONS  "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:36 | 204 |       3.506µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:31:36 | 200 |     590.593µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:36 | 200 |   24.316541ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:31:36 | 200 |   29.694092ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:36 | 200 |   38.231391ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:36 | 200 |     308.926µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:37 | 200 |   12.762815ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:31:37 | 200 |    6.604528ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:37 | 200 |   19.178197ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:37 | 200 |    1.381709ms |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:37 | 200 |     522.515µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:41 | 204 |       6.552µs |             ::1 | OPTIONS  "/api/admin/stats"
+[GIN] 2025/11/29 - 15:31:41 | 204 |       3.687µs |             ::1 | OPTIONS  "/api/admin/stats"
+[GIN] 2025/11/29 - 15:31:41 | 200 |   34.102725ms |             ::1 | GET      "/api/admin/stats"
+[GIN] 2025/11/29 - 15:31:41 | 204 |       4.589µs |             ::1 | OPTIONS  "/api/admin/sellers"
+[GIN] 2025/11/29 - 15:31:41 | 200 |    6.983245ms |             ::1 | GET      "/api/admin/stats"
+[GIN] 2025/11/29 - 15:31:41 | 200 |    1.664186ms |             ::1 | GET      "/api/admin/sellers"
+[GIN] 2025/11/29 - 15:31:41 | 200 |    1.582333ms |             ::1 | GET      "/api/admin/sellers"
+[GIN] 2025/11/29 - 15:31:41 | 204 |       3.697µs |             ::1 | OPTIONS  "/api/admin/users"
+[GIN] 2025/11/29 - 15:31:41 | 204 |       3.808µs |             ::1 | OPTIONS  "/api/admin/users"
+[GIN] 2025/11/29 - 15:31:41 | 200 |    1.809176ms |             ::1 | GET      "/api/admin/users"
+[GIN] 2025/11/29 - 15:31:41 | 200 |    1.455179ms |             ::1 | GET      "/api/admin/users"
+[GIN] 2025/11/29 - 15:31:41 | 204 |       4.689µs |             ::1 | OPTIONS  "/api/admin/notes"
+[GIN] 2025/11/29 - 15:31:41 | 204 |        5.72µs |             ::1 | OPTIONS  "/api/admin/notes"
+[GIN] 2025/11/29 - 15:31:41 | 200 |     925.648µs |             ::1 | GET      "/api/admin/notes"
+[GIN] 2025/11/29 - 15:31:41 | 200 |     884.491µs |             ::1 | GET      "/api/admin/notes"
+[GIN] 2025/11/29 - 15:31:41 | 204 |       3.356µs |             ::1 | OPTIONS  "/api/admin/notes/pending"
+[GIN] 2025/11/29 - 15:31:41 | 200 |     850.139µs |             ::1 | GET      "/api/admin/notes/pending"
+[GIN] 2025/11/29 - 15:31:41 | 200 |     845.257µs |             ::1 | GET      "/api/admin/notes/pending"
+[GIN] 2025/11/29 - 15:31:41 | 204 |       3.266µs |             ::1 | OPTIONS  "/api/admin/slider"
+[GIN] 2025/11/29 - 15:31:41 | 200 |     332.811µs |             ::1 | GET      "/api/admin/slider"
+[GIN] 2025/11/29 - 15:31:41 | 200 |     378.603µs |             ::1 | GET      "/api/admin/slider"
+[GIN] 2025/11/29 - 15:31:45 | 204 |       6.222µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:31:45 | 204 |       4.528µs |             ::1 | OPTIONS  "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:45 | 204 |       4.528µs |             ::1 | OPTIONS  "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:45 | 204 |       3.086µs |             ::1 | OPTIONS  "/api/notes"
+[GIN] 2025/11/29 - 15:31:45 | 204 |       3.426µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:31:45 | 204 |       3.376µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:31:45 | 204 |       3.908µs |             ::1 | OPTIONS  "/api/notes"
+[GIN] 2025/11/29 - 15:31:45 | 204 |       3.988µs |             ::1 | OPTIONS  "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:45 | 204 |       3.867µs |             ::1 | OPTIONS  "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:45 | 204 |       3.897µs |             ::1 | OPTIONS  "/api/slider"
+[GIN] 2025/11/29 - 15:31:45 | 200 |    1.121774ms |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:45 | 200 |    1.427753ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:45 | 200 |    2.901729ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:45 | 200 |   12.585482ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:31:45 | 200 |     376.024µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:45 | 200 |    1.005303ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:31:45 | 200 |    2.930981ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:31:45 | 200 |   12.141706ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:31:45 | 200 |     241.037µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:31:45 | 200 |     285.914µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:32:08 | 204 |       7.685µs |             ::1 | OPTIONS  "/api/logout"
+[GIN] 2025/11/29 - 15:32:08 | 200 |    1.591341ms |             ::1 | POST     "/api/logout"
+[GIN] 2025/11/29 - 15:32:08 | 200 |    19.93921ms |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:32:08 | 200 |   29.027725ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:32:08 | 200 |   35.584901ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:32:08 | 200 |   52.858082ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:32:08 | 200 |     635.376µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:32:08 | 200 |    1.478884ms |             ::1 | GET      "/api/notes/best-selling"
+[GIN] 2025/11/29 - 15:32:08 | 200 |    8.286995ms |             ::1 | GET      "/api/notes/latest"
+[GIN] 2025/11/29 - 15:32:09 | 200 |   13.061359ms |             ::1 | GET      "/api/notes"
+[GIN] 2025/11/29 - 15:32:09 | 200 |     313.284µs |             ::1 | GET      "/api/slider"
+[GIN] 2025/11/29 - 15:32:09 | 200 |     344.991µs |             ::1 | GET      "/api/slider"

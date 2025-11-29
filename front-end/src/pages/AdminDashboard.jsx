@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/auth';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import {
   ChartBarIcon,
   UserGroupIcon,
@@ -11,10 +13,14 @@ import {
   PencilSquareIcon,
   TrashIcon,
   EyeIcon,
+  PhotoIcon,
 } from '@heroicons/react/24/outline';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  // โหลด active tab จาก localStorage ถ้ามี, ไม่เช่นนั้นใช้ 'overview'
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('adminActiveTab') || 'overview';
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -26,14 +32,21 @@ const AdminDashboard = () => {
     totalRevenue: 0,
     monthlyRevenue: 0,
     activeOrders: 0,
-    pendingApprovals: 0,
-    reportedIssues: 0
+    pendingApprovals: 0
   });
 
   const [sellers, setSellers] = useState([]);
   const [users, setUsers] = useState([]);
   const [notes, setNotes] = useState([]);
   const [pendingNotes, setPendingNotes] = useState([]); // Notes ที่รออนุมัติจริง
+  const [sliderImages, setSliderImages] = useState([]); // รูป slider
+  const [uploadingSlider, setUploadingSlider] = useState(false);
+  const [hasSliderChanges, setHasSliderChanges] = useState(false); // ติดตามว่ามีการแก้ไขหรือไม่
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState('');
+  const [confirmAction, setConfirmAction] = useState(null);
 
   // Fetch data from API
   useEffect(() => {
@@ -53,8 +66,7 @@ const AdminDashboard = () => {
             totalRevenue: stats.total_revenue || 0,
             monthlyRevenue: stats.monthly_revenue || 0,
             totalOrders: stats.total_orders || 0,
-            pendingApprovals: stats.pending_approvals || 0,
-            reportedIssues: stats.reported_issues || 0
+            pendingApprovals: stats.pending_approvals || 0
           }));
         }
 
@@ -81,6 +93,12 @@ const AdminDashboard = () => {
         if (pendingResponse.data.success) {
           setPendingNotes(pendingResponse.data.data || []);
         }
+
+        // Fetch slider images
+        const sliderResponse = await api.get('/admin/slider');
+        if (sliderResponse.data.success) {
+          setSliderImages(sliderResponse.data.data || []);
+        }
       } catch (err) {
         console.error('Error fetching admin data:', err);
         setError(err.response?.data?.message || 'Failed to fetch data');
@@ -90,6 +108,17 @@ const AdminDashboard = () => {
     };
 
     fetchData();
+
+    // ลบ saved tab หลังโหลดเสร็จ (ถ้ามี)
+    return () => {
+      localStorage.removeItem('adminActiveTab');
+      // Cleanup image previews
+      sliderImages.forEach(img => {
+        if (img.isNew && img.image_path) {
+          URL.revokeObjectURL(img.image_path);
+        }
+      });
+    };
   }, []);
 
   // Handle add seller role
@@ -113,7 +142,8 @@ const AdminDashboard = () => {
       const response = await api.post(`/admin/notes/${noteId}/approve`);
       if (response.data.success) {
         alert('อนุมัติสรุปสำเร็จ!');
-        // Refresh data
+        // บันทึก active tab ก่อน reload
+        localStorage.setItem('adminActiveTab', activeTab);
         window.location.reload();
       }
     } catch (err) {
@@ -129,7 +159,8 @@ const AdminDashboard = () => {
       const response = await api.post(`/admin/notes/${noteId}/reject`, { reason });
       if (response.data.success) {
         alert('ปฏิเสธสรุปสำเร็จ!');
-        // Refresh data
+        // บันทึก active tab ก่อน reload
+        localStorage.setItem('adminActiveTab', activeTab);
         window.location.reload();
       }
     } catch (err) {
@@ -138,45 +169,258 @@ const AdminDashboard = () => {
     }
   };
 
-  // Handle remove seller role
-  const handleRemoveSellerRole = async (userId) => {
-    if (!window.confirm('คุณแน่ใจหรือไม่ที่จะลบ role seller ออกจากผู้ใช้นี้?')) {
-      return;
-    }
+
+
+  // Handle view PDF for admin (open in new tab)
+  const handleViewPDF = async (noteId) => {
     try {
-      const response = await api.post('/admin/seller/remove', { user_id: userId });
-      if (response.data.success) {
-        alert('ลบ role seller สำเร็จ!');
-        // Refresh data
-        window.location.reload();
-      }
-    } catch (err) {
-      console.error('Error removing seller role:', err);
-      alert('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+      const response = await api.get(`/admin/notes/${noteId}/download`, {
+        responseType: 'blob'
+      });
+
+      // สร้าง URL สำหรับ blob และเปิดใน tab ใหม่
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      window.open(url, '_blank');
+
+      // ล้าง URL หลังจาก 1 นาที
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 60000);
+    } catch (error) {
+      console.error('View PDF error:', error);
+      alert('ไม่สามารถเปิด PDF ได้ กรุณาลองใหม่อีกครั้ง');
     }
   };
 
-  // Mock Data for issues (can be replaced with API later)
-  const [reportedIssues] = useState([
-    {
-      id: 1,
-      type: 'inappropriate_content',
-      title: 'สรุปมีเนื้อหาไม่เหมาะสม',
-      reported_by: 'ผู้ใช้ ID: USER123',
-      summary: 'Final HCI',
-      status: 'pending',
-      createdAt: '2567-11-16'
-    },
-    {
-      id: 2,
-      type: 'spam',
-      title: 'ขอย้ายสินค้า - Spam',
-      reported_by: 'ผู้ใช้ ID: USER456',
-      summary: 'Test Summary',
-      status: 'resolved',
-      createdAt: '2567-11-15'
+  // Handle remove seller role
+  const handleRemoveSellerRole = async (userId) => {
+    setConfirmMessage('คุณแน่ใจหรือไม่ที่จะลบ role seller ออกจากผู้ใช้นี้?');
+    setConfirmAction(() => async () => {
+      try {
+        const response = await api.post('/admin/seller/remove', { user_id: userId });
+        if (response.data.success) {
+          setSuccessMessage('ลบ role seller สำเร็จ!');
+          setShowSuccessPopup(true);
+          setTimeout(() => {
+            setShowSuccessPopup(false);
+            window.location.reload();
+          }, 2000);
+        }
+      } catch (err) {
+        console.error('Error removing seller role:', err);
+        setSuccessMessage('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+        setShowSuccessPopup(true);
+        setTimeout(() => setShowSuccessPopup(false), 5000);
+      }
+    });
+    setShowConfirmPopup(true);
+  };
+
+  // ============= Slider Management Functions =============
+
+  // Component สำหรับรูปภาพ slider ที่ลากได้
+  const DraggableSliderImage = ({ image, index, moveImage, removeImage }) => {
+    const [{ isDragging }, drag] = useDrag({
+      type: 'sliderImage',
+      item: { index },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    });
+
+    const [, drop] = useDrop({
+      accept: 'sliderImage',
+      hover: (draggedItem) => {
+        if (draggedItem.index !== index) {
+          moveImage(draggedItem.index, index);
+          draggedItem.index = index;
+        }
+      },
+    });
+
+    return (
+      <div
+        ref={(node) => drag(drop(node))}
+        className={`relative group ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+        style={{ cursor: 'move' }}
+      >
+        <img
+          src={image.isNew ? image.image_path : `http://localhost:8080/${image.image_path}`}
+          alt={`Slider ${index + 1}`}
+          className={`w-full h-48 object-cover rounded-lg border-2 ${image.isNew ? 'border-yellow-400' : 'border-blue-500'}`}
+        />
+        {/* ปุ่มจัดการ */}
+        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            type="button"
+            onClick={() => removeImage(image.id)}
+            className="bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform"
+            title="ลบรูป"
+          >
+            ×
+          </button>
+        </div>
+        {/* ป้ายสถานะ */}
+        {image.isNew && (
+          <div className="absolute top-2 left-2 bg-yellow-500 text-yellow-900 text-xs px-2 py-1 rounded font-bold">
+            ใหม่
+          </div>
+        )}
+        {/* หมายเลขลำดับ */}
+        <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white text-sm px-3 py-1 rounded font-bold">
+          #{index + 1}
+        </div>
+      </div>
+    );
+  };
+
+  // เพิ่มรูปเข้า slider list โดยตรง
+  const handleSliderUpload = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const newImages = files.map((file, index) => ({
+      id: `temp-${Date.now()}-${index}`, // temporary ID
+      file: file,
+      image_path: URL.createObjectURL(file),
+      display_order: sliderImages.length + index,
+      isNew: true
+    }));
+
+    setSliderImages(prev => [...prev, ...newImages]);
+    setHasSliderChanges(true);
+  };
+
+  // ย้ายรูป slider
+  const moveSliderImage = (fromIndex, toIndex) => {
+    const updatedImages = [...sliderImages];
+    const [movedImage] = updatedImages.splice(fromIndex, 1);
+    updatedImages.splice(toIndex, 0, movedImage);
+    // Update display_order
+    const reorderedImages = updatedImages.map((img, idx) => ({
+      ...img,
+      display_order: idx
+    }));
+    setSliderImages(reorderedImages);
+    setHasSliderChanges(true);
+  };
+
+  // บันทึกทั้งหมด (รูปใหม่ + ลำดับ)
+  const saveAllSliders = async () => {
+    setUploadingSlider(true);
+    try {
+      // 1. Upload รูปใหม่ก่อน
+      const newImages = sliderImages.filter(img => img.isNew);
+      const uploadedImages = [];
+
+      for (const newImage of newImages) {
+        const formData = new FormData();
+        formData.append('image', newImage.file);
+
+        const response = await api.post('/admin/slider/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        if (response.data.success) {
+          uploadedImages.push(response.data.data);
+        }
+
+        // Clean up preview URL
+        URL.revokeObjectURL(newImage.image_path);
+      }
+
+      // 2. Refresh เพื่อดึง ID จริงของรูปที่ upload
+      const sliderResponse = await api.get('/admin/slider');
+      if (sliderResponse.data.success) {
+        const allImages = sliderResponse.data.data || [];
+
+        // 3. Update ลำดับตาม display_order ที่จัดไว้
+        const existingImages = sliderImages.filter(img => !img.isNew);
+        const finalOrder = [];
+
+        // รักษาลำดับที่จัดไว้
+        sliderImages.forEach((img, index) => {
+          if (img.isNew) {
+            // หารูปที่ upload ใหม่ที่ตรงกัน (ใช้ index เดิม)
+            const newIdx = sliderImages.slice(0, index).filter(i => i.isNew).length;
+            if (uploadedImages[newIdx]) {
+              finalOrder.push({
+                id: uploadedImages[newIdx].id,
+                order: index
+              });
+            }
+          } else {
+            finalOrder.push({
+              id: img.id,
+              order: index
+            });
+          }
+        });
+
+        // 4. บันทึกลำดับ
+        if (finalOrder.length > 0) {
+          await api.put('/admin/slider/order', finalOrder);
+        }
+
+        // 5. Refresh อีกครั้งเพื่อแสดงผลล่าสุด
+        const finalResponse = await api.get('/admin/slider');
+        if (finalResponse.data.success) {
+          setSliderImages(finalResponse.data.data || []);
+        }
+      }
+
+      setHasSliderChanges(false);
+      setSuccessMessage('บันทึกรูปภาพและลำดับสำเร็จ!');
+      setShowSuccessPopup(true);
+      setTimeout(() => setShowSuccessPopup(false), 3000);
+    } catch (error) {
+      console.error('❌ Save error:', error);
+      setSuccessMessage('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+      setShowSuccessPopup(true);
+      setTimeout(() => setShowSuccessPopup(false), 5000);
+    } finally {
+      setUploadingSlider(false);
     }
-  ]);
+  };
+
+  // ลบรูป slider
+  const removeSliderImage = async (imageId) => {
+    const imageToRemove = sliderImages.find(img => img.id === imageId);
+
+    setConfirmMessage('คุณแน่ใจหรือไม่ที่จะลบรูปนี้?');
+    setConfirmAction(() => async () => {
+      // ถ้าเป็นรูปใหม่ที่ยังไม่ได้ upload ให้ลบแค่จาก state
+      if (imageToRemove?.isNew) {
+        URL.revokeObjectURL(imageToRemove.image_path);
+        setSliderImages(sliderImages.filter(img => img.id !== imageId));
+        setHasSliderChanges(true);
+        setSuccessMessage('ลบรูปภาพสำเร็จ!');
+        setShowSuccessPopup(true);
+        setTimeout(() => setShowSuccessPopup(false), 3000);
+        return;
+      }
+
+      // ถ้าเป็นรูปที่มีใน database ให้เรียก API ลบ
+      try {
+        const response = await api.delete(`/admin/slider/${imageId}`);
+        if (response.data.success) {
+          setSliderImages(sliderImages.filter(img => img.id !== imageId));
+          setHasSliderChanges(true);
+          setSuccessMessage('ลบรูปภาพสำเร็จ!');
+          setShowSuccessPopup(true);
+          setTimeout(() => setShowSuccessPopup(false), 3000);
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        setSuccessMessage('เกิดข้อผิดพลาดในการลบรูป: ' + (error.response?.data?.message || error.message));
+        setShowSuccessPopup(true);
+        setTimeout(() => setShowSuccessPopup(false), 5000);
+      }
+    });
+    setShowConfirmPopup(true);
+  };
+
+  // ============= End Slider Management Functions =============
 
   // Loading state
   if (loading) {
@@ -211,6 +455,81 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 pt-24 pb-16">
+      {/* Confirm Popup */}
+      {showConfirmPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg shadow-2xl p-6 max-w-md w-full mx-4 border-2 border-gray-600">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-white mb-2">ยืนยันการดำเนินการ</h3>
+                <p className="text-gray-300">{confirmMessage}</p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowConfirmPopup(false);
+                  setConfirmAction(null);
+                }}
+                className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirmPopup(false);
+                  if (confirmAction) {
+                    confirmAction();
+                  }
+                  setConfirmAction(null);
+                }}
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                ยืนยัน
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Popup */}
+      {showSuccessPopup && (
+        <div className="fixed top-24 right-8 z-50 animate-slide-in-right">
+          <div className={`rounded-lg shadow-2xl p-4 flex items-center gap-3 min-w-[300px] ${successMessage.includes('ข้อผิดพลาด') || successMessage.includes('Error')
+              ? 'bg-red-600 border-2 border-red-400'
+              : 'bg-green-600 border-2 border-green-400'
+            }`}>
+            <div className="flex-shrink-0">
+              {successMessage.includes('ข้อผิดพลาด') || successMessage.includes('Error') ? (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-white font-semibold">{successMessage}</p>
+            </div>
+            <button
+              onClick={() => setShowSuccessPopup(false)}
+              className="flex-shrink-0 text-white hover:text-gray-200 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
@@ -223,7 +542,7 @@ const AdminDashboard = () => {
           <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-lg p-6 text-white border border-blue-500">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-blue-100 text-sm font-semibold mb-1">จำนวนผู้ใช้</p>
+                <p className="text-blue-100 text-sm font-semibold mb-1">จำนวนผู้ใช้ (รวม Seller)</p>
                 <p className="text-4xl font-bold">{dashboardStats.totalUsers}</p>
               </div>
               <UserGroupIcon className="w-14 h-14 opacity-30" />
@@ -265,18 +584,8 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Alert Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-6 text-white border border-red-400">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-red-100 text-sm font-semibold mb-2">⚠️ ปัญหาที่รายงาน</p>
-                <p className="text-3xl font-bold">{dashboardStats.reportedIssues}</p>
-              </div>
-              <ExclamationTriangleIcon className="w-12 h-12 opacity-40" />
-            </div>
-          </div>
-
+        {/* Alert Card - รอการอนุมัติ */}
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8 max-w-md">
           <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg p-6 text-white border border-orange-400">
             <div className="flex items-center justify-between">
               <div>
@@ -284,16 +593,6 @@ const AdminDashboard = () => {
                 <p className="text-3xl font-bold">{dashboardStats.pendingApprovals}</p>
               </div>
               <CheckCircleIcon className="w-12 h-12 opacity-40" />
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl shadow-lg p-6 text-white border border-cyan-400">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-cyan-100 text-sm font-semibold mb-2">📦 คำสั่งซื้อที่ใช้งานอยู่</p>
-                <p className="text-3xl font-bold">{dashboardStats.activeOrders}</p>
-              </div>
-              <ShoppingBagIcon className="w-12 h-12 opacity-40" />
             </div>
           </div>
         </div>
@@ -347,13 +646,13 @@ const AdminDashboard = () => {
               ✓ อนุมัติ ({dashboardStats.pendingApprovals})
             </button>
             <button
-              onClick={() => setActiveTab('reports')}
-              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === 'reports'
+              onClick={() => setActiveTab('slider')}
+              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === 'slider'
                 ? 'bg-blue-600 text-white border-b-2 border-blue-400'
                 : 'text-gray-400 hover:text-gray-200'
                 }`}
             >
-              ⚠️ รายงาน ({dashboardStats.reportedIssues})
+              🖼️ Slider ({sliderImages.length})
             </button>
           </div>
 
@@ -631,32 +930,52 @@ const AdminDashboard = () => {
                   <div className="space-y-4">
                     {pendingNotes.map((item) => (
                       <div key={item.id} className="bg-gray-700 rounded-xl p-6 border border-yellow-600/50">
-                        <div className="mb-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-xl font-bold text-white">{item.title}</h3>
-                            <span className="px-3 py-1 bg-yellow-500/30 text-yellow-300 rounded-full text-sm font-bold">
-                              ⏳ รอ
-                            </span>
+                        <div className="flex gap-6 mb-4">
+                          {/* รูปปก */}
+                          {item.cover_image && (
+                            <div className="flex-shrink-0">
+                              <img
+                                src={`http://localhost:8080/${item.cover_image}`}
+                                alt={item.title}
+                                className="w-32 h-40 object-cover rounded-lg border-2 border-yellow-500/50"
+                              />
+                            </div>
+                          )}
+
+                          {/* เนื้อหา */}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-3">
+                              <h3 className="text-xl font-bold text-white">{item.title}</h3>
+                              <span className="px-3 py-1 bg-yellow-500/30 text-yellow-300 rounded-full text-sm font-bold">
+                                ⏳ รอ
+                              </span>
+                            </div>
+                            <p className="text-gray-400">
+                              สรุปวิชา - ราคา: ฿{item.price}
+                            </p>
+                            <p className="text-gray-500 text-sm mt-2">
+                              จาก: {item.seller_name} | เมื่อ: {item.created_at}
+                            </p>
+                            {item.exam_term && (
+                              <p className="text-gray-500 text-sm">
+                                เทอม: {item.exam_term} {item.course_name && `| วิชา: ${item.course_name}`}
+                              </p>
+                            )}
+                            {item.description && (
+                              <p className="text-gray-400 text-sm mt-2 bg-gray-600 p-3 rounded-lg">
+                                📝 {item.description}
+                              </p>
+                            )}
                           </div>
-                          <p className="text-gray-400">
-                            สรุปวิชา - ราคา: ฿{item.price}
-                          </p>
-                          <p className="text-gray-500 text-sm mt-2">
-                            จาก: {item.seller_name} | เมื่อ: {item.created_at}
-                          </p>
-                          {item.exam_term && (
-                            <p className="text-gray-500 text-sm">
-                              เทอม: {item.exam_term} {item.course_name && `| วิชา: ${item.course_name}`}
-                            </p>
-                          )}
-                          {item.description && (
-                            <p className="text-gray-400 text-sm mt-2 bg-gray-600 p-3 rounded-lg">
-                              📝 {item.description}
-                            </p>
-                          )}
                         </div>
 
                         <div className="flex gap-3">
+                          <button
+                            onClick={() => handleViewPDF(item.id)}
+                            className="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors"
+                          >
+                            👁️ ดู PDF
+                          </button>
                           <button
                             onClick={() => handleApproveNote(item.id)}
                             className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors"
@@ -675,52 +994,94 @@ const AdminDashboard = () => {
                   </div>
                 )}
               </div>
-            )}          {/* Reports Tab */}
-            {activeTab === 'reports' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-white mb-6">⚠️ รายงานปัญหา ({dashboardStats.reportedIssues})</h2>
+            )}          {/* Slider Tab */}
+            {activeTab === 'slider' && (
+              <DndProvider backend={HTML5Backend}>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-white">🖼️ จัดการ Slider Homepage ({sliderImages.length})</h2>
+                    <button
+                      onClick={saveAllSliders}
+                      disabled={uploadingSlider || !hasSliderChanges}
+                      className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
+                      </svg>
+                      <span>💾 บันทึกทั้งหมด</span>
+                    </button>
+                  </div>
 
-                <div className="space-y-4">
-                  {reportedIssues.map((issue) => (
-                    <div key={issue.id} className={`rounded-xl p-6 border ${issue.status === 'pending'
-                      ? 'bg-red-900/30 border-red-600/50'
-                      : 'bg-green-900/30 border-green-600/50'
-                      }`}>
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-xl font-bold text-white">{issue.title}</h3>
-                          <span className={`px-3 py-1 rounded-full text-sm font-bold ${issue.status === 'pending'
-                            ? 'bg-red-500/30 text-red-300'
-                            : 'bg-green-500/30 text-green-300'
-                            }`}>
-                            {issue.status === 'pending' ? '⚠️ รอดำเนินการ' : '✓ แก้ไขแล้ว'}
-                          </span>
-                        </div>
-                        <p className="text-gray-400">
-                          สรุป: {issue.summary}
-                        </p>
-                        <p className="text-gray-500 text-sm mt-2">
-                          รายงานโดย: {issue.reported_by} | เมื่อ: {issue.createdAt}
+                  {/* Upload Section */}
+                  <div className="bg-gray-700 rounded-xl p-6 border border-gray-600">
+                    <h3 className="text-xl font-bold text-white mb-4">📤 เพิ่มรูปภาพ Slider</h3>
+                    <div className="flex items-center gap-4">
+                      <label className="flex-1 flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-500 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-gray-800">
+                        <PhotoIcon className="w-12 h-12 text-gray-400 mb-2" />
+                        <span className="text-gray-400 text-sm">คลิกเพื่อเลือกรูปภาพ</span>
+                        <span className="text-gray-500 text-xs mt-1">รองรับ JPG, PNG, GIF, WebP • เลือกได้หลายรูป</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleSliderUpload}
+                          className="hidden"
+                          disabled={uploadingSlider}
+                        />
+                      </label>
+                    </div>
+
+                    {uploadingSlider && (
+                      <div className="mt-4 text-center">
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                        <p className="text-gray-400 mt-2">กำลังบันทึก...</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Slider Images Grid */}
+                  {sliderImages.length === 0 ? (
+                    <div className="bg-gray-700 rounded-xl p-8 text-center border border-gray-600">
+                      <PhotoIcon className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                      <p className="text-gray-400 text-lg">ยังไม่มีรูปภาพ Slider</p>
+                      <p className="text-gray-500 text-sm mt-2">เพิ่มรูปภาพเพื่อแสดงบน Homepage</p>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-700 rounded-xl p-6 border border-gray-600">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-white">รูปภาพ Slider ({sliderImages.length} รูป)</h3>
+                        <p className="text-gray-400 text-sm">
+                          💡 ลากเพื่อเรียงลำดับ • คลิก × เพื่อลบ • อย่าลืมกด "บันทึกทั้งหมด"
                         </p>
                       </div>
-
-                      {issue.status === 'pending' && (
-                        <div className="flex gap-3">
-                          <button className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors">
-                            🗑️ ลบสรุป
-                          </button>
-                          <button className="flex-1 px-4 py-3 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-lg transition-colors">
-                            📧 ติดต่อ Seller
-                          </button>
-                          <button className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors">
-                            ✓ แก้ไขแล้ว
-                          </button>
-                        </div>
-                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {sliderImages.map((image, index) => (
+                          <DraggableSliderImage
+                            key={image.id}
+                            image={image}
+                            index={index}
+                            moveImage={moveSliderImage}
+                            removeImage={removeSliderImage}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Instructions */}
+                  <div className="bg-blue-900/30 border border-blue-500/50 rounded-xl p-6">
+                    <h3 className="text-lg font-bold text-blue-300 mb-3">📝 วิธีใช้งาน</h3>
+                    <ul className="text-blue-200 space-y-2 text-sm">
+                      <li>• อัปโหลดรูปภาพขนาดแนะนำ 1920x600 px หรือใกล้เคียง (รองรับหลายรูป)</li>
+                      <li>• รูปใหม่จะแสดงขอบสีเหลืองและป้าย "ใหม่"</li>
+                      <li>• ลากรูปเพื่อเรียงลำดับการแสดงผล</li>
+                      <li>• คลิกปุ่ม × เพื่อลบรูปออก</li>
+                      <li>• กดปุ่ม "บันทึกทั้งหมด" เพื่อ upload รูปใหม่และบันทึกลำดับทั้งหมดพร้อมกัน</li>
+                      <li>• รูปภาพทั้งหมดจะแสดงบน Homepage โดยอัตโนมัติ</li>
+                    </ul>
+                  </div>
                 </div>
-              </div>
+              </DndProvider>
             )}
           </div>
         </div>

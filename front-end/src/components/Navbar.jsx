@@ -15,6 +15,7 @@ const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [username, setUsername] = useState("");
+    const [isAdmin, setIsAdmin] = useState(false);
     const { getTotalItems } = useCart();
     const cartCount = getTotalItems();
 
@@ -26,6 +27,10 @@ const Navbar = () => {
             setIsLoggedIn(true);
             const userData = JSON.parse(user);
             setUsername(userData.username);
+            // ตรวจสอบว่าเป็น admin หรือไม่
+            if (userData.roles && userData.roles.includes('admin')) {
+                setIsAdmin(true);
+            }
         }
     }, []);
 
@@ -91,8 +96,13 @@ const Navbar = () => {
                             {isOpen && isLoggedIn && (
                                 <ul className="navbar-dropdown-menu">
                                    <li> 
-                                    <Link to = '/profile' className="navbar-dropdown-item">
-                                    ประวัติส่วนตัว
+                                    <Link to = '/profile' state={{ tab: 'ข้อมูลส่วนตัว' }} className="navbar-dropdown-item">
+                                    บัญชีของฉัน
+                                    </Link>
+                                   </li>
+                                   <li> 
+                                    <Link to = '/profile' state={{ tab: 'ประวัติการซื้อ' }} className="navbar-dropdown-item">
+                                    การซื้อของฉัน
                                     </Link>
                                    </li>
                                    <li> 
@@ -132,6 +142,14 @@ const Navbar = () => {
                             </Link>
                         )}    
                     </div>
+                    {isAdmin && (
+                    <div className="navbar-sell">
+                        <Link to = '/admin' 
+                         className="navbar-sell-button"
+                        >Dashboard
+                        </Link>    
+                    </div>
+                    )}
                 </div>
             </div>
         </nav>

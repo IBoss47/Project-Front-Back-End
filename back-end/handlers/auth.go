@@ -11,7 +11,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Login - API สำหรับ login
+// Login godoc
+// @Summary เข้าสู่ระบบ
+// @Description เข้าสู่ระบบด้วย username/email และ password
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body models.LoginRequest true "ข้อมูลการเข้าสู่ระบบ"
+// @Success 200 {object} map[string]interface{} "เข้าสู่ระบบสำเร็จ"
+// @Failure 400 {object} map[string]interface{} "ข้อมูลไม่ถูกต้อง"
+// @Failure 401 {object} map[string]interface{} "รหัสผ่านไม่ถูกต้อง"
+// @Failure 500 {object} map[string]interface{} "Server error"
+// @Router /login [post]
 func Login(c *gin.Context) {
 	var req models.LoginRequest
 
@@ -26,14 +37,15 @@ func Login(c *gin.Context) {
 
 	// ค้นหา user จาก username หรือ email
 	var user models.User
+	var avatarURL sql.NullString
 	query := `
-		SELECT id, username, email, password_hash, fullname, phone, created_at
+		SELECT id, username, email, password_hash, fullname, phone, avatar_url, created_at
 		FROM users 
 		WHERE username = $1 OR email = $1
 	`
 	err := config.DB.QueryRow(query, req.Username).Scan(
 		&user.ID, &user.Username, &user.Email, &user.PasswordHash,
-		&user.FullName, &user.Phone, &user.CreatedAt,
+		&user.FullName, &user.Phone, &avatarURL, &user.CreatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -50,6 +62,11 @@ func Login(c *gin.Context) {
 			"message": err.Error(),
 		})
 		return
+	}
+
+	// กำหนดค่า avatar_url
+	if avatarURL.Valid {
+		user.AvatarURL = avatarURL.String
 	}
 
 	// ตรวจสอบ password

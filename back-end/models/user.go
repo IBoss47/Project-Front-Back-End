@@ -10,6 +10,7 @@ type User struct {
 	PasswordHash string    `json:"-"` // ไม่ส่งใน JSON response
 	FullName     string    `json:"fullname"`
 	Phone        string    `json:"phone"`
+	AvatarURL    string    `json:"avatar_url"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 
