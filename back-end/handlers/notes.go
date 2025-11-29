@@ -12,7 +12,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CreateNote - สร้างโน้ตขาย พร้อมรูปภาพและ PDF
+// CreateNote godoc
+// @Summary Create a new note for sale
+// @Description Create a new note/book for sale with images and PDF file. The note will be set to 'pending' status and requires admin approval.
+// @Tags notes
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param title formData string true "Book title"
+// @Param description formData string false "Book description"
+// @Param price formData number true "Price"
+// @Param course_id formData int true "Course ID"
+// @Param exam_term formData string true "Exam term (midterm, final, etc.)"
+// @Param pdf formData file true "PDF file"
+// @Param images formData file false "Image files (multiple allowed)"
+// @Success 201 {object} map[string]interface{} "Note created successfully"
+// @Failure 400 {object} map[string]string "Bad request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/notes [post]
 func CreateNote(c *gin.Context) {
 	// ดึง user_id จาก JWT token
 	userID, exists := c.Get("user_id")

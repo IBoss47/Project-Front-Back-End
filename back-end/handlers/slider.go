@@ -15,7 +15,15 @@ import (
 	"github.com/google/uuid"
 )
 
-// GetSliderImages - ดึงรายการรูปภาพ slider ทั้งหมด
+// GetSliderImages godoc
+// @Summary Get slider images
+// @Description Get all slider images ordered by display order
+// @Tags slider
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "List of slider images"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/slider [get]
 func GetSliderImages(c *gin.Context) {
 	rows, err := config.DB.Query(`
 		SELECT id, image_path, display_order
@@ -53,7 +61,19 @@ func GetSliderImages(c *gin.Context) {
 	})
 }
 
-// UploadSliderImage - อัปโหลดรูปภาพ slider ใหม่
+// UploadSliderImage godoc
+// @Summary Upload slider image
+// @Description Upload a new image for the homepage slider (Admin only)
+// @Tags slider
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param image formData file true "Image file (jpg, jpeg, png, gif, webp)"
+// @Success 200 {object} map[string]interface{} "Upload successful with image info"
+// @Failure 400 {object} map[string]string "Invalid file"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/admin/slider [post]
 func UploadSliderImage(c *gin.Context) {
 	// รับไฟล์จาก form
 	file, err := c.FormFile("image")
@@ -150,7 +170,19 @@ func UploadSliderImage(c *gin.Context) {
 	})
 }
 
-// UpdateSliderOrder - อัปเดตลำดับการแสดงของรูปภาพ slider
+// UpdateSliderOrder godoc
+// @Summary Update slider order
+// @Description Update the display order of slider images (Admin only)
+// @Tags slider
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body []object{id=int,order=int} true "Array of id and order pairs"
+// @Success 200 {object} map[string]interface{} "Order updated successfully"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/slider/order [put]
 func UpdateSliderOrder(c *gin.Context) {
 	type OrderUpdate struct {
 		ID    int `json:"id"`
@@ -222,7 +254,20 @@ func UpdateSliderOrder(c *gin.Context) {
 	})
 }
 
-// DeleteSliderImage - ลบรูปภาพ slider
+// DeleteSliderImage godoc
+// @Summary Delete slider image
+// @Description Delete a slider image by ID (Admin only)
+// @Tags slider
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Slider image ID"
+// @Success 200 {object} map[string]interface{} "Image deleted successfully"
+// @Failure 400 {object} map[string]string "Invalid image ID"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Image not found"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/admin/slider/{id} [delete]
 func DeleteSliderImage(c *gin.Context) {
 	idStr := c.Param("id")
 	imageID, err := strconv.Atoi(idStr)

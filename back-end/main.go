@@ -2,6 +2,7 @@ package main
 
 import (
 	"back-end/config"
+	_ "back-end/docs" // Swagger docs
 	"back-end/handlers"
 	"back-end/middleware"
 	"log"
@@ -9,7 +10,28 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// @title NoteShop API
+// @version 1.0
+// @description API สำหรับระบบขายสรุปวิชา (Note Shop)
+// @description รองรับการลงทะเบียน, เข้าสู่ระบบ, จัดการสรุปวิชา, ตะกร้าสินค้า และระบบ Admin
+
+// @contact.name API Support
+// @contact.email support@noteshop.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /api
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description กรุณาใส่ Bearer token เช่น "Bearer {token}"
 
 func main() {
 	// โหลด .env file
@@ -41,6 +63,9 @@ func main() {
 
 	// Serve static files (สำหรับรูปภาพและ PDF)
 	r.Static("/uploads", "./uploads")
+
+	// Swagger documentation
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Health check endpoint
 	r.GET("/", func(c *gin.Context) {

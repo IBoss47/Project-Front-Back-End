@@ -8,7 +8,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// DownloadPurchasedNote - ดาวน์โหลด PDF ของ note ที่ซื้อแล้ว
+// DownloadPurchasedNote godoc
+// @Summary Download purchased note PDF
+// @Description Download the PDF file of a purchased note
+// @Tags download
+// @Accept json
+// @Produce application/pdf
+// @Security BearerAuth
+// @Param id path int true "Note ID"
+// @Success 200 {file} binary "PDF file"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 403 {object} map[string]string "Not purchased"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/download/{id} [get]
 func DownloadPurchasedNote(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {

@@ -8,7 +8,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// DownloadNoteForAdmin - Admin สามารถดาวน์โหลด PDF ของ note ใดๆ ได้
+// DownloadNoteForAdmin godoc
+// @Summary Download note PDF (Admin)
+// @Description Admin can download any note's PDF file
+// @Tags admin
+// @Accept json
+// @Produce application/pdf
+// @Security BearerAuth
+// @Param id path int true "Note ID"
+// @Success 200 {file} binary "PDF file"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Note not found"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/notes/{id}/download [get]
 func DownloadNoteForAdmin(c *gin.Context) {
 	noteID := c.Param("id")
 

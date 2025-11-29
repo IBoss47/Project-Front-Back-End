@@ -25,7 +25,17 @@ type PurchaseHistoryResponse struct {
 	IsLiked     *bool    `json:"is_liked"`
 }
 
-// GetMyPurchaseHistory - ดึงประวัติการซื้อของ user ที่ login อยู่
+// GetMyPurchaseHistory godoc
+// @Summary Get purchase history
+// @Description Get the purchase history of the currently authenticated user
+// @Tags purchase
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} PurchaseHistoryResponse "List of purchased notes"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/purchase-history [get]
 func GetMyPurchaseHistory(c *gin.Context) {
 	// ดึง user_id จาก middleware
 	v, exists := c.Get("user_id")

@@ -11,26 +11,39 @@ import (
 
 // NoteResponse - โครงสร้างข้อมูล note สำหรับ response
 type NoteResponse struct {
-	ID          int      `json:"id"`
-	BookTitle   string   `json:"book_title"`
-	Price       float64  `json:"price"`
-	ExamTerm    string   `json:"exam_term"`
-	Description string   `json:"description"`
-	Status      string   `json:"status"`
-	CreatedAt   string   `json:"created_at"`
-	CoverImage  string   `json:"cover_image"`
+	ID          int      `json:"id" example:"1"`
+	BookTitle   string   `json:"book_title" example:"สรุป Database Final"`
+	Price       float64  `json:"price" example:"99.00"`
+	ExamTerm    string   `json:"exam_term" example:"ปลายภาค"`
+	Description string   `json:"description" example:"สรุปเนื้อหาทั้งหมด"`
+	Status      string   `json:"status" example:"available"`
+	CreatedAt   string   `json:"created_at" example:"2024-01-01"`
+	CoverImage  string   `json:"cover_image" example:"/uploads/images/cover.jpg"`
 	Images      []string `json:"images"`
 	Course      Course   `json:"course"`
 	Seller      Seller   `json:"seller"`
 }
 
 type Seller struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	Fullname string `json:"fullname"`
+	ID       int    `json:"id" example:"1"`
+	Username string `json:"username" example:"seller1"`
+	Fullname string `json:"fullname" example:"ผู้ขายตัวอย่าง"`
 }
 
-// GetAllNotes - ดึงข้อมูล notes ทั้งหมด (พร้อม filter)
+// GetAllNotes godoc
+// @Summary ดึงรายการสรุปทั้งหมด
+// @Description ดึงรายการสรุปทั้งหมดที่พร้อมขาย พร้อม filter
+// @Tags Notes
+// @Accept json
+// @Produce json
+// @Param major query string false "กรองตามสาขา"
+// @Param subject query string false "กรองตามวิชา"
+// @Param year query string false "กรองตามชั้นปี"
+// @Param exam_term query string false "กรองตามเทอมสอบ"
+// @Param search query string false "ค้นหาตามชื่อหรือรายละเอียด"
+// @Success 200 {object} map[string]interface{} "รายการสรุปทั้งหมด"
+// @Failure 500 {object} map[string]interface{} "Server error"
+// @Router /notes [get]
 func GetAllNotes(c *gin.Context) {
 	// รับ query parameters สำหรับ filter
 	major := c.Query("major")
@@ -172,7 +185,17 @@ func GetAllNotes(c *gin.Context) {
 	c.JSON(http.StatusOK, notes)
 }
 
-// GetNoteByID - ดึงข้อมูล note เดียวตาม ID
+// GetNoteByID godoc
+// @Summary Get note by ID
+// @Description Get a single note/book for sale by its ID with full details including course, seller, and images
+// @Tags notes
+// @Accept json
+// @Produce json
+// @Param id path int true "Note ID"
+// @Success 200 {object} map[string]interface{} "Note details wrapped in data field"
+// @Failure 404 {object} map[string]string "Note not found"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/notes/{id} [get]
 func GetNoteByID(c *gin.Context) {
 	noteID := c.Param("id")
 
@@ -268,7 +291,16 @@ func GetNoteByID(c *gin.Context) {
 	})
 }
 
-// GetNotesByUserID - ดึงข้อมูล notes ทั้งหมดของ user คนใดคนหนึ่ง
+// GetNotesByUserID godoc
+// @Summary Get notes by user ID
+// @Description Get all available notes for sale by a specific user/seller
+// @Tags notes
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {array} NoteResponse "List of notes"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/notes/user/{id} [get]
 func GetNotesByUserID(c *gin.Context) {
 	userID := c.Param("id")
 
@@ -371,7 +403,15 @@ func GetNotesByUserID(c *gin.Context) {
 	c.JSON(http.StatusOK, notes)
 }
 
-// GetBestSellingNotes - ดึงหนังสือขายดี (เรียงตามจำนวนการซื้อ)
+// GetBestSellingNotes godoc
+// @Summary Get best selling notes
+// @Description Get top 5 best selling notes ordered by purchase count
+// @Tags notes
+// @Accept json
+// @Produce json
+// @Success 200 {array} map[string]interface{} "List of best selling notes with sold_count"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/notes/best-selling [get]
 func GetBestSellingNotes(c *gin.Context) {
 	query := `
 		SELECT 
@@ -493,7 +533,15 @@ func GetBestSellingNotes(c *gin.Context) {
 	c.JSON(http.StatusOK, notes)
 }
 
-// GetLatestNotes - ดึงหนังสือมาใหม่ล่าสุด
+// GetLatestNotes godoc
+// @Summary Get latest notes
+// @Description Get the 5 most recently added notes for sale
+// @Tags notes
+// @Accept json
+// @Produce json
+// @Success 200 {array} NoteResponse "List of latest notes"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/notes/latest [get]
 func GetLatestNotes(c *gin.Context) {
 	query := `
 		SELECT 

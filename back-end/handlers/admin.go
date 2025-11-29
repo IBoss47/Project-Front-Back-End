@@ -46,7 +46,17 @@ type DashboardStats struct {
 	ReportedIssues   int     `json:"reported_issues"`
 }
 
-// GetAllSellers - ดึงรายการ Sellers ทั้งหมด
+// GetAllSellers godoc
+// @Summary Get all sellers
+// @Description Get a list of all users with seller role including their sales statistics
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "List of sellers with count"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/sellers [get]
 func GetAllSellers(c *gin.Context) {
 	query := `
 		SELECT 
@@ -119,7 +129,17 @@ func GetAllSellers(c *gin.Context) {
 	})
 }
 
-// GetAllUsers - ดึงรายการ Users ทั้งหมด
+// GetAllUsers godoc
+// @Summary Get all users
+// @Description Get a list of all users with their roles
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "List of users with count"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/users [get]
 func GetAllUsers(c *gin.Context) {
 	query := `
 		SELECT 
@@ -179,7 +199,16 @@ func GetAllUsers(c *gin.Context) {
 	})
 }
 
-// GetDashboardStats - ดึงสถิติสำหรับ Admin Dashboard
+// GetDashboardStats godoc
+// @Summary Get dashboard statistics
+// @Description Get admin dashboard statistics including users, sellers, revenue (2% commission), and pending approvals
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "Dashboard statistics"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Router /api/admin/dashboard [get]
 func GetDashboardStats(c *gin.Context) {
 	var stats DashboardStats
 
@@ -271,7 +300,19 @@ func GetDashboardStats(c *gin.Context) {
 	})
 }
 
-// AddSellerRole - เพิ่ม role seller ให้กับ user
+// AddSellerRole godoc
+// @Summary Add seller role to user
+// @Description Assign the seller role to a specific user
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body object{user_id=int} true "User ID to add seller role"
+// @Success 200 {object} map[string]interface{} "Role assigned successfully"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/admin/users/seller [post]
 func AddSellerRole(c *gin.Context) {
 	var req struct {
 		UserID int `json:"user_id" binding:"required"`
@@ -316,7 +357,20 @@ func AddSellerRole(c *gin.Context) {
 	})
 }
 
-// RemoveSellerRole - ลบ role seller ออกจาก user
+// RemoveSellerRole godoc
+// @Summary Remove seller role from user
+// @Description Remove the seller role from a specific user
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body object{user_id=int} true "User ID to remove seller role"
+// @Success 200 {object} map[string]interface{} "Role removed successfully"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Seller role not found"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/admin/users/seller [delete]
 func RemoveSellerRole(c *gin.Context) {
 	var req struct {
 		UserID int `json:"user_id" binding:"required"`
@@ -371,7 +425,17 @@ type NoteInfo struct {
 	Sales       int     `json:"sales"`
 }
 
-// GetAllNotesAdmin - ดึงรายการ Notes ทั้งหมดสำหรับ Admin
+// GetAllNotesAdmin godoc
+// @Summary Get all notes (Admin)
+// @Description Get a list of all notes for admin management
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "List of notes with count"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/notes [get]
 func GetAllNotesAdmin(c *gin.Context) {
 	query := `
 		SELECT 
@@ -448,7 +512,17 @@ type PendingNoteInfo struct {
 	CoverImage  string  `json:"cover_image"`
 }
 
-// GetPendingNotes - ดึงรายการ Notes ที่รออนุมัติ
+// GetPendingNotes godoc
+// @Summary Get pending notes
+// @Description Get a list of notes waiting for admin approval
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "List of pending notes with count"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/notes/pending [get]
 func GetPendingNotes(c *gin.Context) {
 	query := `
 		SELECT 
@@ -516,7 +590,20 @@ func GetPendingNotes(c *gin.Context) {
 	})
 }
 
-// ApproveNote - อนุมัติ Note ให้แสดงในหน้าขาย
+// ApproveNote godoc
+// @Summary Approve a note
+// @Description Approve a pending note to make it available for sale
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Note ID"
+// @Success 200 {object} map[string]interface{} "Note approved successfully"
+// @Failure 400 {object} map[string]string "Note ID is required"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Note not found or already processed"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/notes/{id}/approve [put]
 func ApproveNote(c *gin.Context) {
 	noteID := c.Param("id")
 	if noteID == "" {
@@ -555,7 +642,21 @@ func ApproveNote(c *gin.Context) {
 	})
 }
 
-// RejectNote - ปฏิเสธ Note
+// RejectNote godoc
+// @Summary Reject a note
+// @Description Reject a pending note with optional reason
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Note ID"
+// @Param request body object{reason=string} false "Rejection reason"
+// @Success 200 {object} map[string]interface{} "Note rejected successfully"
+// @Failure 400 {object} map[string]string "Note ID is required"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Note not found or already processed"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/notes/{id}/reject [put]
 func RejectNote(c *gin.Context) {
 	noteID := c.Param("id")
 	if noteID == "" {
@@ -601,7 +702,20 @@ func RejectNote(c *gin.Context) {
 	})
 }
 
-// DeleteNote - ลบ Note (Admin only)
+// DeleteNote godoc
+// @Summary Delete a note
+// @Description Delete a note from the system (Admin only)
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Note ID"
+// @Success 200 {object} map[string]interface{} "Note deleted successfully"
+// @Failure 400 {object} map[string]string "Note ID is required"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Note not found"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/admin/notes/{id} [delete]
 func DeleteNote(c *gin.Context) {
 	noteID := c.Param("id")
 	if noteID == "" {
