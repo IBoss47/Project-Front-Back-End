@@ -13,10 +13,21 @@ import (
 
 // RefreshTokenRequest - request body สำหรับ refresh token
 type RefreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token" binding:"required"`
+	RefreshToken string `json:"refresh_token" binding:"required" example:"eyJhbGciOiJIUzI1NiIs..."`
 }
 
-// RefreshToken - API สำหรับขอ access token ใหม่
+// RefreshToken godoc
+// @Summary Refresh access token
+// @Description Get a new access token using a valid refresh token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body RefreshTokenRequest true "Refresh token request"
+// @Success 200 {object} map[string]interface{} "New tokens and user info"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Invalid or expired refresh token"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/refresh-token [post]
 func RefreshToken(c *gin.Context) {
 	var req RefreshTokenRequest
 

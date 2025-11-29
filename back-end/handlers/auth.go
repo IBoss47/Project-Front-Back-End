@@ -11,7 +11,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Login - API สำหรับ login
+// Login godoc
+// @Summary เข้าสู่ระบบ
+// @Description เข้าสู่ระบบด้วย username/email และ password
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body models.LoginRequest true "ข้อมูลการเข้าสู่ระบบ"
+// @Success 200 {object} map[string]interface{} "เข้าสู่ระบบสำเร็จ"
+// @Failure 400 {object} map[string]interface{} "ข้อมูลไม่ถูกต้อง"
+// @Failure 401 {object} map[string]interface{} "รหัสผ่านไม่ถูกต้อง"
+// @Failure 500 {object} map[string]interface{} "Server error"
+// @Router /login [post]
 func Login(c *gin.Context) {
 	var req models.LoginRequest
 

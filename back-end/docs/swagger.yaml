@@ -1,0 +1,1620 @@
+basePath: /api
+definitions:
+  handlers.CartItem:
+    properties:
+      book_title:
+        type: string
+      course:
+        $ref: '#/definitions/handlers.Course'
+      cover_image:
+        type: string
+      exam_term:
+        type: string
+      id:
+        type: integer
+      note_id:
+        type: integer
+      price:
+        type: number
+      quantity:
+        type: integer
+      seller:
+        $ref: '#/definitions/handlers.Seller'
+      status:
+        type: string
+    type: object
+  handlers.Course:
+    properties:
+      code:
+        type: string
+      id:
+        type: integer
+      major:
+        type: string
+      name:
+        type: string
+      year:
+        type: string
+    type: object
+  handlers.NoteResponse:
+    properties:
+      book_title:
+        example: สรุป Database Final
+        type: string
+      course:
+        $ref: '#/definitions/handlers.Course'
+      cover_image:
+        example: /uploads/images/cover.jpg
+        type: string
+      created_at:
+        example: "2024-01-01"
+        type: string
+      description:
+        example: สรุปเนื้อหาทั้งหมด
+        type: string
+      exam_term:
+        example: ปลายภาค
+        type: string
+      id:
+        example: 1
+        type: integer
+      images:
+        items:
+          type: string
+        type: array
+      price:
+        example: 99
+        type: number
+      seller:
+        $ref: '#/definitions/handlers.Seller'
+      status:
+        example: available
+        type: string
+    type: object
+  handlers.PurchaseHistoryResponse:
+    properties:
+      book_title:
+        type: string
+      buyed_note_id:
+        type: integer
+      course:
+        $ref: '#/definitions/handlers.Course'
+      cover_image:
+        type: string
+      description:
+        type: string
+      exam_term:
+        type: string
+      images:
+        items:
+          type: string
+        type: array
+      is_liked:
+        type: boolean
+      note_id:
+        type: integer
+      pdf_file:
+        type: string
+      price:
+        type: number
+      review:
+        type: string
+      seller:
+        $ref: '#/definitions/handlers.Seller'
+    type: object
+  handlers.PurchaseRequest:
+    properties:
+      note_ids:
+        items:
+          type: integer
+        type: array
+    required:
+    - note_ids
+    type: object
+  handlers.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+    required:
+    - refresh_token
+    type: object
+  handlers.Seller:
+    properties:
+      fullname:
+        example: ผู้ขายตัวอย่าง
+        type: string
+      id:
+        example: 1
+        type: integer
+      username:
+        example: seller1
+        type: string
+    type: object
+  models.LoginRequest:
+    properties:
+      password:
+        minLength: 3
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  models.RegisterRequest:
+    properties:
+      email:
+        type: string
+      fullname:
+        type: string
+      password:
+        minLength: 3
+        type: string
+      phone:
+        type: string
+      username:
+        maxLength: 100
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  models.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      fullname:
+        type: string
+      id:
+        type: integer
+      phone:
+        type: string
+      username:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@noteshop.com
+    name: API Support
+  description: |-
+    API สำหรับระบบขายสรุปวิชา (Note Shop)
+    รองรับการลงทะเบียน, เข้าสู่ระบบ, จัดการสรุปวิชา, ตะกร้าสินค้า และระบบ Admin
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: NoteShop API
+  version: "1.0"
+paths:
+  /api/admin/dashboard:
+    get:
+      consumes:
+      - application/json
+      description: Get admin dashboard statistics including users, sellers, revenue
+        (2% commission), and pending approvals
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Dashboard statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get dashboard statistics
+      tags:
+      - admin
+  /api/admin/notes:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all notes for admin management
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of notes with count
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all notes (Admin)
+      tags:
+      - admin
+  /api/admin/notes/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a note from the system (Admin only)
+      parameters:
+      - description: Note ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Note deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Note ID is required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Note not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a note
+      tags:
+      - admin
+  /api/admin/notes/{id}/approve:
+    put:
+      consumes:
+      - application/json
+      description: Approve a pending note to make it available for sale
+      parameters:
+      - description: Note ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Note approved successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Note ID is required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Note not found or already processed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Approve a note
+      tags:
+      - admin
+  /api/admin/notes/{id}/download:
+    get:
+      consumes:
+      - application/json
+      description: Admin can download any note's PDF file
+      parameters:
+      - description: Note ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/pdf
+      responses:
+        "200":
+          description: PDF file
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Note not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Download note PDF (Admin)
+      tags:
+      - admin
+  /api/admin/notes/{id}/reject:
+    put:
+      consumes:
+      - application/json
+      description: Reject a pending note with optional reason
+      parameters:
+      - description: Note ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Rejection reason
+        in: body
+        name: request
+        schema:
+          properties:
+            reason:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Note rejected successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Note ID is required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Note not found or already processed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Reject a note
+      tags:
+      - admin
+  /api/admin/notes/pending:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of notes waiting for admin approval
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of pending notes with count
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get pending notes
+      tags:
+      - admin
+  /api/admin/sellers:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all users with seller role including their sales
+        statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of sellers with count
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all sellers
+      tags:
+      - admin
+  /api/admin/slider:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a new image for the homepage slider (Admin only)
+      parameters:
+      - description: Image file (jpg, jpeg, png, gif, webp)
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Upload successful with image info
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid file
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload slider image
+      tags:
+      - slider
+  /api/admin/slider/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a slider image by ID (Admin only)
+      parameters:
+      - description: Slider image ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid image ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Image not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete slider image
+      tags:
+      - slider
+  /api/admin/slider/order:
+    put:
+      consumes:
+      - application/json
+      description: Update the display order of slider images (Admin only)
+      parameters:
+      - description: Array of id and order pairs
+        in: body
+        name: request
+        required: true
+        schema:
+          items:
+            properties:
+              id:
+                type: integer
+              order:
+                type: integer
+            type: object
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Order updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update slider order
+      tags:
+      - slider
+  /api/admin/users:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all users with their roles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users with count
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all users
+      tags:
+      - admin
+  /api/admin/users/seller:
+    delete:
+      consumes:
+      - application/json
+      description: Remove the seller role from a specific user
+      parameters:
+      - description: User ID to remove seller role
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            user_id:
+              type: integer
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Role removed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Seller role not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove seller role from user
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Assign the seller role to a specific user
+      parameters:
+      - description: User ID to add seller role
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            user_id:
+              type: integer
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Role assigned successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add seller role to user
+      tags:
+      - admin
+  /api/cart:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all items in the user's cart with note details
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of cart items
+          schema:
+            items:
+              $ref: '#/definitions/handlers.CartItem'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get cart items
+      tags:
+      - cart
+    post:
+      consumes:
+      - application/json
+      description: Add a note to the user's shopping cart
+      parameters:
+      - description: Add to cart request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            note_id:
+              type: integer
+            quantity:
+              type: integer
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item added successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request or note not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add item to cart
+      tags:
+      - cart
+  /api/cart/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a specific item from the user's cart
+      parameters:
+      - description: Cart item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item removed successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid item ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Cart item not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove item from cart
+      tags:
+      - cart
+    put:
+      consumes:
+      - application/json
+      description: Update the quantity of a specific item in the cart
+      parameters:
+      - description: Cart item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update quantity request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            quantity:
+              type: integer
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item updated successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Cart item not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update cart item quantity
+      tags:
+      - cart
+  /api/cart/clear:
+    delete:
+      consumes:
+      - application/json
+      description: Remove all items from the user's cart
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cart cleared successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Clear cart
+      tags:
+      - cart
+  /api/courses:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all courses with optional filtering by major and
+        year
+      parameters:
+      - description: Filter by major
+        in: query
+        name: major
+        type: string
+      - description: Filter by year
+        in: query
+        name: year
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of courses with count
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all courses
+      tags:
+      - courses
+  /api/courses/majors:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all unique majors
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of majors with count
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all majors
+      tags:
+      - courses
+  /api/courses/years:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all unique course years
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of years with count
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all years
+      tags:
+      - courses
+  /api/download/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Download the PDF file of a purchased note
+      parameters:
+      - description: Note ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/pdf
+      responses:
+        "200":
+          description: PDF file
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Not purchased
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Download purchased note PDF
+      tags:
+      - download
+  /api/me:
+    get:
+      consumes:
+      - application/json
+      description: Get the profile of the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile
+          schema:
+            $ref: '#/definitions/models.User'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - users
+  /api/notes:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Create a new note/book for sale with images and PDF file. The note
+        will be set to 'pending' status and requires admin approval.
+      parameters:
+      - description: Book title
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: Book description
+        in: formData
+        name: description
+        type: string
+      - description: Price
+        in: formData
+        name: price
+        required: true
+        type: number
+      - description: Course ID
+        in: formData
+        name: course_id
+        required: true
+        type: integer
+      - description: Exam term (midterm, final, etc.)
+        in: formData
+        name: exam_term
+        required: true
+        type: string
+      - description: PDF file
+        in: formData
+        name: pdf
+        required: true
+        type: file
+      - description: Image files (multiple allowed)
+        in: formData
+        name: images
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Note created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new note for sale
+      tags:
+      - notes
+  /api/notes/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a single note/book for sale by its ID with full details including
+        course, seller, and images
+      parameters:
+      - description: Note ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Note details wrapped in data field
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Note not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get note by ID
+      tags:
+      - notes
+  /api/notes/best-selling:
+    get:
+      consumes:
+      - application/json
+      description: Get top 5 best selling notes ordered by purchase count
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of best selling notes with sold_count
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get best selling notes
+      tags:
+      - notes
+  /api/notes/latest:
+    get:
+      consumes:
+      - application/json
+      description: Get the 5 most recently added notes for sale
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of latest notes
+          schema:
+            items:
+              $ref: '#/definitions/handlers.NoteResponse'
+            type: array
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get latest notes
+      tags:
+      - notes
+  /api/notes/user/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get all available notes for sale by a specific user/seller
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of notes
+          schema:
+            items:
+              $ref: '#/definitions/handlers.NoteResponse'
+            type: array
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get notes by user ID
+      tags:
+      - notes
+  /api/purchase:
+    post:
+      consumes:
+      - application/json
+      description: Complete a purchase of one or more notes and remove them from cart
+      parameters:
+      - description: Purchase request with note IDs
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PurchaseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Purchase completed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Purchase notes
+      tags:
+      - purchase
+  /api/purchase-history:
+    get:
+      consumes:
+      - application/json
+      description: Get the purchase history of the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of purchased notes
+          schema:
+            items:
+              $ref: '#/definitions/handlers.PurchaseHistoryResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get purchase history
+      tags:
+      - purchase
+  /api/refresh-token:
+    post:
+      consumes:
+      - application/json
+      description: Get a new access token using a valid refresh token
+      parameters:
+      - description: Refresh token request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New tokens and user info
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Invalid or expired refresh token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh access token
+      tags:
+      - auth
+  /api/slider:
+    get:
+      consumes:
+      - application/json
+      description: Get all slider images ordered by display order
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of slider images
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get slider images
+      tags:
+      - slider
+  /api/users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a user's public profile by their ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Invalid user ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get user by ID
+      tags:
+      - users
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: เข้าสู่ระบบด้วย username/email และ password
+      parameters:
+      - description: ข้อมูลการเข้าสู่ระบบ
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: เข้าสู่ระบบสำเร็จ
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: ข้อมูลไม่ถูกต้อง
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: รหัสผ่านไม่ถูกต้อง
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: เข้าสู่ระบบ
+      tags:
+      - Authentication
+  /notes:
+    get:
+      consumes:
+      - application/json
+      description: ดึงรายการสรุปทั้งหมดที่พร้อมขาย พร้อม filter
+      parameters:
+      - description: กรองตามสาขา
+        in: query
+        name: major
+        type: string
+      - description: กรองตามวิชา
+        in: query
+        name: subject
+        type: string
+      - description: กรองตามชั้นปี
+        in: query
+        name: year
+        type: string
+      - description: กรองตามเทอมสอบ
+        in: query
+        name: exam_term
+        type: string
+      - description: ค้นหาตามชื่อหรือรายละเอียด
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: รายการสรุปทั้งหมด
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: ดึงรายการสรุปทั้งหมด
+      tags:
+      - Notes
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: สมัครสมาชิกใหม่ในระบบ
+      parameters:
+      - description: ข้อมูลการสมัครสมาชิก
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: สมัครสมาชิกสำเร็จ
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: ข้อมูลไม่ถูกต้อง
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Email หรือ Username ซ้ำ
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: สมัครสมาชิก
+      tags:
+      - Authentication
+securityDefinitions:
+  BearerAuth:
+    description: กรุณาใส่ Bearer token เช่น "Bearer {token}"
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
