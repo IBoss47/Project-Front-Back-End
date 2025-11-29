@@ -7,7 +7,7 @@ import { useCart } from '../context/CartContext';
 import { ReviewList, ReviewStats } from './Store/ReviewItem';
 
 const BookDetailModal = ({ book, isOpen, onClose }) => {
-    const [isFavorite, setIsFavorite] = useState(false);
+
     const [quantity, setQuantity] = useState(1);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [showErrorPopup, setShowErrorPopup] = useState(false);
@@ -87,9 +87,7 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
         }
     };
 
-    const handleToggleFavorite = () => {
-        setIsFavorite(!isFavorite);
-    };
+
 
     // แปลงสถานะเป็นภาษาไทย
     const getStatusBadge = (status) => {
@@ -209,23 +207,8 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                     )}
                                 </div>
 
-                                {/* Favorite Button */}
-                                <button
-                                    onClick={handleToggleFavorite}
-                                    className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all transform hover:scale-105 shadow-sm"
-                                >
-                                    {isFavorite ? (
-                                        <>
-                                            <HeartSolidIcon className="w-4 h-4 text-red-500" />
-                                            <span className="font-bold text-sm text-red-500">บันทึกแล้ว</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <HeartIcon className="w-4 h-4 text-gray-600" />
-                                            <span className="font-bold text-sm text-gray-600">บันทึกสินค้า</span>
-                                        </>
-                                    )}
-                                </button>
+
+
                             </div>
 
                             {/* Right: Study Notes Details */}
@@ -247,7 +230,7 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                     <h3 className="text-2xl font-bold text-gray-800 mb-2 leading-tight">
                                         {book.book_title}
                                     </h3>
-                                    <p className="text-sm text-gray-500">รหัสสรุป: {book.book_code}</p>
+               
                                 </div>
 
                                 {/* Price */}
@@ -270,16 +253,6 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                     </span>
                                 </div>
 
-                                {/* Type of Notes */}
-                                <div>
-                                    <p className="text-sm text-gray-600 mb-2 font-semibold">ประเภทสรุป</p>
-                                    <span className={`inline-block px-4 py-2 rounded-xl font-bold text-sm ${book.condition === 'ดีมาก' ? 'bg-green-100 text-green-700' :
-                                        book.condition === 'ดี' ? 'bg-blue-100 text-blue-700' :
-                                            'bg-purple-100 text-purple-700'
-                                        }`}>
-                                        📋 {book.condition || 'สรุปเต็มบท'}
-                                    </span>
-                                </div>
 
                                 {/* Creator Info */}
                                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl shadow-md border border-blue-100">

@@ -83,7 +83,7 @@ const SaleList = ({ book }) => {
           <div className="absolute top-3 right-3">
             <span className="bg-indigo-600 text-white px-3 py-1 
               rounded-full text-xs font-semibold shadow-md">
-               {course?.year || '-'}
+               {'ปี '+course?.year || '-'}
             </span>
           </div>
 
@@ -125,12 +125,15 @@ const SaleList = ({ book }) => {
             </span>
           </div>
 
-          {/* Price */}
+          {/* Price & Sales */}
           <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
             <div>
               <span className="text-2xl font-bold text-blue-600">
                 ฿{book.price}
               </span>
+                <p className="text-xs text-gray-500 mt-1">
+                  📊 ขายแล้ว: <span className="font-semibold text-gray-700">{book.total_sales}</span> ชุด
+                </p>
             </div>
           </div>
         </div>

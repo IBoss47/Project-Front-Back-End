@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { XMarkIcon, PlusIcon, MinusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 import api from '../api/auth';
 
@@ -136,30 +136,12 @@ const Shopping_Cart = () => {
                           </div>
 
                           <div className="flex items-center gap-3">
-                            {/* Quantity Control */}
-                            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-2">
-                              <button
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                disabled={item.quantity <= 1}
-                                className={`p-1 rounded transition-colors ${
-                                  item.quantity <= 1
-                                    ? 'opacity-30 cursor-not-allowed'
-                                    : 'hover:bg-gray-200'
-                                }`}
-                                title={item.quantity <= 1 ? 'ไม่สามารถลดจำนวนได้ (กดลบเพื่อนำออกจากตะกร้า)' : 'ลดจำนวน'}
-                              >
-                                <MinusIcon className="w-4 h-4 text-gray-700" />
-                              </button>
+                            {/* Quantity Display Only - No controls */}
+                            <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-4 py-2">
+                              <span className="text-sm text-gray-600">จำนวน:</span>
                               <span className="min-w-[2rem] text-center font-semibold text-gray-900">
                                 {item.quantity}
                               </span>
-                              <button
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                className="p-1 hover:bg-gray-200 rounded transition-colors"
-                                title="เพิ่มจำนวน"
-                              >
-                                <PlusIcon className="w-4 h-4 text-gray-700" />
-                              </button>
                             </div>
 
                             {/* Delete Button */}
@@ -264,12 +246,7 @@ const Shopping_Cart = () => {
                 </div>
               )}
 
-              {/* Info */}
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-xs text-blue-700">
-                  ⓘ ไฟล์จะถูกจัดส่งทางอีเมลหลังชำระเงิน
-                </p>
-              </div>
+
             </div>
           </div>
         </div>
@@ -284,18 +261,7 @@ const Shopping_Cart = () => {
                 <p className="text-gray-600">ยอดรวม: <span className="text-2xl font-bold text-blue-600">฿{getTotalPrice().toLocaleString()}</span></p>
               </div>
 
-              <div className="space-y-3 mb-6">
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-sm text-blue-900">
-                    ✓ ไฟล์สรุปวิชาจะส่งไปที่อีเมลของคุณ
-                  </p>
-                </div>
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-sm text-green-900">
-                    ✓ โปรดตรวจสอบ Spam folder หากไม่เห็นอีเมล
-                  </p>
-                </div>
-              </div>
+
 
               <button
                 onClick={() => {
