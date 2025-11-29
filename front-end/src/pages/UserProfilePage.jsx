@@ -6,7 +6,7 @@ import DetailAutoReply from "../components/User/UserDetail/DetailAutoReply";
 import MyPurchaseHistory from "../components/User/UserDetail/MyPurchaseHistory";
 import DetailManageProfile from "../components/User/UserDetail/DetailManageProfile";
 import DetailAccount from "../components/User/UserDetail/DetailAccount";
-import axios from "axios";
+import api from '../api/auth';
 
 export default function UserProfilePage() {
 
@@ -15,12 +15,7 @@ export default function UserProfilePage() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const token = localStorage.getItem("access_token");
-        const res = await axios.get("http://localhost:8080/api/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await api.get('/me');
         setUser(res.data);
       } catch (err) {
         console.error("Error loading profile:", err);

@@ -1,7 +1,7 @@
 // src/pages/PublicStorePage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import api from '../api/auth';
 
 import StoreOwnerBar from "../components/Store/StoreOwnerBar";
 import StoreProductsPanel from "../components/Store/StoreProductsPanel";
@@ -19,12 +19,7 @@ export default function PublicStorePage() {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem("access_token");
-        const response = await axios.get(`http://localhost:8080/api/users/${userId}/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await api.get(`/users/${userId}/profile`);
         setUserData(response.data);
       } catch (error) {
         console.error("Error fetching user data:", error);
