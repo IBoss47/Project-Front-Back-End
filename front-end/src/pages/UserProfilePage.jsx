@@ -28,6 +28,10 @@ export default function UserProfilePage() {
     loadUser();
   }, []);
 
+  const handleAvatarUpdate = (newAvatarUrl) => {
+    setUser(prev => ({ ...prev, avatar_url: newAvatarUrl }));
+  };
+
   const detailComponent = {
     "ข้อมูลส่วนตัว": <DetailProfile user={user}/>,
     "ข้อความตอบกลับอัตโนมัติ": <DetailAutoReply />,
@@ -63,7 +67,8 @@ export default function UserProfilePage() {
           <UserProfile
             name={user.username}
             memberId={user.id}
-            avatar="/Images/cat.png"
+            avatar={user.avatar_url}
+            onAvatarUpdate={handleAvatarUpdate}
           />
 
           {/* Menu (left) */}

@@ -2,7 +2,7 @@ import React,{useEffect, useState} from "react";
 import {Link} from "react-router-dom";
 import Slider from "../components/Slider";
 import SaleList from "../components/SaleList";
-import { ArrowRightIcon, BookOpenIcon, TruckIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { ArrowRightIcon} from '@heroicons/react/24/outline';
 import api from '../api/auth';
 
 const Homepage = () => {

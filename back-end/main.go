@@ -119,6 +119,7 @@ func main() {
 		// User endpoints
 		protected.GET("/me", handlers.GetMe)
 		protected.GET("/users/:id/profile", handlers.GetUserByID)
+		protected.PUT("/update-profile", handlers.UpdateUserProfile) // อัปเดตข้อมูลผู้ใช้
 		protected.POST("/upload-avatar", handlers.UploadAvatar)   // อัปโหลด avatar
 		protected.DELETE("/delete-avatar", handlers.DeleteAvatar) // ลบ avatar
 

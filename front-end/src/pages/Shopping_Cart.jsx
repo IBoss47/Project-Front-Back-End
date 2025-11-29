@@ -49,8 +49,8 @@ const Shopping_Cart = () => {
             <h1 className="text-4xl font-bold text-gray-800 mb-4">ตะกร้าของคุณว่างเปล่า</h1>
             <p className="text-gray-600 text-lg mb-8">ไปค้นหาสรุปวิชาที่คุณต้องการสิ</p>
             <Link
-              to="/"
-              className="inline-block px-8 py-3 bg-gradient-to-r from-viridian-600 to-viridian-700 
+              to="/SellListPage"
+              className="inline-block px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 
                 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300
                 transform hover:scale-105"
             >
