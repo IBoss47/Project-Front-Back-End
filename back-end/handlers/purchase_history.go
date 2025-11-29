@@ -10,12 +10,13 @@ import (
 
 // PurchaseHistoryResponse - โครงสร้างข้อมูลประวัติการซื้อ
 type PurchaseHistoryResponse struct {
-	ID          int      `json:"id"`
+	BuyedNoteID int      `json:"buyed_note_id"`
 	NoteID      int      `json:"note_id"`
 	BookTitle   string   `json:"book_title"`
 	Price       float64  `json:"price"`
 	ExamTerm    string   `json:"exam_term"`
 	Description string   `json:"description"`
+	PDFFile     string   `json:"pdf_file"`
 	CoverImage  string   `json:"cover_image"`
 	Images      []string `json:"images"`
 	Course      Course   `json:"course"`
@@ -37,7 +38,7 @@ func GetMyPurchaseHistory(c *gin.Context) {
 	query := `
 		SELECT 
 			bn.id, bn.review, bn.is_liked,
-			n.id, n.book_title, n.price, n.exam_term, n.description,
+			n.id, n.book_title, n.price, n.exam_term, n.description, n.pdf_file,
 			c.id, c.code, c.name, c.year, c.major,
 			u.id, u.username, u.fullname
 		FROM buyed_note bn
@@ -65,12 +66,12 @@ func GetMyPurchaseHistory(c *gin.Context) {
 		var courseID, sellerID sql.NullInt64
 		var courseCode, courseName, courseYear, courseMajor sql.NullString
 		var sellerUsername, sellerFullname sql.NullString
-		var examTerm, review sql.NullString
+		var examTerm, description, review sql.NullString
 		var isLiked sql.NullBool
 
 		err := rows.Scan(
-			&purchase.ID, &review, &isLiked,
-			&purchase.NoteID, &purchase.BookTitle, &purchase.Price, &examTerm, &purchase.Description,
+			&purchase.BuyedNoteID, &review, &isLiked,
+			&purchase.NoteID, &purchase.BookTitle, &purchase.Price, &examTerm, &description, &purchase.PDFFile,
 			&courseID, &courseCode, &courseName, &courseYear, &courseMajor,
 			&sellerID, &sellerUsername, &sellerFullname,
 		)
@@ -94,6 +95,11 @@ func GetMyPurchaseHistory(c *gin.Context) {
 			purchase.ExamTerm = examTerm.String
 		}
 
+		// กำหนดค่า description
+		if description.Valid {
+			purchase.Description = description.String
+		}
+
 		// กำหนดค่า course
 		if courseID.Valid {
 			purchase.Course = Course{
@@ -114,36 +120,98 @@ func GetMyPurchaseHistory(c *gin.Context) {
 			}
 		}
 
-		// ดึงรูปภาพ
+		// ดึงรูปปกเท่านั้น (รูปแรก)
 		imageQuery := `
 			SELECT path FROM note_images 
 			WHERE note_id = $1 
 			ORDER BY image_order ASC
+			LIMIT 1
 		`
-		imageRows, err := config.DB.Query(imageQuery, purchase.NoteID)
-		if err == nil {
-			images := []string{}
-			for imageRows.Next() {
-				var path string
-				if err := imageRows.Scan(&path); err == nil {
-					images = append(images, path)
-				}
-			}
-			imageRows.Close()
-
-			purchase.Images = images
-			if len(images) > 0 {
-				purchase.CoverImage = images[0]
-			}
+		var coverImage string
+		if err := config.DB.QueryRow(imageQuery, purchase.NoteID).Scan(&coverImage); err == nil {
+			purchase.CoverImage = coverImage
+			purchase.Images = []string{coverImage}
 		}
 
 		purchases = append(purchases, purchase)
 	}
 
-	// ถ้าไม่มีข้อมูล ส่ง array ว่าง
-	if purchases == nil {
-		purchases = []PurchaseHistoryResponse{}
+	c.JSON(http.StatusOK, purchases)
+}
+
+// UpdatePurchaseReviewRequest represents the review update request
+type UpdatePurchaseReviewRequest struct {
+	Review  string `json:"review" binding:"required"`
+	IsLiked bool   `json:"is_liked"`
+}
+
+// UpdatePurchaseReview - อัพเดทรีวิวและการกดใจ
+func UpdatePurchaseReview(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Unauthorized",
+		})
+		return
 	}
 
-	c.JSON(http.StatusOK, purchases)
+	buyedNoteID := c.Param("id")
+
+	var req UpdatePurchaseReviewRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request format",
+		})
+		return
+	}
+
+	// ตรวจสอบว่า buyed_note นี้เป็นของ user นี้หรือไม่
+	var existingReview string
+	var existingLiked sql.NullBool
+	checkQuery := `
+		SELECT review, is_liked 
+		FROM buyed_note 
+		WHERE id = $1 AND user_id = $2
+	`
+	err := config.DB.QueryRow(checkQuery, buyedNoteID, userID).Scan(&existingReview, &existingLiked)
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Purchase not found",
+		})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Database error",
+		})
+		return
+	}
+
+	// ถ้ามี review หรือ is_liked แล้ว ห้ามแก้ไข
+	if existingReview != "" || existingLiked.Valid {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Review already submitted and cannot be modified",
+		})
+		return
+	}
+
+	// อัพเดท review และ is_liked
+	updateQuery := `
+		UPDATE buyed_note 
+		SET review = $1, is_liked = $2
+		WHERE id = $3 AND user_id = $4
+	`
+	_, err = config.DB.Exec(updateQuery, req.Review, req.IsLiked, buyedNoteID, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to update review",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Review updated successfully",
+	})
 }

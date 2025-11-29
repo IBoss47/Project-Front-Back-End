@@ -14,7 +14,10 @@ import {
 } from '@heroicons/react/24/outline';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  // โหลด active tab จาก localStorage ถ้ามี, ไม่เช่นนั้นใช้ 'overview'
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('adminActiveTab') || 'overview';
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -90,6 +93,11 @@ const AdminDashboard = () => {
     };
 
     fetchData();
+    
+    // ลบ saved tab หลังโหลดเสร็จ (ถ้ามี)
+    return () => {
+      localStorage.removeItem('adminActiveTab');
+    };
   }, []);
 
   // Handle add seller role
@@ -113,7 +121,8 @@ const AdminDashboard = () => {
       const response = await api.post(`/admin/notes/${noteId}/approve`);
       if (response.data.success) {
         alert('อนุมัติสรุปสำเร็จ!');
-        // Refresh data
+        // บันทึก active tab ก่อน reload
+        localStorage.setItem('adminActiveTab', activeTab);
         window.location.reload();
       }
     } catch (err) {
@@ -129,12 +138,36 @@ const AdminDashboard = () => {
       const response = await api.post(`/admin/notes/${noteId}/reject`, { reason });
       if (response.data.success) {
         alert('ปฏิเสธสรุปสำเร็จ!');
-        // Refresh data
+        // บันทึก active tab ก่อน reload
+        localStorage.setItem('adminActiveTab', activeTab);
         window.location.reload();
       }
     } catch (err) {
       console.error('Error rejecting note:', err);
       alert('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+
+
+  // Handle view PDF for admin (open in new tab)
+  const handleViewPDF = async (noteId) => {
+    try {
+      const response = await api.get(`/admin/notes/${noteId}/download`, {
+        responseType: 'blob'
+      });
+
+      // สร้าง URL สำหรับ blob และเปิดใน tab ใหม่
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      window.open(url, '_blank');
+      
+      // ล้าง URL หลังจาก 1 นาที
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 60000);
+    } catch (error) {
+      console.error('View PDF error:', error);
+      alert('ไม่สามารถเปิด PDF ได้ กรุณาลองใหม่อีกครั้ง');
     }
   };
 
@@ -657,6 +690,12 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="flex gap-3">
+                          <button
+                            onClick={() => handleViewPDF(item.id)}
+                            className="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors"
+                          >
+                            👁️ ดู PDF
+                          </button>
                           <button
                             onClick={() => handleApproveNote(item.id)}
                             className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors"

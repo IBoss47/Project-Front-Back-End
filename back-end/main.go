@@ -96,8 +96,10 @@ func main() {
 		protected.GET("/users/:id/profile", handlers.GetUserByID)
 		
 		// Purchase endpoints
-		protected.POST("/purchase", handlers.PurchaseNotes)           // ซื้อหนังสือ
-		protected.GET("/my-purchases", handlers.GetMyPurchaseHistory) // ดึงประวัติการซื้อ
+		protected.POST("/purchase", handlers.PurchaseNotes)              // ซื้อหนังสือ
+		protected.GET("/my-purchases", handlers.GetMyPurchaseHistory)    // ดึงประวัติการซื้อ
+		protected.PUT("/my-purchases/:id", handlers.UpdatePurchaseReview) // อัพเดทรีวิว
+		protected.GET("/download/:id", handlers.DownloadPurchasedNote)   // ดาวน์โหลด PDF
 		
 		// Cart endpoints
 		protected.POST("/cart", handlers.AddToCart)            // เพิ่มสินค้าลงตะกร้า
@@ -117,6 +119,7 @@ func main() {
 		admin.GET("/stats", handlers.GetDashboardStats)         // ดึงสถิติ Dashboard
 		admin.GET("/notes", handlers.GetAllNotesAdmin)          // ดึงรายการ Notes ทั้งหมด
 		admin.GET("/notes/pending", handlers.GetPendingNotes)   // ดึงรายการ Notes ที่รออนุมัติ
+		admin.GET("/notes/:id/download", handlers.DownloadNoteForAdmin) // ดาวน์โหลด PDF (Admin)
 		admin.POST("/notes/:id/approve", handlers.ApproveNote)  // อนุมัติ Note
 		admin.POST("/notes/:id/reject", handlers.RejectNote)    // ปฏิเสธ Note
 		admin.POST("/seller/add", handlers.AddSellerRole)       // เพิ่ม role seller
