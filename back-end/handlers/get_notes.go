@@ -129,6 +129,7 @@ func GetAllNotes(c *gin.Context) {
 			&note.ID, &note.BookTitle, &note.Price, &examTerm, &note.Description, &note.Status, &note.CreatedAt,
 			&courseID, &courseCode, &courseName, &courseYear, &courseMajor,
 			&sellerID, &sellerUsername, &sellerFullname,
+			&note.TotalSales,
 		)
 		if err != nil {
 			continue

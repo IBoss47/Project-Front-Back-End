@@ -193,7 +193,7 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                     <h3 className="text-2xl font-bold text-gray-800 mb-2 leading-tight">
                                         {book.book_title}
                                     </h3>
-                                    <p className="text-sm text-gray-500">รหัสสรุป: {book.book_code}</p>
+               
                                 </div>
 
                                 {/* Price */}
@@ -216,16 +216,6 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                     </span>
                                 </div>
 
-                                {/* Type of Notes */}
-                                <div>
-                                    <p className="text-sm text-gray-600 mb-2 font-semibold">ประเภทสรุป</p>
-                                    <span className={`inline-block px-4 py-2 rounded-xl font-bold text-sm ${book.condition === 'ดีมาก' ? 'bg-green-100 text-green-700' :
-                                        book.condition === 'ดี' ? 'bg-blue-100 text-blue-700' :
-                                            'bg-purple-100 text-purple-700'
-                                        }`}>
-                                        📋 {book.condition || 'สรุปเต็มบท'}
-                                    </span>
-                                </div>
 
                                 {/* Creator Info */}
                                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl shadow-md border border-blue-100">
@@ -260,33 +250,8 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                     </div>
                                 )}
 
-                                {/* Quantity Selector */}
-                                {book.status === 'available' && (
-                                    <div>
-                                        <p className="text-xs text-gray-600 mb-2 font-semibold">จำนวน</p>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                                className="w-8 h-8 border border-gray-300 rounded-lg hover:bg-gray-100 font-bold text-base text-gray-700 transition-all hover:scale-110"
-                                            >
-                                                -
-                                            </button>
-                                            <input
-                                                type="number"
-                                                value={quantity}
-                                                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                                                className="w-16 h-8 border border-gray-300 rounded-lg text-center font-bold text-base"
-                                                min="1"
-                                            />
-                                            <button
-                                                onClick={() => setQuantity(quantity + 1)}
-                                                className="w-8 h-8 border border-gray-300 rounded-lg hover:bg-gray-100 font-bold text-base text-gray-700 transition-all hover:scale-110"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
+                                {/* Quantity Selector - Hidden */}
+                                {/* Removed quantity selector as requested */}
 
                                 {/* Add to Cart Button */}
                                 {book.status === 'available' ? (
