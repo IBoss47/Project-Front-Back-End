@@ -72,6 +72,10 @@ code {
     animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+
   @keyframes fadeIn {
     from {
       opacity: 0;
@@ -94,23 +98,15 @@ code {
     }
   }
 
-  @keyframes bounceIn {
-    0% {
-      transform: scale(0.3) translateY(100px);
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
       opacity: 0;
     }
 
-    50% {
-      transform: scale(1.05) translateY(-10px);
+    to {
+      transform: translateX(0);
       opacity: 1;
-    }
-
-    70% {
-      transform: scale(0.95) translateY(5px);
-    }
-
-    100% {
-      transform: scale(1) translateY(0);
     }
   }
 }

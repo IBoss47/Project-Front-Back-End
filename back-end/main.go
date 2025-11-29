@@ -71,7 +71,7 @@ func main() {
 		public.GET("/courses/years", handlers.GetCourseYears)   // ดึงรายการชั้นปีทั้งหมด
 
 		// Slider - ดูได้โดยไม่ต้อง login
-		public.GET("/slider", handlers.GetSliderData) // ดึงข้อมูล slider
+		public.GET("/slider", handlers.GetSliderImages) // ดึงรูปภาพ slider ที่ active
 	}
 
 	// Protected routes (ต้อง login)
@@ -129,9 +129,10 @@ func main() {
 		admin.POST("/seller/remove", handlers.RemoveSellerRole) // ลบ role seller
 
 		// Slider management
-		admin.POST("/slider", handlers.AddSliderImage)          // เพิ่มรูป slider
-		admin.DELETE("/slider/:id", handlers.DeleteSliderImage) // ลบรูป slider
-		admin.PUT("/slider/order", handlers.UpdateSliderOrder)  // อัปเดตลำดับ slider
+		admin.GET("/slider", handlers.GetSliderImages)       // ดึงรูปภาพ slider ทั้งหมด
+		admin.POST("/slider/upload", handlers.UploadSliderImage) // อัปโหลดรูป slider
+		admin.PUT("/slider/order", handlers.UpdateSliderOrder)   // อัปเดตลำดับการแสดง
+		admin.DELETE("/slider/:id", handlers.DeleteSliderImage)  // ลบรูป slider
 	}
 
 	// เริ่ม server

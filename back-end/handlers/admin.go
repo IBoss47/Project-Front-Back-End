@@ -65,12 +65,13 @@ func GetAllSellers(c *gin.Context) {
 		INNER JOIN roles r ON ur.role_id = r.id
 		LEFT JOIN (
 			SELECT 
-				seller_id,
-				COUNT(*) as note_count,
-				0 as total_sales,
-				COALESCE(SUM(price), 0) as revenue
-			FROM notes_for_sale
-			GROUP BY seller_id
+				n.seller_id,
+				COUNT(DISTINCT n.id) as note_count,
+				COUNT(b.id) as total_sales,
+				COALESCE(SUM(n.price), 0) as revenue
+			FROM notes_for_sale n
+			LEFT JOIN buyed_note b ON n.id = b.note_id
+			GROUP BY n.seller_id
 		) ns ON u.id = ns.seller_id
 		WHERE r.name = 'seller'
 		ORDER BY u.created_at DESC
@@ -206,19 +207,45 @@ func GetDashboardStats(c *gin.Context) {
 		stats.TotalSummaries = 0
 	}
 
-	// คำนวณรายได้รวมจากตาราง orders (2% ของยอดขาย)
-	err = config.DB.QueryRow("SELECT COALESCE(SUM(total_amount) * 0.02, 0) FROM orders WHERE status = 'completed'").Scan(&stats.TotalRevenue)
+	// คำนวณรายได้รวมจากตาราง buyed_note (ดึงราคาจริงที่ขายได้)
+	err = config.DB.QueryRow(`
+		SELECT COALESCE(SUM(n.price), 0) 
+		FROM buyed_note b
+		INNER JOIN notes_for_sale n ON b.note_id = n.id
+	`).Scan(&stats.TotalRevenue)
 	if err != nil {
 		stats.TotalRevenue = 0
 	}
 
-	// คำนวณรายได้เดือนนี้ (2% ของยอดขาย)
+	// คำนวณรายได้เดือนนี้ (ดึงจาก buyed_note ที่มี created_at ถ้ามี)
+	// หากตาราง buyed_note ไม่มี created_at ให้ใช้รายได้ทั้งหมดแทน
+	var monthlyRevenueQuery string
+	var hasCreatedAt bool
 	err = config.DB.QueryRow(`
-		SELECT COALESCE(SUM(total_amount) * 0.02, 0) 
-		FROM orders 
-		WHERE status = 'completed' 
-		AND created_at >= DATE_TRUNC('month', CURRENT_DATE)
-	`).Scan(&stats.MonthlyRevenue)
+		SELECT EXISTS (
+			SELECT 1 
+			FROM information_schema.columns 
+			WHERE table_name='buyed_note' AND column_name='created_at'
+		)
+	`).Scan(&hasCreatedAt)
+	
+	if hasCreatedAt {
+		monthlyRevenueQuery = `
+			SELECT COALESCE(SUM(n.price), 0) 
+			FROM buyed_note b
+			INNER JOIN notes_for_sale n ON b.note_id = n.id
+			WHERE b.created_at >= DATE_TRUNC('month', CURRENT_DATE)
+		`
+	} else {
+		// ถ้าไม่มี created_at ให้ใช้รายได้ทั้งหมด
+		monthlyRevenueQuery = `
+			SELECT COALESCE(SUM(n.price), 0) 
+			FROM buyed_note b
+			INNER JOIN notes_for_sale n ON b.note_id = n.id
+		`
+	}
+	
+	err = config.DB.QueryRow(monthlyRevenueQuery).Scan(&stats.MonthlyRevenue)
 	if err != nil {
 		stats.MonthlyRevenue = 0
 	}
@@ -418,6 +445,7 @@ type PendingNoteInfo struct {
 	CourseName  string  `json:"course_name"`
 	CreatedAt   string  `json:"created_at"`
 	Description string  `json:"description"`
+	CoverImage  string  `json:"cover_image"`
 }
 
 // GetPendingNotes - ดึงรายการ Notes ที่รออนุมัติ
@@ -433,7 +461,11 @@ func GetPendingNotes(c *gin.Context) {
 			COALESCE(n.exam_term, '') as exam_term,
 			COALESCE(c.name, '') as course_name,
 			TO_CHAR(n.created_at, 'YYYY-MM-DD HH24:MI') as created_at,
-			COALESCE(n.description, '') as description
+			COALESCE(n.description, '') as description,
+			COALESCE(
+				(SELECT path FROM note_images WHERE note_id = n.id ORDER BY image_order LIMIT 1),
+				''
+			) as cover_image
 		FROM notes_for_sale n
 		LEFT JOIN users u ON n.seller_id = u.id
 		LEFT JOIN courses c ON n.course_id = c.id
@@ -465,6 +497,7 @@ func GetPendingNotes(c *gin.Context) {
 			&note.CourseName,
 			&note.CreatedAt,
 			&note.Description,
+			&note.CoverImage,
 		)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{

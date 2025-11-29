@@ -54,7 +54,7 @@ const Homepage = () => {
 
     return (
      <div className="homepage w-full h-full">
-       {slideData.length > 0 && <Slider slides={slideData} />}
+       <Slider useAPI={true} autoPlay={5000} slides={slideData} />
        
       <section className="py-8 bg-gray-50">
 

@@ -91,8 +91,13 @@ const Navbar = () => {
                             {isOpen && isLoggedIn && (
                                 <ul className="navbar-dropdown-menu">
                                    <li> 
-                                    <Link to = '/profile' className="navbar-dropdown-item">
-                                    ประวัติส่วนตัว
+                                    <Link to = '/profile' state={{ tab: 'ข้อมูลส่วนตัว' }} className="navbar-dropdown-item">
+                                    บัญชีของฉัน
+                                    </Link>
+                                   </li>
+                                   <li> 
+                                    <Link to = '/profile' state={{ tab: 'ประวัติการซื้อ' }} className="navbar-dropdown-item">
+                                    การซื้อของฉัน
                                     </Link>
                                    </li>
                                    <li> 

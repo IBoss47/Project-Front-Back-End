@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/auth';
-import Slider from '../components/Slider';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import {
   ChartBarIcon,
   UserGroupIcon,
@@ -39,69 +40,14 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [notes, setNotes] = useState([]);
   const [pendingNotes, setPendingNotes] = useState([]); // Notes ที่รออนุมัติจริง
-
-  // Slider data
-  const [sliderData, setSliderData] = useState([]);
-  const [sliderLoading, setSliderLoading] = useState(false);
-
-  // Fetch slider data
-  const fetchSliderData = async () => {
-    try {
-      const response = await api.get('/slider');
-      if (response.data.success) {
-        const slides = response.data.data.map(slide => ({
-          ...slide,
-          image: `http://localhost:8080/${slide.image}`
-        }));
-        setSliderData(slides);
-      }
-    } catch (err) {
-      console.error('Error fetching slider data:', err);
-    }
-  };
-
-  // Add slider image
-  const handleAddSliderImage = async (file, link) => {
-    setSliderLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-      formData.append('link', link || '');
-      
-      const response = await api.post('/admin/slider', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      
-      if (response.data.success) {
-        alert('เพิ่มรูปภาพสำเร็จ!');
-        fetchSliderData();
-      }
-    } catch (err) {
-      console.error('Error adding slider image:', err);
-      alert('เกิดข้อผิดพลาด: ' + (err.response?.data?.error || err.message));
-    } finally {
-      setSliderLoading(false);
-    }
-  };
-
-  // Delete slider image
-  const handleDeleteSliderImage = async (slideId) => {
-    if (!window.confirm('คุณแน่ใจหรือไม่ที่จะลบรูปภาพนี้?')) return;
-    
-    setSliderLoading(true);
-    try {
-      const response = await api.delete(`/admin/slider/${slideId}`);
-      if (response.data.success) {
-        alert('ลบรูปภาพสำเร็จ!');
-        fetchSliderData();
-      }
-    } catch (err) {
-      console.error('Error deleting slider image:', err);
-      alert('เกิดข้อผิดพลาด: ' + (err.response?.data?.error || err.message));
-    } finally {
-      setSliderLoading(false);
-    }
-  };
+  const [sliderImages, setSliderImages] = useState([]); // รูป slider
+  const [uploadingSlider, setUploadingSlider] = useState(false);
+  const [hasSliderChanges, setHasSliderChanges] = useState(false); // ติดตามว่ามีการแก้ไขหรือไม่
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState('');
+  const [confirmAction, setConfirmAction] = useState(null);
 
   // Fetch data from API
   useEffect(() => {
@@ -150,8 +96,11 @@ const AdminDashboard = () => {
           setPendingNotes(pendingResponse.data.data || []);
         }
 
-        // Fetch slider data
-        await fetchSliderData();
+        // Fetch slider images
+        const sliderResponse = await api.get('/admin/slider');
+        if (sliderResponse.data.success) {
+          setSliderImages(sliderResponse.data.data || []);
+        }
       } catch (err) {
         console.error('Error fetching admin data:', err);
         setError(err.response?.data?.message || 'Failed to fetch data');
@@ -165,6 +114,12 @@ const AdminDashboard = () => {
     // ลบ saved tab หลังโหลดเสร็จ (ถ้ามี)
     return () => {
       localStorage.removeItem('adminActiveTab');
+      // Cleanup image previews
+      sliderImages.forEach(img => {
+        if (img.isNew && img.image_path) {
+          URL.revokeObjectURL(img.image_path);
+        }
+      });
     };
   }, []);
 
@@ -241,21 +196,233 @@ const AdminDashboard = () => {
 
   // Handle remove seller role
   const handleRemoveSellerRole = async (userId) => {
-    if (!window.confirm('คุณแน่ใจหรือไม่ที่จะลบ role seller ออกจากผู้ใช้นี้?')) {
-      return;
-    }
-    try {
-      const response = await api.post('/admin/seller/remove', { user_id: userId });
-      if (response.data.success) {
-        alert('ลบ role seller สำเร็จ!');
-        // Refresh data
-        window.location.reload();
+    setConfirmMessage('คุณแน่ใจหรือไม่ที่จะลบ role seller ออกจากผู้ใช้นี้?');
+    setConfirmAction(() => async () => {
+      try {
+        const response = await api.post('/admin/seller/remove', { user_id: userId });
+        if (response.data.success) {
+          setSuccessMessage('ลบ role seller สำเร็จ!');
+          setShowSuccessPopup(true);
+          setTimeout(() => {
+            setShowSuccessPopup(false);
+            window.location.reload();
+          }, 2000);
+        }
+      } catch (err) {
+        console.error('Error removing seller role:', err);
+        setSuccessMessage('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+        setShowSuccessPopup(true);
+        setTimeout(() => setShowSuccessPopup(false), 5000);
       }
-    } catch (err) {
-      console.error('Error removing seller role:', err);
-      alert('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+    });
+    setShowConfirmPopup(true);
+  };
+
+  // ============= Slider Management Functions =============
+  
+  // Component สำหรับรูปภาพ slider ที่ลากได้
+  const DraggableSliderImage = ({ image, index, moveImage, removeImage }) => {
+    const [{ isDragging }, drag] = useDrag({
+      type: 'sliderImage',
+      item: { index },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    });
+
+    const [, drop] = useDrop({
+      accept: 'sliderImage',
+      hover: (draggedItem) => {
+        if (draggedItem.index !== index) {
+          moveImage(draggedItem.index, index);
+          draggedItem.index = index;
+        }
+      },
+    });
+
+    return (
+      <div
+        ref={(node) => drag(drop(node))}
+        className={`relative group ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+        style={{ cursor: 'move' }}
+      >
+        <img
+          src={image.isNew ? image.image_path : `http://localhost:8080/${image.image_path}`}
+          alt={`Slider ${index + 1}`}
+          className={`w-full h-48 object-cover rounded-lg border-2 ${image.isNew ? 'border-yellow-400' : 'border-blue-500'}`}
+        />
+        {/* ปุ่มจัดการ */}
+        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            type="button"
+            onClick={() => removeImage(image.id)}
+            className="bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform"
+            title="ลบรูป"
+          >
+            ×
+          </button>
+        </div>
+        {/* ป้ายสถานะ */}
+        {image.isNew && (
+          <div className="absolute top-2 left-2 bg-yellow-500 text-yellow-900 text-xs px-2 py-1 rounded font-bold">
+            ใหม่
+          </div>
+        )}
+        {/* หมายเลขลำดับ */}
+        <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white text-sm px-3 py-1 rounded font-bold">
+          #{index + 1}
+        </div>
+      </div>
+    );
+  };
+
+  // เพิ่มรูปเข้า slider list โดยตรง
+  const handleSliderUpload = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const newImages = files.map((file, index) => ({
+      id: `temp-${Date.now()}-${index}`, // temporary ID
+      file: file,
+      image_path: URL.createObjectURL(file),
+      display_order: sliderImages.length + index,
+      isNew: true
+    }));
+
+    setSliderImages(prev => [...prev, ...newImages]);
+    setHasSliderChanges(true);
+  };
+
+  // ย้ายรูป slider
+  const moveSliderImage = (fromIndex, toIndex) => {
+    const updatedImages = [...sliderImages];
+    const [movedImage] = updatedImages.splice(fromIndex, 1);
+    updatedImages.splice(toIndex, 0, movedImage);
+    // Update display_order
+    const reorderedImages = updatedImages.map((img, idx) => ({
+      ...img,
+      display_order: idx
+    }));
+    setSliderImages(reorderedImages);
+    setHasSliderChanges(true);
+  };
+
+  // บันทึกทั้งหมด (รูปใหม่ + ลำดับ)
+  const saveAllSliders = async () => {
+    setUploadingSlider(true);
+    try {
+      // 1. Upload รูปใหม่ก่อน
+      const newImages = sliderImages.filter(img => img.isNew);
+      const uploadedImages = [];
+      
+      for (const newImage of newImages) {
+        const formData = new FormData();
+        formData.append('image', newImage.file);
+
+        const response = await api.post('/admin/slider/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        if (response.data.success) {
+          uploadedImages.push(response.data.data);
+        }
+        
+        // Clean up preview URL
+        URL.revokeObjectURL(newImage.image_path);
+      }
+      
+      // 2. Refresh เพื่อดึง ID จริงของรูปที่ upload
+      const sliderResponse = await api.get('/admin/slider');
+      if (sliderResponse.data.success) {
+        const allImages = sliderResponse.data.data || [];
+        
+        // 3. Update ลำดับตาม display_order ที่จัดไว้
+        const existingImages = sliderImages.filter(img => !img.isNew);
+        const finalOrder = [];
+        
+        // รักษาลำดับที่จัดไว้
+        sliderImages.forEach((img, index) => {
+          if (img.isNew) {
+            // หารูปที่ upload ใหม่ที่ตรงกัน (ใช้ index เดิม)
+            const newIdx = sliderImages.slice(0, index).filter(i => i.isNew).length;
+            if (uploadedImages[newIdx]) {
+              finalOrder.push({
+                id: uploadedImages[newIdx].id,
+                order: index
+              });
+            }
+          } else {
+            finalOrder.push({
+              id: img.id,
+              order: index
+            });
+          }
+        });
+        
+        // 4. บันทึกลำดับ
+        if (finalOrder.length > 0) {
+          await api.put('/admin/slider/order', finalOrder);
+        }
+        
+        // 5. Refresh อีกครั้งเพื่อแสดงผลล่าสุด
+        const finalResponse = await api.get('/admin/slider');
+        if (finalResponse.data.success) {
+          setSliderImages(finalResponse.data.data || []);
+        }
+      }
+      
+      setHasSliderChanges(false);
+      setSuccessMessage('บันทึกรูปภาพและลำดับสำเร็จ!');
+      setShowSuccessPopup(true);
+      setTimeout(() => setShowSuccessPopup(false), 3000);
+    } catch (error) {
+      console.error('❌ Save error:', error);
+      setSuccessMessage('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+      setShowSuccessPopup(true);
+      setTimeout(() => setShowSuccessPopup(false), 5000);
+    } finally {
+      setUploadingSlider(false);
     }
   };
+
+  // ลบรูป slider
+  const removeSliderImage = async (imageId) => {
+    const imageToRemove = sliderImages.find(img => img.id === imageId);
+    
+    setConfirmMessage('คุณแน่ใจหรือไม่ที่จะลบรูปนี้?');
+    setConfirmAction(() => async () => {
+      // ถ้าเป็นรูปใหม่ที่ยังไม่ได้ upload ให้ลบแค่จาก state
+      if (imageToRemove?.isNew) {
+        URL.revokeObjectURL(imageToRemove.image_path);
+        setSliderImages(sliderImages.filter(img => img.id !== imageId));
+        setHasSliderChanges(true);
+        setSuccessMessage('ลบรูปภาพสำเร็จ!');
+        setShowSuccessPopup(true);
+        setTimeout(() => setShowSuccessPopup(false), 3000);
+        return;
+      }
+
+      // ถ้าเป็นรูปที่มีใน database ให้เรียก API ลบ
+      try {
+        const response = await api.delete(`/admin/slider/${imageId}`);
+        if (response.data.success) {
+          setSliderImages(sliderImages.filter(img => img.id !== imageId));
+          setHasSliderChanges(true);
+          setSuccessMessage('ลบรูปภาพสำเร็จ!');
+          setShowSuccessPopup(true);
+          setTimeout(() => setShowSuccessPopup(false), 3000);
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        setSuccessMessage('เกิดข้อผิดพลาดในการลบรูป: ' + (error.response?.data?.message || error.message));
+        setShowSuccessPopup(true);
+        setTimeout(() => setShowSuccessPopup(false), 5000);
+      }
+    });
+    setShowConfirmPopup(true);
+  };
+
+  // ============= End Slider Management Functions =============
 
   // Mock Data for issues (can be replaced with API later)
   const [reportedIssues] = useState([
@@ -312,6 +479,82 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 pt-24 pb-16">
+      {/* Confirm Popup */}
+      {showConfirmPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg shadow-2xl p-6 max-w-md w-full mx-4 border-2 border-gray-600">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-white mb-2">ยืนยันการดำเนินการ</h3>
+                <p className="text-gray-300">{confirmMessage}</p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowConfirmPopup(false);
+                  setConfirmAction(null);
+                }}
+                className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirmPopup(false);
+                  if (confirmAction) {
+                    confirmAction();
+                  }
+                  setConfirmAction(null);
+                }}
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                ยืนยัน
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Popup */}
+      {showSuccessPopup && (
+        <div className="fixed top-24 right-8 z-50 animate-slide-in-right">
+          <div className={`rounded-lg shadow-2xl p-4 flex items-center gap-3 min-w-[300px] ${
+            successMessage.includes('ข้อผิดพลาด') || successMessage.includes('Error')
+              ? 'bg-red-600 border-2 border-red-400'
+              : 'bg-green-600 border-2 border-green-400'
+          }`}>
+            <div className="flex-shrink-0">
+              {successMessage.includes('ข้อผิดพลาด') || successMessage.includes('Error') ? (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-white font-semibold">{successMessage}</p>
+            </div>
+            <button
+              onClick={() => setShowSuccessPopup(false)}
+              className="flex-shrink-0 text-white hover:text-gray-200 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
@@ -324,7 +567,7 @@ const AdminDashboard = () => {
           <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-lg p-6 text-white border border-blue-500">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-blue-100 text-sm font-semibold mb-1">จำนวนผู้ใช้</p>
+                <p className="text-blue-100 text-sm font-semibold mb-1">จำนวนผู้ใช้ (รวม Seller)</p>
                 <p className="text-4xl font-bold">{dashboardStats.totalUsers}</p>
               </div>
               <UserGroupIcon className="w-14 h-14 opacity-30" />
@@ -367,7 +610,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Alert Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-6 text-white border border-red-400">
             <div className="flex items-center justify-between">
               <div>
@@ -385,16 +628,6 @@ const AdminDashboard = () => {
                 <p className="text-3xl font-bold">{dashboardStats.pendingApprovals}</p>
               </div>
               <CheckCircleIcon className="w-12 h-12 opacity-40" />
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl shadow-lg p-6 text-white border border-cyan-400">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-cyan-100 text-sm font-semibold mb-2">📦 คำสั่งซื้อที่ใช้งานอยู่</p>
-                <p className="text-3xl font-bold">{dashboardStats.activeOrders}</p>
-              </div>
-              <ShoppingBagIcon className="w-12 h-12 opacity-40" />
             </div>
           </div>
         </div>
@@ -463,7 +696,7 @@ const AdminDashboard = () => {
                 : 'text-gray-400 hover:text-gray-200'
                 }`}
             >
-              🖼️ Slider
+              🖼️ Slider ({sliderImages.length})
             </button>
           </div>
 
@@ -741,29 +974,43 @@ const AdminDashboard = () => {
                   <div className="space-y-4">
                     {pendingNotes.map((item) => (
                       <div key={item.id} className="bg-gray-700 rounded-xl p-6 border border-yellow-600/50">
-                        <div className="mb-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-xl font-bold text-white">{item.title}</h3>
-                            <span className="px-3 py-1 bg-yellow-500/30 text-yellow-300 rounded-full text-sm font-bold">
-                              ⏳ รอ
-                            </span>
+                        <div className="flex gap-6 mb-4">
+                          {/* รูปปก */}
+                          {item.cover_image && (
+                            <div className="flex-shrink-0">
+                              <img
+                                src={`http://localhost:8080/${item.cover_image}`}
+                                alt={item.title}
+                                className="w-32 h-40 object-cover rounded-lg border-2 border-yellow-500/50"
+                              />
+                            </div>
+                          )}
+                          
+                          {/* เนื้อหา */}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-3">
+                              <h3 className="text-xl font-bold text-white">{item.title}</h3>
+                              <span className="px-3 py-1 bg-yellow-500/30 text-yellow-300 rounded-full text-sm font-bold">
+                                ⏳ รอ
+                              </span>
+                            </div>
+                            <p className="text-gray-400">
+                              สรุปวิชา - ราคา: ฿{item.price}
+                            </p>
+                            <p className="text-gray-500 text-sm mt-2">
+                              จาก: {item.seller_name} | เมื่อ: {item.created_at}
+                            </p>
+                            {item.exam_term && (
+                              <p className="text-gray-500 text-sm">
+                                เทอม: {item.exam_term} {item.course_name && `| วิชา: ${item.course_name}`}
+                              </p>
+                            )}
+                            {item.description && (
+                              <p className="text-gray-400 text-sm mt-2 bg-gray-600 p-3 rounded-lg">
+                                📝 {item.description}
+                              </p>
+                            )}
                           </div>
-                          <p className="text-gray-400">
-                            สรุปวิชา - ราคา: ฿{item.price}
-                          </p>
-                          <p className="text-gray-500 text-sm mt-2">
-                            จาก: {item.seller_name} | เมื่อ: {item.created_at}
-                          </p>
-                          {item.exam_term && (
-                            <p className="text-gray-500 text-sm">
-                              เทอม: {item.exam_term} {item.course_name && `| วิชา: ${item.course_name}`}
-                            </p>
-                          )}
-                          {item.description && (
-                            <p className="text-gray-400 text-sm mt-2 bg-gray-600 p-3 rounded-lg">
-                              📝 {item.description}
-                            </p>
-                          )}
                         </div>
 
                         <div className="flex gap-3">
@@ -791,7 +1038,97 @@ const AdminDashboard = () => {
                   </div>
                 )}
               </div>
-            )}          {/* Reports Tab */}
+            )}          {/* Slider Tab */}
+            {activeTab === 'slider' && (
+              <DndProvider backend={HTML5Backend}>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-white">🖼️ จัดการ Slider Homepage ({sliderImages.length})</h2>
+                    <button
+                      onClick={saveAllSliders}
+                      disabled={uploadingSlider || !hasSliderChanges}
+                      className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
+                      </svg>
+                      <span>💾 บันทึกทั้งหมด</span>
+                    </button>
+                  </div>
+
+                  {/* Upload Section */}
+                  <div className="bg-gray-700 rounded-xl p-6 border border-gray-600">
+                    <h3 className="text-xl font-bold text-white mb-4">📤 เพิ่มรูปภาพ Slider</h3>
+                    <div className="flex items-center gap-4">
+                      <label className="flex-1 flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-500 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-gray-800">
+                        <PhotoIcon className="w-12 h-12 text-gray-400 mb-2" />
+                        <span className="text-gray-400 text-sm">คลิกเพื่อเลือกรูปภาพ</span>
+                        <span className="text-gray-500 text-xs mt-1">รองรับ JPG, PNG, GIF, WebP • เลือกได้หลายรูป</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleSliderUpload}
+                          className="hidden"
+                          disabled={uploadingSlider}
+                        />
+                      </label>
+                    </div>
+
+                    {uploadingSlider && (
+                      <div className="mt-4 text-center">
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                        <p className="text-gray-400 mt-2">กำลังบันทึก...</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Slider Images Grid */}
+                  {sliderImages.length === 0 ? (
+                    <div className="bg-gray-700 rounded-xl p-8 text-center border border-gray-600">
+                      <PhotoIcon className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                      <p className="text-gray-400 text-lg">ยังไม่มีรูปภาพ Slider</p>
+                      <p className="text-gray-500 text-sm mt-2">เพิ่มรูปภาพเพื่อแสดงบน Homepage</p>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-700 rounded-xl p-6 border border-gray-600">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-white">รูปภาพ Slider ({sliderImages.length} รูป)</h3>
+                        <p className="text-gray-400 text-sm">
+                          💡 ลากเพื่อเรียงลำดับ • คลิก × เพื่อลบ • อย่าลืมกด "บันทึกทั้งหมด"
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {sliderImages.map((image, index) => (
+                          <DraggableSliderImage
+                            key={image.id}
+                            image={image}
+                            index={index}
+                            moveImage={moveSliderImage}
+                            removeImage={removeSliderImage}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Instructions */}
+                  <div className="bg-blue-900/30 border border-blue-500/50 rounded-xl p-6">
+                    <h3 className="text-lg font-bold text-blue-300 mb-3">📝 วิธีใช้งาน</h3>
+                    <ul className="text-blue-200 space-y-2 text-sm">
+                      <li>• อัปโหลดรูปภาพขนาดแนะนำ 1920x600 px หรือใกล้เคียง (รองรับหลายรูป)</li>
+                      <li>• รูปใหม่จะแสดงขอบสีเหลืองและป้าย "ใหม่"</li>
+                      <li>• ลากรูปเพื่อเรียงลำดับการแสดงผล</li>
+                      <li>• คลิกปุ่ม × เพื่อลบรูปออก</li>
+                      <li>• กดปุ่ม "บันทึกทั้งหมด" เพื่อ upload รูปใหม่และบันทึกลำดับทั้งหมดพร้อมกัน</li>
+                      <li>• รูปภาพทั้งหมดจะแสดงบน Homepage โดยอัตโนมัติ</li>
+                    </ul>
+                  </div>
+                </div>
+              </DndProvider>
+            )}
+
+            {/* Reports Tab */}
             {activeTab === 'reports' && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-white mb-6">⚠️ รายงานปัญหา ({dashboardStats.reportedIssues})</h2>
@@ -835,151 +1172,6 @@ const AdminDashboard = () => {
                       )}
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
-
-            {/* Slider Tab */}
-            {activeTab === 'slider' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-white mb-6">🖼️ จัดการ Slider หน้าแรก ({sliderData.length} รูป)</h2>
-                
-                {sliderLoading && (
-                  <div className="text-center py-4">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-                    <p className="text-gray-400 mt-2">กำลังดำเนินการ...</p>
-                  </div>
-                )}
-
-                {sliderData.length > 0 ? (
-                  <div className="bg-gray-700 rounded-xl p-6 border border-gray-600">
-                    <h3 className="text-lg font-bold text-white mb-4">ตัวอย่าง Slider</h3>
-                    <div className="rounded-xl overflow-hidden">
-                      <Slider 
-                        slides={sliderData} 
-                        editable={false}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-gray-700 rounded-xl p-8 text-center border border-gray-600">
-                    <PhotoIcon className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                    <p className="text-gray-400">ยังไม่มีรูปภาพใน Slider</p>
-                  </div>
-                )}
-
-                {/* Add Image Form */}
-                <div className="bg-gray-700 rounded-xl p-6 border border-gray-600">
-                  <h3 className="text-lg font-bold text-white mb-4">➕ เพิ่มรูปภาพใหม่</h3>
-                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.target);
-                    const file = formData.get('image');
-                    const link = formData.get('link');
-                    if (file && file.size > 0) {
-                      handleAddSliderImage(file, link);
-                      e.target.reset();
-                      // Clear preview
-                      const previewEl = document.getElementById('slider-preview');
-                      if (previewEl) previewEl.src = '';
-                      const previewContainer = document.getElementById('slider-preview-container');
-                      if (previewContainer) previewContainer.classList.add('hidden');
-                    } else {
-                      alert('กรุณาเลือกรูปภาพ');
-                    }
-                  }} className="space-y-4">
-                    <div>
-                      <label className="block text-gray-300 text-sm mb-2">รูปภาพ *</label>
-                      <input 
-                        type="file" 
-                        name="image"
-                        accept="image/*"
-                        className="w-full px-4 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white"
-                        onChange={(e) => {
-                          const file = e.target.files[0];
-                          const previewEl = document.getElementById('slider-preview');
-                          const previewContainer = document.getElementById('slider-preview-container');
-                          if (file && previewEl && previewContainer) {
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                              previewEl.src = e.target.result;
-                              previewContainer.classList.remove('hidden');
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                      {/* Preview รูปภาพที่เลือก */}
-                      <div id="slider-preview-container" className="hidden mt-3">
-                        <p className="text-gray-400 text-xs mb-2">ตัวอย่างรูปภาพ:</p>
-                        <div className="relative inline-block">
-                          <img 
-                            id="slider-preview"
-                            src="" 
-                            alt="Preview" 
-                            className="w-40 h-24 object-cover rounded-lg border-2 border-green-500"
-                          />
-                          <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">ใหม่</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 text-sm mb-2">ลิงก์ (ไม่บังคับ)</label>
-                      <input 
-                        type="text" 
-                        name="link"
-                        placeholder="เช่น /SellListPage"
-                        className="w-full px-4 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400"
-                      />
-                    </div>
-                    <button 
-                      type="submit"
-                      disabled={sliderLoading}
-                      className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      ➕ เพิ่มรูปภาพ
-                    </button>
-                  </form>
-                </div>
-
-                <div className="bg-gray-700 rounded-xl p-6 border border-gray-600">
-                  <h3 className="text-lg font-bold text-white mb-4">📋 รายการรูปภาพใน Slider</h3>
-                  <div className="space-y-3">
-                    {sliderData.length === 0 ? (
-                      <p className="text-gray-400 text-center py-4">ยังไม่มีรูปภาพ</p>
-                    ) : (
-                      sliderData.map((slide, index) => (
-                        <div key={slide.id || index} className="flex items-center gap-4 bg-gray-600 rounded-lg p-4">
-                          <div className="w-24 h-16 rounded-lg overflow-hidden bg-gray-500">
-                            <img 
-                              src={slide.image} 
-                              alt={`Slide ${index + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-semibold text-white">รูปที่ {index + 1} {index === 0 && <span className="text-blue-400">(หน้าปก)</span>}</p>
-                            <p className="text-gray-400 text-sm truncate">{slide.image}</p>
-                            {slide.link && <p className="text-blue-400 text-sm">ลิงก์: {slide.link}</p>}
-                          </div>
-                          <button
-                            onClick={() => handleDeleteSliderImage(slide.id)}
-                            disabled={sliderLoading || sliderData.length <= 1}
-                            className="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={sliderData.length <= 1 ? "ต้องมีอย่างน้อย 1 รูป" : "ลบรูปภาพ"}
-                          >
-                            <TrashIcon className="w-5 h-5 text-white" />
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-xl p-4">
-                  <p className="text-yellow-300 text-sm">
-                    💡 <strong>คำแนะนำ:</strong> รูปภาพจะถูกเก็บที่ back-end/uploads/slider/ และแสดงบนหน้าแรกอัตโนมัติ
-                  </p>
                 </div>
               </div>
             )}

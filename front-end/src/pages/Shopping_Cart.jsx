@@ -140,8 +140,13 @@ const Shopping_Cart = () => {
                             <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-2">
                               <button
                                 onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                className="p-1 hover:bg-gray-200 rounded transition-colors"
-                                title="ลดจำนวน"
+                                disabled={item.quantity <= 1}
+                                className={`p-1 rounded transition-colors ${
+                                  item.quantity <= 1
+                                    ? 'opacity-30 cursor-not-allowed'
+                                    : 'hover:bg-gray-200'
+                                }`}
+                                title={item.quantity <= 1 ? 'ไม่สามารถลดจำนวนได้ (กดลบเพื่อนำออกจากตะกร้า)' : 'ลดจำนวน'}
                               >
                                 <MinusIcon className="w-4 h-4 text-gray-700" />
                               </button>

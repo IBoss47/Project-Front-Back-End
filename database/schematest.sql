@@ -105,19 +105,19 @@ ON CONFLICT (user_id, role_id) DO NOTHING;
 -- เพิ่ม Mock Seller Account
 -- Username: seller1, Password: seller
 INSERT INTO users (username, email, password_hash, fullname, phone)
-VALUES ('seller1', 'seller1@noteshop.com', '$2a$10$xvZ4qY8KFQxQZ9X5gF5mHO5b5Z4K4vT6YZ0XZ5K4vT6YZ0XZ5K4vT6', 'ผู้ขายคนที่ 1', '0811111111')
+VALUES ('seller1', 'seller1@noteshop.com', '$2b$12$O1DTonfBAITG6CsJiU49Ge.VTaHa6mH/IpayU5T.x.rhe8hlZ5evK', 'ผู้ขายคนที่ 1', '0811111111')
 ON CONFLICT (username) DO NOTHING;
 
 -- เพิ่ม Mock Seller2 Account  
 -- Username: seller2, Password: seller
 INSERT INTO users (username, email, password_hash, fullname, phone)
-VALUES ('seller2', 'seller2@noteshop.com', '$2a$10$xvZ4qY8KFQxQZ9X5gF5mHO5b5Z4K4vT6YZ0XZ5K4vT6YZ0XZ5K4vT6', 'ผู้ขายคนที่ 2', '0822222222')
+VALUES ('seller2', 'seller2@noteshop.com', '$2b$12$O1DTonfBAITG6CsJiU49Ge.VTaHa6mH/IpayU5T.x.rhe8hlZ5evK', 'ผู้ขายคนที่ 2', '0822222222')
 ON CONFLICT (username) DO NOTHING;
 
 -- เพิ่ม Mock Seller3 Account
 -- Username: seller3, Password: seller  
 INSERT INTO users (username, email, password_hash, fullname, phone)
-VALUES ('seller3', 'seller3@noteshop.com', '$2a$10$xvZ4qY8KFQxQZ9X5gF5mHO5b5Z4K4vT6YZ0XZ5K4vT6YZ0XZ5K4vT6', 'ผู้ขายคนที่ 3', '0833333333')
+VALUES ('seller3', 'seller3@noteshop.com', '$2b$12$O1DTonfBAITG6CsJiU49Ge.VTaHa6mH/IpayU5T.x.rhe8hlZ5evK', 'ผู้ขายคนที่ 3', '0833333333')
 ON CONFLICT (username) DO NOTHING;
 
 -- กำหนด role seller ให้กับ seller1 user
@@ -267,6 +267,13 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     is_revoked BOOLEAN DEFAULT false,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- ตาราง slider_images สำหรับจัดการรูปภาพ slider หน้า homepage
+CREATE TABLE IF NOT EXISTS slider_images (
+    id SERIAL PRIMARY KEY,
+    image_path TEXT NOT NULL,
+    display_order INTEGER NOT NULL DEFAULT 0
 );
 
 

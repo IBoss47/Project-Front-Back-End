@@ -9,6 +9,10 @@ const PurchasedNoteModal = ({ purchase, isOpen, onClose, onReviewSubmitted }) =>
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [hasSubmitted, setHasSubmitted] = useState(purchase.review !== '' || purchase.is_liked !== null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState('');
 
   if (!isOpen) return null;
 
@@ -17,6 +21,11 @@ const PurchasedNoteModal = ({ purchase, isOpen, onClose, onReviewSubmitted }) =>
       const response = await api.get(`/download/${purchase.note_id}`, {
         responseType: 'blob'
       });
+
+      // ตรวจสอบว่า response เป็น error หรือไม่
+      if (response.status !== 200) {
+        throw new Error('Failed to download PDF');
+      }
 
       // สร้าง URL สำหรับ blob และเปิดใน tab ใหม่
       const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
@@ -28,13 +37,19 @@ const PurchasedNoteModal = ({ purchase, isOpen, onClose, onReviewSubmitted }) =>
       }, 60000);
     } catch (error) {
       console.error('Download error:', error);
-      alert('ไม่สามารถเปิด PDF ได้ กรุณาลองใหม่อีกครั้ง');
+      const errorMessage = error.response?.status === 404 
+        ? 'ไม่พบไฟล์ PDF กรุณาติดต่อผู้ขาย'
+        : 'ไม่สามารถเปิด PDF ได้ กรุณาลองใหม่อีกครั้ง';
+      setPopupMessage(errorMessage);
+      setShowErrorPopup(true);
+      setTimeout(() => setShowErrorPopup(false), 3000);
     }
   };
 
   const handleSubmitReview = async () => {
+    // ถ้าไม่มีรีวิว แสดง dialog ยืนยัน
     if (!review.trim()) {
-      setError('กรุณาเขียนรีวิวก่อนยืนยัน');
+      setShowConfirmDialog(true);
       return;
     }
 
@@ -43,17 +58,24 @@ const PurchasedNoteModal = ({ purchase, isOpen, onClose, onReviewSubmitted }) =>
       return;
     }
 
+    await submitReview();
+  };
+
+  const submitReview = async () => {
     setIsSubmitting(true);
     setError('');
+    setShowConfirmDialog(false);
 
     try {
       await api.put(`/my-purchases/${purchase.buyed_note_id}`, {
-        review: review,
+        review: review.trim() || '-',
         is_liked: isLiked
       });
 
       setHasSubmitted(true);
-      alert('บันทึกรีวิวสำเร็จ!');
+      setPopupMessage('บันทึกรีวิวสำเร็จ!');
+      setShowSuccessPopup(true);
+      setTimeout(() => setShowSuccessPopup(false), 3000);
       
       if (onReviewSubmitted) {
         onReviewSubmitted();
@@ -67,8 +89,58 @@ const PurchasedNoteModal = ({ purchase, isOpen, onClose, onReviewSubmitted }) =>
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      {/* Success Popup */}
+      {showSuccessPopup && (
+        <div className="fixed top-4 right-4 z-[60] animate-slide-in-right">
+          <div className="bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 min-w-[300px]">
+            <div className="flex-shrink-0">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-sm">{popupMessage}</p>
+            </div>
+            <button 
+              onClick={() => setShowSuccessPopup(false)}
+              className="flex-shrink-0 hover:bg-green-600 rounded-full p-1 transition-colors"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Error Popup */}
+      {showErrorPopup && (
+        <div className="fixed top-4 right-4 z-[60] animate-slide-in-right">
+          <div className="bg-red-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 min-w-[300px]">
+            <div className="flex-shrink-0">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-sm">{popupMessage}</p>
+            </div>
+            <button 
+              onClick={() => setShowErrorPopup(false)}
+              className="flex-shrink-0 hover:bg-red-600 rounded-full p-1 transition-colors"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div 
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
           <h2 className="text-2xl font-bold text-gray-800">รายละเอียดสรุปที่ซื้อ</h2>
@@ -158,7 +230,7 @@ const PurchasedNoteModal = ({ purchase, isOpen, onClose, onReviewSubmitted }) =>
             {/* Review Text */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                เขียนรีวิว
+                เขียนรีวิว <span className="text-gray-400 text-xs">(ไม่บังคับ)</span>
               </label>
               <textarea
                 value={review}
@@ -171,6 +243,35 @@ const PurchasedNoteModal = ({ purchase, isOpen, onClose, onReviewSubmitted }) =>
                   ${hasSubmitted ? 'bg-gray-50 cursor-not-allowed' : ''}`}
               />
             </div>
+
+            {/* Confirm Dialog */}
+            {showConfirmDialog && (
+              <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800 mb-3">
+                  คุณไม่ได้เขียนรีวิว ต้องการยืนยันโดยไม่ใส่รีวิวใช่หรือไม่?
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={submitReview}
+                    disabled={isSubmitting || isLiked === null}
+                    className="flex-1 py-2 px-4 bg-green-600 text-white font-medium rounded-lg 
+                      hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ยืนยัน
+                  </button>
+                  <button
+                    onClick={() => setShowConfirmDialog(false)}
+                    className="flex-1 py-2 px-4 bg-gray-300 text-gray-700 font-medium rounded-lg 
+                      hover:bg-gray-400 transition-colors"
+                  >
+                    ยกเลิก
+                  </button>
+                </div>
+                {isLiked === null && (
+                  <p className="text-xs text-red-600 mt-2">* กรุณาเลือกว่าชอบหรือไม่ชอบก่อนยืนยัน</p>
+                )}
+              </div>
+            )}
 
             {/* Error Message */}
             {error && (
@@ -199,7 +300,7 @@ const PurchasedNoteModal = ({ purchase, isOpen, onClose, onReviewSubmitted }) =>
                   </>
                 ) : (
                   <>
-                    ✓ ยืนยันรีวิว
+                    ✓ ยืนยัน
                   </>
                 )}
               </button>
