@@ -116,7 +116,7 @@ export default function MyStorePage() {
       <div className="flex justify-center px-6">
         <div className="w-full max-w-6xl px-20 space-y-4">
           {/* 1) รูปหน้าร้าน (การ์ด) */}
-          <StoreCover coverUrl={store.coverUrl} onSave={handleSaveCover} />
+          {/* <StoreCover coverUrl={store.coverUrl} onSave={handleSaveCover} /> */}
 
           {/* 2) แถบข้อมูลเจ้าของ (การ์ด) */}
           <StoreOwnerBar
