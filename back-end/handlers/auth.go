@@ -37,14 +37,15 @@ func Login(c *gin.Context) {
 
 	// ค้นหา user จาก username หรือ email
 	var user models.User
+	var avatarURL sql.NullString
 	query := `
-		SELECT id, username, email, password_hash, fullname, phone, created_at
+		SELECT id, username, email, password_hash, fullname, phone, avatar_url, created_at
 		FROM users 
 		WHERE username = $1 OR email = $1
 	`
 	err := config.DB.QueryRow(query, req.Username).Scan(
 		&user.ID, &user.Username, &user.Email, &user.PasswordHash,
-		&user.FullName, &user.Phone, &user.CreatedAt,
+		&user.FullName, &user.Phone, &avatarURL, &user.CreatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -61,6 +62,11 @@ func Login(c *gin.Context) {
 			"message": err.Error(),
 		})
 		return
+	}
+
+	// กำหนดค่า avatar_url
+	if avatarURL.Valid {
+		user.AvatarURL = avatarURL.String
 	}
 
 	// ตรวจสอบ password

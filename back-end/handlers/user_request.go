@@ -32,9 +32,10 @@ func GetMe(c *gin.Context){
     userId := v.(int)
 
     var user models.User
+    var avatarURL sql.NullString
 
     query := `
-		SELECT id, username, email, fullname, phone, created_at 
+		SELECT id, username, email, fullname, phone, avatar_url, created_at 
 		FROM users 
 		WHERE id = $1
 	`
@@ -47,6 +48,7 @@ func GetMe(c *gin.Context){
         &user.Email,
         &user.FullName,
         &user.Phone,
+        &avatarURL,
         &user.CreatedAt,
     )
 
@@ -58,6 +60,11 @@ func GetMe(c *gin.Context){
         }
         c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
         return
+    }
+
+    // กำหนดค่า avatar_url
+    if avatarURL.Valid {
+        user.AvatarURL = avatarURL.String
     }
 
     c.JSON(http.StatusOK, user)
@@ -85,9 +92,10 @@ func GetUserByID(c *gin.Context) {
 	}
 
 	var user models.User
+    var avatarURL sql.NullString
 
 	query := `
-		SELECT id, username, email, fullname, phone, created_at
+		SELECT id, username, email, fullname, phone, avatar_url, created_at
 		FROM users
 		WHERE id = $1
 	`
@@ -100,6 +108,7 @@ func GetUserByID(c *gin.Context) {
 		&user.Email,
 		&user.FullName,
 		&user.Phone,
+		&avatarURL,
 		&user.CreatedAt,
 	)
 
@@ -110,6 +119,11 @@ func GetUserByID(c *gin.Context) {
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
 		return
+	}
+
+	// กำหนดค่า avatar_url
+	if avatarURL.Valid {
+		user.AvatarURL = avatarURL.String
 	}
 
 	c.JSON(http.StatusOK, user)

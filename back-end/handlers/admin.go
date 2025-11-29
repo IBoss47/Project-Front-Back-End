@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"back-end/config"
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -29,6 +30,7 @@ type UserInfo struct {
 	Email     string   `json:"email"`
 	FullName  string   `json:"fullname"`
 	Phone     string   `json:"phone"`
+	AvatarURL string   `json:"avatar_url"`
 	Roles     []string `json:"roles"`
 	JoinDate  string   `json:"join_date"`
 	Status    string   `json:"status"`
@@ -148,12 +150,13 @@ func GetAllUsers(c *gin.Context) {
 			u.email,
 			COALESCE(u.fullname, '') as fullname,
 			COALESCE(u.phone, '') as phone,
+			COALESCE(u.avatar_url, '') as avatar_url,
 			TO_CHAR(u.created_at, 'YYYY-MM-DD') as join_date,
 			ARRAY_AGG(r.name) as roles
 		FROM users u
 		LEFT JOIN user_roles ur ON u.id = ur.user_id
 		LEFT JOIN roles r ON ur.role_id = r.id
-		GROUP BY u.id, u.username, u.email, u.fullname, u.phone, u.created_at
+		GROUP BY u.id, u.username, u.email, u.fullname, u.phone, u.avatar_url, u.created_at
 		ORDER BY u.created_at DESC
 	`
 
@@ -171,12 +174,14 @@ func GetAllUsers(c *gin.Context) {
 	for rows.Next() {
 		var user UserInfo
 		var roles pq.StringArray
+		var avatarURL sql.NullString
 		err := rows.Scan(
 			&user.ID,
 			&user.Username,
 			&user.Email,
 			&user.FullName,
 			&user.Phone,
+			&avatarURL,
 			&user.JoinDate,
 			&roles,
 		)
@@ -186,6 +191,10 @@ func GetAllUsers(c *gin.Context) {
 				"message": err.Error(),
 			})
 			return
+		}
+		// กำหนดค่า avatar_url
+		if avatarURL.Valid {
+			user.AvatarURL = avatarURL.String
 		}
 		user.Roles = []string(roles)
 		user.Status = "active"

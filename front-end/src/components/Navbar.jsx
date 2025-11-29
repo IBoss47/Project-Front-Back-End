@@ -1,5 +1,5 @@
 import React from "react";
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import {useState, useEffect} from "react";
 import './styles/Navbar.css'
 import {
@@ -18,6 +18,7 @@ const Navbar = () => {
     const [isAdmin, setIsAdmin] = useState(false);
     const { getTotalItems } = useCart();
     const cartCount = getTotalItems();
+    const navigate = useNavigate();
 
     // เช็ค login status เมื่อโหลดหน้า
     useEffect(() => {
@@ -40,14 +41,15 @@ const Navbar = () => {
             await authAPI.logout();  // เรียก API logout และลบ tokens
             setIsLoggedIn(false);
             setUsername("");
+            setIsAdmin(false);
             setIsOpen(false);
-            window.location.reload();  
+            navigate('/');  // redirect ไปหน้า homepage
             
         } catch (error) {
             console.error('Logout error:', error);
             // ถ้า API fail ก็ยังลบ localStorage ได้
             localStorage.clear();
-            window.location.reload();
+            navigate('/');  // redirect ไปหน้า homepage
         }
     };
     
