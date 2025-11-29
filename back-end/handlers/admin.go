@@ -207,9 +207,9 @@ func GetDashboardStats(c *gin.Context) {
 		stats.TotalSummaries = 0
 	}
 
-	// คำนวณรายได้รวมจากตาราง buyed_note (ดึงราคาจริงที่ขายได้)
+	// คำนวณรายได้รวมจากตาราง buyed_note (เก็บ 2% ของราคาขาย)
 	err = config.DB.QueryRow(`
-		SELECT COALESCE(SUM(n.price), 0) 
+		SELECT COALESCE(SUM(n.price) * 0.02, 0) 
 		FROM buyed_note b
 		INNER JOIN notes_for_sale n ON b.note_id = n.id
 	`).Scan(&stats.TotalRevenue)
@@ -217,7 +217,7 @@ func GetDashboardStats(c *gin.Context) {
 		stats.TotalRevenue = 0
 	}
 
-	// คำนวณรายได้เดือนนี้ (ดึงจาก buyed_note ที่มี created_at ถ้ามี)
+	// คำนวณรายได้เดือนนี้ (เก็บ 2% ของราคาขาย)
 	// หากตาราง buyed_note ไม่มี created_at ให้ใช้รายได้ทั้งหมดแทน
 	var monthlyRevenueQuery string
 	var hasCreatedAt bool
@@ -231,7 +231,7 @@ func GetDashboardStats(c *gin.Context) {
 	
 	if hasCreatedAt {
 		monthlyRevenueQuery = `
-			SELECT COALESCE(SUM(n.price), 0) 
+			SELECT COALESCE(SUM(n.price) * 0.02, 0) 
 			FROM buyed_note b
 			INNER JOIN notes_for_sale n ON b.note_id = n.id
 			WHERE b.created_at >= DATE_TRUNC('month', CURRENT_DATE)
@@ -239,7 +239,7 @@ func GetDashboardStats(c *gin.Context) {
 	} else {
 		// ถ้าไม่มี created_at ให้ใช้รายได้ทั้งหมด
 		monthlyRevenueQuery = `
-			SELECT COALESCE(SUM(n.price), 0) 
+			SELECT COALESCE(SUM(n.price) * 0.02, 0) 
 			FROM buyed_note b
 			INNER JOIN notes_for_sale n ON b.note_id = n.id
 		`
