@@ -1,3 +1,4 @@
+
 -- สร้างตารางผู้ใช้งาน (users) สำหรับผู้ขาย
 CREATE TABLE IF NOT EXISTS users (
 	id SERIAL PRIMARY KEY,

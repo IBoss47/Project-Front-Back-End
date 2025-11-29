@@ -108,6 +108,7 @@ func main() {
 		admin.GET("/notes/pending", handlers.GetPendingNotes)   // ดึงรายการ Notes ที่รออนุมัติ
 		admin.POST("/notes/:id/approve", handlers.ApproveNote)  // อนุมัติ Note
 		admin.POST("/notes/:id/reject", handlers.RejectNote)    // ปฏิเสธ Note
+		admin.DELETE("/notes/:id", handlers.DeleteNote)         // ลบ Note
 		admin.POST("/seller/add", handlers.AddSellerRole)       // เพิ่ม role seller
 		admin.POST("/seller/remove", handlers.RemoveSellerRole) // ลบ role seller
 	}

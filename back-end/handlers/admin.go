@@ -567,3 +567,41 @@ func RejectNote(c *gin.Context) {
 		"reason":  req.Reason,
 	})
 }
+
+// DeleteNote - ลบ Note (Admin only)
+func DeleteNote(c *gin.Context) {
+	noteID := c.Param("id")
+	if noteID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Note ID is required",
+		})
+		return
+	}
+
+	// ลบ note จาก database (note_images และ cart จะถูกลบอัตโนมัติเพราะ ON DELETE CASCADE)
+	result, err := config.DB.Exec(`
+		DELETE FROM notes_for_sale 
+		WHERE id = $1
+	`, noteID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Database error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Note not found",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Note deleted successfully",
+	})
+}

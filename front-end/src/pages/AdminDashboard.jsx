@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/auth';
 import {
-  ChartBarIcon,
   UserGroupIcon,
-  ShoppingBagIcon,
   CurrencyDollarIcon,
   DocumentTextIcon,
-  ExclamationTriangleIcon,
   CheckCircleIcon,
-  PencilSquareIcon,
   TrashIcon,
   EyeIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 
 const AdminDashboard = () => {
@@ -25,15 +22,15 @@ const AdminDashboard = () => {
     totalSummaries: 0,
     totalRevenue: 0,
     monthlyRevenue: 0,
-    activeOrders: 0,
-    pendingApprovals: 0,
-    reportedIssues: 0
+    pendingApprovals: 0
   });
 
   const [sellers, setSellers] = useState([]);
   const [users, setUsers] = useState([]);
   const [notes, setNotes] = useState([]);
   const [pendingNotes, setPendingNotes] = useState([]); // Notes ที่รออนุมัติจริง
+  const [selectedNote, setSelectedNote] = useState(null); // Note ที่เลือกดู
+  const [showNoteModal, setShowNoteModal] = useState(false); // แสดง modal
 
   // Fetch data from API
   useEffect(() => {
@@ -52,9 +49,7 @@ const AdminDashboard = () => {
             totalSummaries: stats.total_summaries || 0,
             totalRevenue: stats.total_revenue || 0,
             monthlyRevenue: stats.monthly_revenue || 0,
-            totalOrders: stats.total_orders || 0,
-            pendingApprovals: stats.pending_approvals || 0,
-            reportedIssues: stats.reported_issues || 0
+            pendingApprovals: stats.pending_approvals || 0
           }));
         }
 
@@ -156,27 +151,31 @@ const AdminDashboard = () => {
     }
   };
 
-  // Mock Data for issues (can be replaced with API later)
-  const [reportedIssues] = useState([
-    {
-      id: 1,
-      type: 'inappropriate_content',
-      title: 'สรุปมีเนื้อหาไม่เหมาะสม',
-      reported_by: 'ผู้ใช้ ID: USER123',
-      summary: 'Final HCI',
-      status: 'pending',
-      createdAt: '2567-11-16'
-    },
-    {
-      id: 2,
-      type: 'spam',
-      title: 'ขอย้ายสินค้า - Spam',
-      reported_by: 'ผู้ใช้ ID: USER456',
-      summary: 'Test Summary',
-      status: 'resolved',
-      createdAt: '2567-11-15'
+  // Handle view note - ดูรายละเอียด note
+  const handleViewNote = (note) => {
+    setSelectedNote(note);
+    setShowNoteModal(true);
+  };
+
+  // Handle delete note - ลบ note
+  const handleDeleteNote = async (noteId) => {
+    if (!window.confirm('คุณแน่ใจหรือไม่ที่จะลบสรุปนี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
+      return;
     }
-  ]);
+    try {
+      const response = await api.delete(`/admin/notes/${noteId}`);
+      if (response.data.success) {
+        alert('ลบสรุปสำเร็จ!');
+        // Refresh data
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Error deleting note:', err);
+      alert('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+
 
   // Loading state
   if (loading) {
@@ -195,7 +194,7 @@ const AdminDashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 pt-24 pb-16 flex items-center justify-center">
         <div className="text-center bg-red-500/20 rounded-xl p-8 border border-red-500">
-          <ExclamationTriangleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          {/* <ExclamationTriangleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" /> */}
           <p className="text-white text-xl mb-2">เกิดข้อผิดพลาด</p>
           <p className="text-gray-400">{error}</p>
           <button
@@ -237,7 +236,7 @@ const AdminDashboard = () => {
                 <p className="text-purple-100 text-sm font-semibold mb-1">จำนวน Seller</p>
                 <p className="text-4xl font-bold">{dashboardStats.totalSellers}</p>
               </div>
-              <ShoppingBagIcon className="w-14 h-14 opacity-30" />
+              {/* <ShoppingBagIcon className="w-14 h-14 opacity-30" /> */}
             </div>
             <p className="text-purple-100 text-sm">↑ 5% จากเดือนที่แล้ว</p>
           </div>
@@ -265,18 +264,8 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Alert Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-6 text-white border border-red-400">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-red-100 text-sm font-semibold mb-2">⚠️ ปัญหาที่รายงาน</p>
-                <p className="text-3xl font-bold">{dashboardStats.reportedIssues}</p>
-              </div>
-              <ExclamationTriangleIcon className="w-12 h-12 opacity-40" />
-            </div>
-          </div>
-
+        {/* Alert Card - รอการอนุมัติ */}
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8 max-w-md">
           <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg p-6 text-white border border-orange-400">
             <div className="flex items-center justify-between">
               <div>
@@ -284,16 +273,6 @@ const AdminDashboard = () => {
                 <p className="text-3xl font-bold">{dashboardStats.pendingApprovals}</p>
               </div>
               <CheckCircleIcon className="w-12 h-12 opacity-40" />
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl shadow-lg p-6 text-white border border-cyan-400">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-cyan-100 text-sm font-semibold mb-2">📦 คำสั่งซื้อที่ใช้งานอยู่</p>
-                <p className="text-3xl font-bold">{dashboardStats.activeOrders}</p>
-              </div>
-              <ShoppingBagIcon className="w-12 h-12 opacity-40" />
             </div>
           </div>
         </div>
@@ -345,15 +324,6 @@ const AdminDashboard = () => {
                 }`}
             >
               ✓ อนุมัติ ({dashboardStats.pendingApprovals})
-            </button>
-            <button
-              onClick={() => setActiveTab('reports')}
-              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === 'reports'
-                ? 'bg-blue-600 text-white border-b-2 border-blue-400'
-                : 'text-gray-400 hover:text-gray-200'
-                }`}
-            >
-              ⚠️ รายงาน ({dashboardStats.reportedIssues})
             </button>
           </div>
 
@@ -463,13 +433,18 @@ const AdminDashboard = () => {
                             </td>
                             <td className="px-4 py-3 text-sm">{item.created_at}</td>
                             <td className="px-4 py-3 flex gap-2">
-                              <button className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors" title="ดู">
+                              <button
+                                onClick={() => handleViewNote(item)}
+                                className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                                title="ดู"
+                              >
                                 <EyeIcon className="w-5 h-5 text-white" />
                               </button>
-                              <button className="p-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors" title="แก้ไข">
-                                <PencilSquareIcon className="w-5 h-5 text-white" />
-                              </button>
-                              <button className="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors" title="ลบ">
+                              <button
+                                onClick={() => handleDeleteNote(item.id)}
+                                className="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                                title="ลบ"
+                              >
                                 <TrashIcon className="w-5 h-5 text-white" />
                               </button>
                             </td>
@@ -675,56 +650,126 @@ const AdminDashboard = () => {
                   </div>
                 )}
               </div>
-            )}          {/* Reports Tab */}
-            {activeTab === 'reports' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-white mb-6">⚠️ รายงานปัญหา ({dashboardStats.reportedIssues})</h2>
-
-                <div className="space-y-4">
-                  {reportedIssues.map((issue) => (
-                    <div key={issue.id} className={`rounded-xl p-6 border ${issue.status === 'pending'
-                      ? 'bg-red-900/30 border-red-600/50'
-                      : 'bg-green-900/30 border-green-600/50'
-                      }`}>
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-xl font-bold text-white">{issue.title}</h3>
-                          <span className={`px-3 py-1 rounded-full text-sm font-bold ${issue.status === 'pending'
-                            ? 'bg-red-500/30 text-red-300'
-                            : 'bg-green-500/30 text-green-300'
-                            }`}>
-                            {issue.status === 'pending' ? '⚠️ รอดำเนินการ' : '✓ แก้ไขแล้ว'}
-                          </span>
-                        </div>
-                        <p className="text-gray-400">
-                          สรุป: {issue.summary}
-                        </p>
-                        <p className="text-gray-500 text-sm mt-2">
-                          รายงานโดย: {issue.reported_by} | เมื่อ: {issue.createdAt}
-                        </p>
-                      </div>
-
-                      {issue.status === 'pending' && (
-                        <div className="flex gap-3">
-                          <button className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors">
-                            🗑️ ลบสรุป
-                          </button>
-                          <button className="flex-1 px-4 py-3 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-lg transition-colors">
-                            📧 ติดต่อ Seller
-                          </button>
-                          <button className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors">
-                            ✓ แก้ไขแล้ว
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Modal ดูรายละเอียด Note */}
+      {showNoteModal && selectedNote && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-600">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <h2 className="text-2xl font-bold text-white">📄 รายละเอียดสรุป</h2>
+              <button
+                onClick={() => setShowNoteModal(false)}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <XMarkIcon className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <div>
+                <p className="text-gray-400 text-sm mb-1">ชื่อสรุป</p>
+                <p className="text-xl font-bold text-white">{selectedNote.title}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">ID</p>
+                  <p className="text-white">#{selectedNote.id}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">ราคา</p>
+                  <p className="text-green-400 font-bold">฿{selectedNote.price}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">ผู้ขาย</p>
+                  <p className="text-white">{selectedNote.seller_name}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">สถานะ</p>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${selectedNote.status === 'available'
+                      ? 'bg-green-500/30 text-green-300'
+                      : selectedNote.status === 'pending'
+                        ? 'bg-yellow-500/30 text-yellow-300'
+                        : selectedNote.status === 'rejected'
+                          ? 'bg-red-500/30 text-red-300'
+                          : 'bg-blue-500/30 text-blue-300'
+                    }`}>
+                    {selectedNote.status === 'available' ? '✓ พร้อมขาย' :
+                      selectedNote.status === 'pending' ? '⏳ รออนุมัติ' :
+                        selectedNote.status === 'rejected' ? '✕ ถูกปฏิเสธ' : selectedNote.status}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">เทอม</p>
+                  <p className="text-white">{selectedNote.exam_term || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">วิชา</p>
+                  <p className="text-white">{selectedNote.course_name || '-'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-gray-400 text-sm mb-1">วันที่สร้าง</p>
+                  <p className="text-white">{selectedNote.created_at}</p>
+                </div>
+              </div>
+
+              {selectedNote.description && (
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">รายละเอียด</p>
+                  <p className="text-gray-300 bg-gray-700 p-3 rounded-lg">{selectedNote.description}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-6 border-t border-gray-700">
+              {selectedNote.status === 'pending' && (
+                <>
+                  <button
+                    onClick={() => {
+                      handleApproveNote(selectedNote.id);
+                      setShowNoteModal(false);
+                    }}
+                    className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors"
+                  >
+                    ✓ อนุมัติ
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleRejectNote(selectedNote.id);
+                      setShowNoteModal(false);
+                    }}
+                    className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
+                  >
+                    ✕ ปฏิเสธ
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => {
+                  handleDeleteNote(selectedNote.id);
+                  setShowNoteModal(false);
+                }}
+                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
+              >
+                🗑️ ลบสรุป
+              </button>
+              <button
+                onClick={() => setShowNoteModal(false)}
+                className="flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg transition-colors"
+              >
+                ปิด
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
