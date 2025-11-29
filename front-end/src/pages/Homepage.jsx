@@ -18,7 +18,7 @@ const Homepage = () => {
             try {
                 // Fetch all data in parallel
                 const [recommended, latest, bestSelling, sliderRes] = await Promise.all([
-                    api.get('/notes'),
+                    api.get('/notes/most-liked'), 
                     api.get('/notes/latest'),
                     api.get('/notes/best-selling'),
                     api.get('/slider')

@@ -6,7 +6,7 @@ import { HeartIcon as HeartSolidIcon, StarIcon as StarSolidIcon } from '@heroico
 import { useCart } from '../context/CartContext';
 
 const BookDetailModal = ({ book, isOpen, onClose }) => {
-    const [isFavorite, setIsFavorite] = useState(false);
+
     const [quantity, setQuantity] = useState(1);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [showErrorPopup, setShowErrorPopup] = useState(false);
@@ -50,9 +50,7 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
         }
     };
 
-    const handleToggleFavorite = () => {
-        setIsFavorite(!isFavorite);
-    };
+
 
     // แปลงสถานะเป็นภาษาไทย
     const getStatusBadge = (status) => {
@@ -172,23 +170,8 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                     )}
                                 </div>
 
-                                {/* Favorite Button */}
-                                <button
-                                    onClick={handleToggleFavorite}
-                                    className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all transform hover:scale-105 shadow-sm"
-                                >
-                                    {isFavorite ? (
-                                        <>
-                                            <HeartSolidIcon className="w-4 h-4 text-red-500" />
-                                            <span className="font-bold text-sm text-red-500">บันทึกแล้ว</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <HeartIcon className="w-4 h-4 text-gray-600" />
-                                            <span className="font-bold text-sm text-gray-600">บันทึกสินค้า</span>
-                                        </>
-                                    )}
-                                </button>
+
+
                             </div>
 
                             {/* Right: Study Notes Details */}
