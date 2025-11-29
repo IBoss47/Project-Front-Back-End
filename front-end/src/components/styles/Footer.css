@@ -1,20 +1,20 @@
 .footer-container {
-    padding: 1rem 0 2rem 0;
+    padding: 2rem 4rem;
     display: flex;
     flex-direction: row;
-    justify-content: center;
-    background-color: wheat;
-    border-top: 1px solid #ccc;
-    border-bottom: 1px solid black;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    justify-content: space-between;
+    align-items: flex-start;
+    background-color: #F0F0F0;
+    border-top: 1px solid #ddd;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+    gap: 60px;
 }
 h4{
-    color: rgba(0, 0, 0, 0.5);
+    color: #4F4F4F;
 }
 
 .footer-left{
-    margin-right: 250px;
-    margin-left: 30px;
+    flex: 1;
     text-align: left;
     font-size: 14px;
 }
@@ -42,10 +42,10 @@ h4{
     cursor: pointer;
 }
 .footer-mid{
+    flex: 1;
     text-align: left;
     font-size: 14px;
     color: #333;
-    margin: 0 25px
 }
 .footer-help{
     text-decoration: none;
@@ -57,9 +57,7 @@ h4{
     cursor: pointer;
 }
 .footer-right{
-    margin-left: 280px;
-    margin-right: 100px;
-    margin-top: 0px;
+    flex: 1;
     text-align: left;
     font-size: 14px;
     color: #333;

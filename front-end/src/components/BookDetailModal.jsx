@@ -68,7 +68,7 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
 
     const modalContent = (
         <div
-            className="fixed inset-0 z-50 bg-black bg-opacity-70 backdrop-blur-sm animate-fade-in flex items-center justify-center p-4"
+            className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md animate-fade-in flex items-center justify-center p-4"
             onClick={onClose}
         >
             {/* Success Popup */}
@@ -116,7 +116,7 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
             )}
 
             <div
-                className="bg-white w-full max-w-4xl max-h-[70vh] overflow-hidden flex flex-col animate-scale-up rounded-2xl shadow-2xl"
+                className="bg-white w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col animate-bounce-in rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] ring-4 ring-white/20"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}

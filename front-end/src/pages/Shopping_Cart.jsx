@@ -42,8 +42,8 @@ const Shopping_Cart = () => {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pt-24">
-        <div className="container mx-auto px-4 py-12">
+      <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pt-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center py-20">
             <div className="mb-6 text-7xl">📝</div>
             <h1 className="text-4xl font-bold text-gray-800 mb-4">ตะกร้าของคุณว่างเปล่า</h1>
@@ -63,8 +63,8 @@ const Shopping_Cart = () => {
   }
 
   return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pt-24 pb-16">
-      <div className="container mx-auto px-4">
+      <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pt-32 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">📝 ตะกร้าสรุปวิชา</h1>
