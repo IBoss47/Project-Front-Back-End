@@ -95,6 +95,12 @@ func main() {
 		public.GET("/courses/majors", handlers.GetCourseMajors) // ดึงรายการสาขาทั้งหมด
 		public.GET("/courses/years", handlers.GetCourseYears)   // ดึงรายการชั้นปีทั้งหมด
 
+		// Reviews - ดูได้โดยไม่ต้อง login
+		public.GET("/sellers/:id/reviews", handlers.GetSellerReviews)           // ดึงรีวิวของ seller
+		public.GET("/sellers/:id/reviews/stats", handlers.GetSellerReviewStats) // ดึงสถิติรีวิว
+		public.GET("/notes/:id/reviews", handlers.GetNoteReviews)          // ดึงรีวิวของหนังสือ
+		public.GET("/notes/:id/reviews/stats", handlers.GetNoteReviewStats) // ดึงสถิติรีวิวของหนังสือ
+
 		// Slider - ดูได้โดยไม่ต้อง login
 		public.GET("/slider", handlers.GetSliderImages) // ดึงรูปภาพ slider ที่ active
 	}

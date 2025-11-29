@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { XMarkIcon, ShoppingCartIcon, HeartIcon, StarIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon, StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 import { useCart } from '../context/CartContext';
+import { ReviewList, ReviewStats } from './Store/ReviewItem';
 
 const BookDetailModal = ({ book, isOpen, onClose }) => {
     const [isFavorite, setIsFavorite] = useState(false);
@@ -13,6 +14,11 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
     const [popupMessage, setPopupMessage] = useState('');
     const { addToCart } = useCart();
     const navigate = useNavigate();
+    
+    // Review states
+    const [reviews, setReviews] = useState([]);
+    const [reviewStats, setReviewStats] = useState(null);
+    const [loadingReviews, setLoadingReviews] = useState(false);
 
     // ป้องกัน scroll เมื่อเปิด modal
     useEffect(() => {
@@ -25,6 +31,37 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
             document.body.style.overflow = 'unset';
         };
     }, [isOpen]);
+
+    // Fetch reviews when modal opens
+    useEffect(() => {
+        if (isOpen && book?.id) {
+            fetchReviews();
+        }
+    }, [isOpen, book?.id]);
+
+    const fetchReviews = async () => {
+        setLoadingReviews(true);
+        try {
+            const [reviewsRes, statsRes] = await Promise.all([
+                fetch(`http://localhost:8080/api/notes/${book.id}/reviews`),
+                fetch(`http://localhost:8080/api/notes/${book.id}/reviews/stats`)
+            ]);
+
+            if (reviewsRes.ok) {
+                const data = await reviewsRes.json();
+                setReviews(data.reviews || []);
+            }
+
+            if (statsRes.ok) {
+                const data = await statsRes.json();
+                setReviewStats(data);
+            }
+        } catch (error) {
+            console.error('Error fetching reviews:', error);
+        } finally {
+            setLoadingReviews(false);
+        }
+    };
 
     if (!isOpen || !book) return null;
 
@@ -276,6 +313,20 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                         </p>
                                     </div>
                                 )}
+
+                                {/* Reviews Section */}
+                                <div>
+                                    <p className="text-sm text-gray-600 mb-3 font-semibold">⭐ รีวิว</p>
+                                    <div className="space-y-4">
+                                        <ReviewStats stats={reviewStats} loading={loadingReviews} />
+                                        <ReviewList 
+                                            reviews={reviews} 
+                                            loading={loadingReviews}
+                                            showNoteName={false}
+                                            emptyMessage="ยังไม่มีรีวิวสำหรับสรุปนี้"
+                                        />
+                                    </div>
+                                </div>
 
                                 {/* Quantity Selector */}
                                 {book.status === 'available' && (

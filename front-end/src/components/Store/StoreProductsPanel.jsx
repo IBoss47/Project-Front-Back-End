@@ -4,6 +4,7 @@ import SaleList from '../SaleList';
 import SearchBar from '../SearchBar';
 import FilterSidebar from '../FilterSidebar';
 import LoadingSpinner from '../LoadingSpinner';
+import { ReviewList, ReviewStats } from './ReviewItem';
 import { ChevronDownIcon, FunnelIcon, Squares2X2Icon, ListBulletIcon } from '@heroicons/react/24/outline';
 import { getAllBooks, filterBooks } from '../../data/mockBooksData';
 
@@ -23,6 +24,8 @@ export default function StoreProductsPanel({ userId }) {
 
   const [books, setBooks] = useState([]);
   const [notes, setNotes] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [reviewStats, setReviewStats] = useState(null);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
   const [selectedSemester, setSelectedSemester] = useState('all');
@@ -32,6 +35,7 @@ export default function StoreProductsPanel({ userId }) {
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingReviews, setLoadingReviews] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState('grid'); // grid or list
   const [showFilters, setShowFilters] = useState(false);
@@ -55,6 +59,29 @@ export default function StoreProductsPanel({ userId }) {
 
     fetchNotes();
   }, [userId]);
+
+  // Load reviews when switching to reviews tab
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!userId || tab !== 'reviews') return;
+      
+      setLoadingReviews(true);
+      try {
+        const [reviewsRes, statsRes] = await Promise.all([
+          api.get(`/sellers/${userId}/reviews`),
+          api.get(`/sellers/${userId}/reviews/stats`)
+        ]);
+        setReviews(reviewsRes.data);
+        setReviewStats(statsRes.data);
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+      } finally {
+        setLoadingReviews(false);
+      }
+    };
+
+    fetchReviews();
+  }, [userId, tab]);
 
   const indexOfLastBook = currentPage * booksPerPage;
   const indexOfFirstBook = indexOfLastBook - booksPerPage;
@@ -93,7 +120,7 @@ export default function StoreProductsPanel({ userId }) {
         >
           รีวิว
         </button>
-        <button
+        {/* <button
           className={`pb-2 ${tab === "sold"
             ? "border-b-2 border-indigo-600 font-medium"
             : "text-gray-600 hover:text-gray-800"
@@ -101,7 +128,7 @@ export default function StoreProductsPanel({ userId }) {
           onClick={() => setTab("sold")}
         >
           ขายแล้ว
-        </button>
+        </button> */}
       </div>
 
       {/* Search (เฉพาะแท็บประกาศ) */}
@@ -146,7 +173,24 @@ export default function StoreProductsPanel({ userId }) {
       )}
 
       {tab === "reviews" && (
-        <EmptyState title="ยังไม่มีรีวิว" />
+        loadingReviews ? (
+          <div className="mt-4 text-center">
+            <LoadingSpinner />
+          </div>
+        ) : (
+          <div className="mt-4">
+            {/* สถิติรีวิว */}
+            <ReviewStats stats={reviewStats} />
+
+            {/* รายการรีวิว */}
+            <ReviewList 
+              reviews={reviews} 
+              loading={loadingReviews}
+              showNoteName={true}
+              emptyMessage="ยังไม่มีรีวิว"
+            />
+          </div>
+        )
       )}
 
       {tab === "sold" && (
