@@ -71,10 +71,12 @@ export default function StoreProductsPanel({ userId }) {
           api.get(`/sellers/${userId}/reviews`),
           api.get(`/sellers/${userId}/reviews/stats`)
         ]);
-        setReviews(reviewsRes.data);
+        setReviews(reviewsRes.data.reviews || []);
         setReviewStats(statsRes.data);
       } catch (error) {
         console.error("Error fetching reviews:", error);
+        setReviews([]);
+        setReviewStats(null);
       } finally {
         setLoadingReviews(false);
       }
