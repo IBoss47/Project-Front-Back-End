@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
-import BookCard from '../SaleList';
+import api from '../../api/auth';
+import SaleList from '../SaleList';
 import SearchBar from '../SearchBar';
 import FilterSidebar from '../FilterSidebar';
 import LoadingSpinner from '../LoadingSpinner';
@@ -15,30 +16,13 @@ function EmptyState({ title }) {
   );
 }
 
-// --- การ์ดสินค้าแบบง่าย (แทน ProductCard/SaleList) ---
-function ProductCard({ book }) {
-  return (
-    <div className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden">
-      <img
-        src={book.coverImage || "/images/book-placeholder.jpg"}
-        alt={book.title}
-        className="h-40 w-full object-cover"
-      />
-      <div className="p-4">
-        <h3 className="text-sm font-bold mb-1">{book.title}</h3>
-        <p className="text-xs text-gray-600 mb-2">โดย {book.author}</p>
-        <p className="text-indigo-600 font-semibold">฿{book.price}</p>
-      </div>
-    </div>
-  );
-}
-
 // --- คอมโพเนนต์หลัก StoreProductsPanel ---
-export default function StoreProductsPanel() {
+export default function StoreProductsPanel({ userId }) {
   const [tab, setTab] = useState("listed"); // listed | reviews | sold
   const [q, setQ] = useState("");
 
   const [books, setBooks] = useState([]);
+  const [notes, setNotes] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
   const [selectedSemester, setSelectedSemester] = useState('all');
@@ -54,28 +38,36 @@ export default function StoreProductsPanel() {
   const booksPerPage = 12;
 
   useEffect(() => {
-    // Load books from data
-    setLoading(true);
-    setTimeout(() => {
-      const booksData = getAllBooks();
-      setBooks(booksData);
-      setFilteredBooks(booksData);
-      setLoading(false);
-    }, 500);
-  }, []);
+    // Load notes from API
+    const fetchNotes = async () => {
+      if (!userId) return;
+      
+      setLoading(true);
+      try {
+        const response = await api.get(`/users/${userId}/notes`);
+        setNotes(response.data);
+      } catch (error) {
+        console.error("Error fetching notes:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotes();
+  }, [userId]);
 
   const indexOfLastBook = currentPage * booksPerPage;
   const indexOfFirstBook = indexOfLastBook - booksPerPage;
   const currentBooks = filteredBooks.slice(indexOfFirstBook, indexOfLastBook);
   const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
 
-  const listed = useMemo(() => books, [books]);
+  const listed = useMemo(() => notes, [notes]);
 
   const filtered = useMemo(() => {
     const kw = q.trim().toLowerCase();
     if (!kw) return listed;
-    return listed.filter((b) =>
-      [b.title, b.author, b.category].join(" ").toLowerCase().includes(kw)
+    return listed.filter((n) =>
+      [n.book_title, n.description, n.course?.name].join(" ").toLowerCase().includes(kw)
     );
   }, [listed, q]);
 
@@ -136,11 +128,22 @@ export default function StoreProductsPanel() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-4 gap-8">
-        {books.map(book => (
-          <BookCard key={book.id} book={book} />
-        ))}
-      </div>
+      {/* แสดงข้อมูล Notes */}
+      {tab === "listed" && (
+        loading ? (
+          <div className="mt-4 text-center">
+            <LoadingSpinner />
+          </div>
+        ) : filtered.length > 0 ? (
+          <div className="mt-4 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {filtered.map(note => (
+              <SaleList key={note.id} book={note} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState title="ยังไม่มีประกาศขายโน้ต" />
+        )
+      )}
 
       {tab === "reviews" && (
         <EmptyState title="ยังไม่มีรีวิว" />

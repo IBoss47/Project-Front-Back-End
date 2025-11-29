@@ -1,7 +1,7 @@
 import React,{useEffect, useState} from "react";
 import {Link} from "react-router-dom";
 import Slider from "../components/Slider";
-import SaleList2 from "../components/SaleList2";
+import SaleList from "../components/SaleList";
 import { ArrowRightIcon, BookOpenIcon, TruckIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import api from '../api/auth';
 
@@ -10,23 +10,39 @@ const Homepage = () => {
     const [recommendedBooks, setRecommendedBooks] = useState([]);
     const [latestBooks, setLatestBooks] = useState([]);
     const [bestSellingBooks, setBestSellingBooks] = useState([]);
+    const [slideData, setSlideData] = useState([]);
     
     useEffect(() => {
         const fetchBooks = async () => {
             setLoading(true);
             try {
-                // Fetch all three types of books in parallel
-                const [recommended, latest, bestSelling] = await Promise.all([
+                // Fetch all data in parallel
+                const [recommended, latest, bestSelling, sliderRes] = await Promise.all([
                     api.get('/notes'),
                     api.get('/notes/latest'),
-                    api.get('/notes/best-selling')
+                    api.get('/notes/best-selling'),
+                    api.get('/slider')
                 ]);
                 
                 setRecommendedBooks(recommended.data.slice(0, 6));
                 setLatestBooks(latest.data);
                 setBestSellingBooks(bestSelling.data.slice(0, 6));
+                
+                // Set slider data from API
+                if (sliderRes.data.success && sliderRes.data.data) {
+                    const slides = sliderRes.data.data.map(slide => ({
+                        ...slide,
+                        image: `http://localhost:8080/${slide.image}`
+                    }));
+                    setSlideData(slides);
+                }
             } catch (error) {
-                console.error('Error fetching books:', error);
+                console.error('Error fetching data:', error);
+                // Fallback to default slides if API fails
+                setSlideData([
+                    { image: '/Images/board/home_board.jpg', link: '/Help' },
+                    { image: '/Images/board/sell_board.jpg', link: '/SellListPage' }
+                ]);
             } finally {
                 setLoading(false);
             }
@@ -34,22 +50,11 @@ const Homepage = () => {
         
         fetchBooks();
     }, []);
-    
-    const slideData = [
-    {
-      image: '/Images/board/home_board.jpg',
-      link: '/Help'
-    },
-    {
-      image: '/Images/board/sell_board.jpg',
-      link: '/SellListPage'
-    }
-  ];
 
 
     return (
      <div className="homepage w-full h-full">
-       <Slider slides={slideData} />
+       <Slider useAPI={true} autoPlay={5000} slides={slideData} />
        
       <section className="py-8 bg-gray-50">
 
@@ -61,7 +66,7 @@ const Homepage = () => {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-8">
                 {recommendedBooks.map(book => (
-                  <SaleList2 key={book.id} book={book} />
+                  <SaleList key={book.id} book={book} />
                 ))}
               </div>
             )}
@@ -72,7 +77,7 @@ const Homepage = () => {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-8">
                 {latestBooks.map(book => (
-                  <SaleList2 key={book.id} book={book} />
+                  <SaleList key={book.id} book={book} />
                 ))}
               </div>
             )}
@@ -83,7 +88,7 @@ const Homepage = () => {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-8">
                 {bestSellingBooks.map(book => (
-                  <SaleList2 key={book.id} book={book} />
+                  <SaleList key={book.id} book={book} />
                 ))}
               </div>
             )}

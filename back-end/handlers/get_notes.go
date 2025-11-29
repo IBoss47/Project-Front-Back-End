@@ -24,14 +24,6 @@ type NoteResponse struct {
 	Seller      Seller   `json:"seller"`
 }
 
-type Course struct {
-	ID    int    `json:"id"`
-	Code  string `json:"code"`
-	Name  string `json:"name"`
-	Year  string `json:"year"`
-	Major string `json:"major"`
-}
-
 type Seller struct {
 	ID       int    `json:"id"`
 	Username string `json:"username"`
@@ -274,6 +266,109 @@ func GetNoteByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": note,
 	})
+}
+
+// GetNotesByUserID - ดึงข้อมูล notes ทั้งหมดของ user คนใดคนหนึ่ง
+func GetNotesByUserID(c *gin.Context) {
+	userID := c.Param("id")
+
+	query := `
+		SELECT 
+			n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
+			c.id, c.code, c.name, c.year, c.major,
+			u.id, u.username, u.fullname
+		FROM notes_for_sale n
+		LEFT JOIN courses c ON n.course_id = c.id
+		LEFT JOIN users u ON n.seller_id = u.id
+		WHERE n.seller_id = $1 AND n.status = 'available'
+		ORDER BY n.created_at DESC
+	`
+
+	rows, err := config.DB.Query(query, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Database error",
+			"message": err.Error(),
+		})
+		return
+	}
+	defer rows.Close()
+
+	notes := []NoteResponse{}
+
+	for rows.Next() {
+		var note NoteResponse
+		var courseID, sellerID sql.NullInt64
+		var courseCode, courseName, courseYear, courseMajor sql.NullString
+		var sellerUsername, sellerFullname sql.NullString
+		var examTerm sql.NullString
+
+		err := rows.Scan(
+			&note.ID, &note.BookTitle, &note.Price, &examTerm, &note.Description, &note.Status, &note.CreatedAt,
+			&courseID, &courseCode, &courseName, &courseYear, &courseMajor,
+			&sellerID, &sellerUsername, &sellerFullname,
+		)
+		if err != nil {
+			continue
+		}
+
+		// กำหนดค่า exam_term
+		if examTerm.Valid {
+			note.ExamTerm = examTerm.String
+		}
+
+		// กำหนดค่า course
+		if courseID.Valid {
+			note.Course = Course{
+				ID:    int(courseID.Int64),
+				Code:  courseCode.String,
+				Name:  courseName.String,
+				Year:  courseYear.String,
+				Major: courseMajor.String,
+			}
+		}
+
+		// กำหนดค่า seller
+		if sellerID.Valid {
+			note.Seller = Seller{
+				ID:       int(sellerID.Int64),
+				Username: sellerUsername.String,
+				Fullname: sellerFullname.String,
+			}
+		}
+
+		// ดึงรูปภาพ
+		imageQuery := `
+			SELECT path FROM note_images 
+			WHERE note_id = $1 
+			ORDER BY image_order ASC
+		`
+		imageRows, err := config.DB.Query(imageQuery, note.ID)
+		if err == nil {
+			images := []string{}
+			for imageRows.Next() {
+				var path string
+				if err := imageRows.Scan(&path); err == nil {
+					images = append(images, path)
+				}
+			}
+			imageRows.Close()
+
+			note.Images = images
+			if len(images) > 0 {
+				note.CoverImage = images[0]
+			}
+		}
+
+		notes = append(notes, note)
+	}
+
+	// ถ้าไม่มีข้อมูล ส่ง array ว่าง
+	if notes == nil {
+		notes = []NoteResponse{}
+	}
+
+	c.JSON(http.StatusOK, notes)
 }
 
 // GetBestSellingNotes - ดึงหนังสือขายดี (เรียงตามจำนวนการซื้อ)

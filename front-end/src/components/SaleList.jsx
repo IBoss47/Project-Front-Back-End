@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { StarIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
-import { getCourseById } from '../data/mockBooksData';
 import BookDetailModal from './BookDetailModal';
 import { useCart } from '../context/CartContext';
 
@@ -9,8 +8,7 @@ const SaleList = ({ book }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { addToCart, isInCart } = useCart();
 
-  // ดึงข้อมูล course จาก course_id
-  const course = getCourseById(book.course_id);
+  const course = book.course;
 
   const handleAddToCart = (e) => {
     e.stopPropagation();
@@ -42,14 +40,23 @@ const SaleList = ({ book }) => {
       >
         {/* Study Notes Cover */}
         <div className="relative h-80 bg-gradient-to-br from-blue-100 to-indigo-100 flex-shrink-0 flex items-center justify-center">
-          <img
-            src={book.book_cover || book.book_image || '/images/book-placeholder.jpg'}
-            alt={book.book_title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = 'https://via.placeholder.com/300x400/6366f1/ffffff?text=' + encodeURIComponent(book.book_title);
-            }}
-          />
+          {book.cover_image ? (
+            <img
+              src={`http://localhost:8080/${book.cover_image}`}
+              alt={book.book_title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center text-gray-400">
+              <svg className="w-20 h-20 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm">ไม่มีรูปภาพ</span>
+            </div>
+          )}
           
           {/* File Icon Overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20"></div>
@@ -65,16 +72,18 @@ const SaleList = ({ book }) => {
               rounded-full text-xs font-semibold shadow-md`}>
               {statusBadge.text}
             </span>
-            <span className="bg-blue-600 text-white px-3 py-1 
-              rounded-full text-xs font-semibold shadow-md flex items-center gap-1">
-              📄 {book.semester}
-            </span>
+            {book.exam_term && (
+              <span className="bg-blue-600 text-white px-3 py-1 
+                rounded-full text-xs font-semibold shadow-md flex items-center gap-1">
+                📄 {book.exam_term}
+              </span>
+            )}
           </div>
 
           <div className="absolute top-3 right-3">
             <span className="bg-indigo-600 text-white px-3 py-1 
               rounded-full text-xs font-semibold shadow-md">
-              ปี {course?.course_year || '-'}
+               {course?.year || '-'}
             </span>
           </div>
 
@@ -92,7 +101,7 @@ const SaleList = ({ book }) => {
         <div className="p-5 flex flex-col flex-grow">
           {/* Course Code */}
           <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-2 line-clamp-1">
-            {course ? `${course.course_code} - ${course.course_name}` : 'ไม่ระบุวิชา'}
+            {course ? `${course.code} - ${course.name}` : 'ไม่ระบุวิชา'}
           </p>
 
           {/* Title */}
@@ -103,7 +112,7 @@ const SaleList = ({ book }) => {
 
           {/* Seller */}
           <p className="text-sm text-gray-600 mb-2 line-clamp-1">
-            <span className="text-gray-500">ผู้สร้าง:</span> {book.seller_name}
+            <span className="text-gray-500">ผู้สร้าง:</span> {book.seller?.fullname || 'ไม่ระบุ'}
           </p>
 
           {/* Type & Rating */}
@@ -112,7 +121,7 @@ const SaleList = ({ book }) => {
               📋 {book.condition || 'สรุปเต็มบท'}
             </span>
             <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full font-medium whitespace-nowrap">
-              ⭐ {book.reviews || 5} คะแนน
+              ⭐ {book.reviews || 0} คะแนน
             </span>
           </div>
 

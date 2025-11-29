@@ -64,6 +64,14 @@ func main() {
 		public.GET("/notes/best-selling", handlers.GetBestSellingNotes) // ดึงหนังสือขายดี
 		public.GET("/notes/latest", handlers.GetLatestNotes)            // ดึงหนังสือมาใหม่ล่าสุด
 		public.GET("/notes/:id", handlers.GetNoteByID)                  // ดึง note เดียวตาม ID
+
+		// Courses - ดูได้โดยไม่ต้อง login
+		public.GET("/courses", handlers.GetAllCourses)     // ดึงรายการ courses ทั้งหมด
+		public.GET("/courses/majors", handlers.GetCourseMajors) // ดึงรายการสาขาทั้งหมด
+		public.GET("/courses/years", handlers.GetCourseYears)   // ดึงรายการชั้นปีทั้งหมด
+
+		// Slider - ดูได้โดยไม่ต้อง login
+		public.GET("/slider", handlers.GetSliderImages) // ดึงรูปภาพ slider ที่ active
 	}
 
 	// Protected routes (ต้อง login)
@@ -86,8 +94,16 @@ func main() {
 		// Notes endpoints
 		protected.POST("/notes", handlers.CreateNote) // สร้างโน้ตขาย
 
+		protected.GET("/users/:id/notes", handlers.GetNotesByUserID)      
 		protected.GET("/me", handlers.GetMe)
-		protected.GET("/users/:id", handlers.GetUserByID)
+		protected.GET("/users/:id/profile", handlers.GetUserByID)
+		
+		// Purchase endpoints
+		protected.POST("/purchase", handlers.PurchaseNotes)              // ซื้อหนังสือ
+		protected.GET("/my-purchases", handlers.GetMyPurchaseHistory)    // ดึงประวัติการซื้อ
+		protected.PUT("/my-purchases/:id", handlers.UpdatePurchaseReview) // อัพเดทรีวิว
+		protected.GET("/download/:id", handlers.DownloadPurchasedNote)   // ดาวน์โหลด PDF
+		
 		// Cart endpoints
 		protected.POST("/cart", handlers.AddToCart)            // เพิ่มสินค้าลงตะกร้า
 		protected.GET("/cart", handlers.GetCart)               // ดูสินค้าในตะกร้า
@@ -106,11 +122,18 @@ func main() {
 		admin.GET("/stats", handlers.GetDashboardStats)         // ดึงสถิติ Dashboard
 		admin.GET("/notes", handlers.GetAllNotesAdmin)          // ดึงรายการ Notes ทั้งหมด
 		admin.GET("/notes/pending", handlers.GetPendingNotes)   // ดึงรายการ Notes ที่รออนุมัติ
+		admin.GET("/notes/:id/download", handlers.DownloadNoteForAdmin) // ดาวน์โหลด PDF (Admin)
 		admin.POST("/notes/:id/approve", handlers.ApproveNote)  // อนุมัติ Note
 		admin.POST("/notes/:id/reject", handlers.RejectNote)    // ปฏิเสธ Note
 		admin.DELETE("/notes/:id", handlers.DeleteNote)         // ลบ Note
 		admin.POST("/seller/add", handlers.AddSellerRole)       // เพิ่ม role seller
 		admin.POST("/seller/remove", handlers.RemoveSellerRole) // ลบ role seller
+
+		// Slider management
+		admin.GET("/slider", handlers.GetSliderImages)       // ดึงรูปภาพ slider ทั้งหมด
+		admin.POST("/slider/upload", handlers.UploadSliderImage) // อัปโหลดรูป slider
+		admin.PUT("/slider/order", handlers.UpdateSliderOrder)   // อัปเดตลำดับการแสดง
+		admin.DELETE("/slider/:id", handlers.DeleteSliderImage)  // ลบรูป slider
 	}
 
 	// เริ่ม server
