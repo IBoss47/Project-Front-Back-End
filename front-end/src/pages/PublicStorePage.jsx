@@ -64,7 +64,7 @@ export default function PublicStorePage() {
             ownerName={userData.fullname}
             subtitle={userData.email}
             memberId={userData.id}
-            avatarUrl=""
+            avatarUrl={userData.avatar_url || ""}
             shareUrl={window.location.href}
             canEdit={false}
           />

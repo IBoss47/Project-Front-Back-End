@@ -9,9 +9,77 @@ export default function DetailProfile({ user }) {
 	const [phone, setPhone] = useState(user?.phone || "");
 	const [showConfirmModal, setShowConfirmModal] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [errors, setErrors] = useState({
+		username: '',
+		fullname: '',
+		email: '',
+		phone: ''
+	});
+
+	// ฟังก์ชัน Validation
+	const validateUsername = (value) => {
+		if (!value.trim()) {
+			return 'กรุณากรอกชื่อผู้ใช้';
+		}
+		if (value.length < 3) {
+			return 'ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร';
+		}
+		if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+			return 'ชื่อผู้ใช้ใช้ได้เฉพาะตัวอักษร ตัวเลข และ _ เท่านั้น';
+		}
+		return '';
+	};
+
+	const validateFullname = (value) => {
+		if (!value.trim()) {
+			return 'กรุณากรอกชื่อ-นามสกุล';
+		}
+		if (value.trim().length < 3) {
+			return 'ชื่อ-นามสกุลต้องมีอย่างน้อย 3 ตัวอักษร';
+		}
+		return '';
+	};
+
+	const validateEmail = (value) => {
+		if (!value.trim()) {
+			return 'กรุณากรอกอีเมล';
+		}
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!emailRegex.test(value)) {
+			return 'รูปแบบอีเมลไม่ถูกต้อง';
+		}
+		return '';
+	};
+
+	const validatePhone = (value) => {
+		if (!value.trim()) {
+			return 'กรุณากรอกเบอร์โทรศัพท์';
+		}
+		const phoneRegex = /^0[0-9]{9}$/;
+		if (!phoneRegex.test(value)) {
+			return 'เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก และเริ่มต้นด้วย 0';
+		}
+		return '';
+	};
 
 	const handleSave = () => {
-		// แสดง modal ยืนยัน
+		// ตรวจสอบ validation ทุกฟิลด์
+		const newErrors = {
+			username: validateUsername(username),
+			fullname: validateFullname(fullname),
+			email: validateEmail(email),
+			phone: validatePhone(phone)
+		};
+
+		setErrors(newErrors);
+
+		// ถ้ามี error ให้หยุดการบันทึก
+		const hasErrors = Object.values(newErrors).some(error => error !== '');
+		if (hasErrors) {
+			return;
+		}
+
+		// ถ้าไม่มี error แสดง modal ยืนยัน
 		setShowConfirmModal(true);
 	};
 
@@ -78,9 +146,17 @@ export default function DetailProfile({ user }) {
 						<input
 							type="text"
 							value={username}
-							onChange={(e) => setUsername(e.target.value)}
-							className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
+							onChange={(e) => {
+								setUsername(e.target.value);
+								if (errors.username) {
+									setErrors(prev => ({ ...prev, username: '' }));
+								}
+							}}
+							className={`border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400 ${errors.username ? 'border-red-500' : ''}`}
 						/>
+						{errors.username && (
+							<span className="text-red-500 text-sm mt-1">{errors.username}</span>
+						)}
 					</div>
 
 					{/* ชื่อ-นามสกุล */}
@@ -91,10 +167,18 @@ export default function DetailProfile({ user }) {
 						<input
 							type="text"
 							value={fullname}
-							onChange={(e) => setFullname(e.target.value)}
+							onChange={(e) => {
+								setFullname(e.target.value);
+								if (errors.fullname) {
+									setErrors(prev => ({ ...prev, fullname: '' }));
+								}
+							}}
 							placeholder="ชื่อ-นามสกุล"
-							className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
+							className={`border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400 ${errors.fullname ? 'border-red-500' : ''}`}
 						/>
+						{errors.fullname && (
+							<span className="text-red-500 text-sm mt-1">{errors.fullname}</span>
+						)}
 					</div>
 				</div>
 			</div>
@@ -115,10 +199,18 @@ export default function DetailProfile({ user }) {
 						<input
 							type="email"
 							value={email}
-							onChange={(e) => setEmail(e.target.value)}
+							onChange={(e) => {
+								setEmail(e.target.value);
+								if (errors.email) {
+									setErrors(prev => ({ ...prev, email: '' }));
+								}
+							}}
 							placeholder="Email"
-							className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
+							className={`border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400 ${errors.email ? 'border-red-500' : ''}`}
 						/>
+						{errors.email && (
+							<span className="text-red-500 text-sm mt-1">{errors.email}</span>
+						)}
 					</div>
 
 					<div className="flex flex-col gap-1">
@@ -128,10 +220,18 @@ export default function DetailProfile({ user }) {
 						<input
 							type="text"
 							value={phone}
-							onChange={(e) => setPhone(e.target.value)}
+							onChange={(e) => {
+								setPhone(e.target.value);
+								if (errors.phone) {
+									setErrors(prev => ({ ...prev, phone: '' }));
+								}
+							}}
 							placeholder="Phone"
-							className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
+							className={`border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400 ${errors.phone ? 'border-red-500' : ''}`}
 						/>
+						{errors.phone && (
+							<span className="text-red-500 text-sm mt-1">{errors.phone}</span>
+						)}
 					</div>
 
 				</div>

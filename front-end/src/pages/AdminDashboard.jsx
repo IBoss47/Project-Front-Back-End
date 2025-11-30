@@ -20,9 +20,9 @@ import {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  // โหลด active tab จาก localStorage ถ้ามี, ไม่เช่นนั้นใช้ 'overview'
+  // โหลด active tab จาก localStorage ถ้ามี, ไม่เช่นนั้นใช้ 'summaries'
   const [activeTab, setActiveTab] = useState(() => {
-    return localStorage.getItem('adminActiveTab') || 'overview';
+    return localStorage.getItem('adminActiveTab') || 'summaries';
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -185,13 +185,27 @@ const AdminDashboard = () => {
   // Handle view PDF for admin (open in new tab)
   const handleViewPDF = async (noteId) => {
     try {
+      showSuccessMessage('กำลังโหลด PDF...');
       const response = await api.get(`/admin/notes/${noteId}/download`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        timeout: 30000 // 30 seconds timeout
       });
 
+      // ตรวจสอบว่าได้ข้อมูล blob หรือไม่
+      if (!response.data || response.data.size === 0) {
+        throw new Error('ไม่พบไฟล์ PDF');
+      }
+
       // สร้าง URL สำหรับ blob และเปิดใน tab ใหม่
-      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
-      window.open(url, '_blank');
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const newWindow = window.open(url, '_blank');
+
+      if (!newWindow) {
+        showSuccessMessage('กรุณาอนุญาตให้เปิด popup ในเบราว์เซอร์');
+      } else {
+        showSuccessMessage('เปิด PDF สำเร็จ!');
+      }
 
       // ล้าง URL หลังจาก 1 นาที
       setTimeout(() => {
@@ -199,8 +213,58 @@ const AdminDashboard = () => {
       }, 60000);
     } catch (error) {
       console.error('View PDF error:', error);
-      showSuccessMessage('ไม่สามารถเปิด PDF ได้ กรุณาลองใหม่อีกครั้ง');
+      const errorMsg = error.response?.status === 404 
+        ? 'ไม่พบไฟล์ PDF' 
+        : error.response?.data?.message || 'ไม่สามารถเปิด PDF ได้ กรุณาลองใหม่อีกครั้ง';
+      showSuccessMessage(errorMsg);
     }
+  };
+
+  // Handle edit note - แสดง modal แก้ไขราคาและสถานะ
+  const handleEditNote = async (noteId, currentNote) => {
+    const newPrice = prompt(`แก้ไขราคาสรุป "${currentNote.title}"\n\nราคาปัจจุบัน: ฿${currentNote.price}`, currentNote.price);
+    
+    if (newPrice === null) return; // ยกเลิก
+    
+    const price = parseFloat(newPrice);
+    if (isNaN(price) || price < 0) {
+      showSuccessMessage('กรุณากรอกราคาที่ถูกต้อง');
+      return;
+    }
+
+    try {
+      const response = await api.put(`/admin/notes/${noteId}`, { price });
+      if (response.data.success) {
+        showSuccessMessage('แก้ไขราคาสำเร็จ!');
+        localStorage.setItem('adminActiveTab', activeTab);
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    } catch (err) {
+      console.error('Error editing note:', err);
+      showSuccessMessage('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  // Handle delete note
+  const handleDeleteNote = async (noteId, noteTitle) => {
+    setConfirmMessage(`คุณแน่ใจหรือไม่ที่จะลบสรุป "${noteTitle}" ?
+
+การดำเนินการนี้ไม่สามารถย้อนกลับได้`);
+    setConfirmAction(() => async () => {
+      try {
+        const response = await api.delete(`/admin/notes/${noteId}`);
+        if (response.data.success) {
+          showSuccessMessage('ลบสรุปสำเร็จ!');
+          // บันทึก active tab ก่อน reload
+          localStorage.setItem('adminActiveTab', activeTab);
+          setTimeout(() => window.location.reload(), 1500);
+        }
+      } catch (err) {
+        console.error('Error deleting note:', err);
+        showSuccessMessage('เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+      }
+    });
+    setShowConfirmPopup(true);
   };
 
   // Handle remove seller role
@@ -734,15 +798,6 @@ const AdminDashboard = () => {
         <div className="bg-gray-800 rounded-2xl shadow-lg overflow-hidden mb-8 border border-gray-700">
           <div className="flex border-b border-gray-700 overflow-x-auto">
             <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === 'overview'
-                ? 'bg-blue-600 text-white border-b-2 border-blue-400'
-                : 'text-gray-400 hover:text-gray-200'
-                }`}
-            >
-              📊 ภาพรวม
-            </button>
-            <button
               onClick={() => setActiveTab('summaries')}
               className={`px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === 'summaries'
                 ? 'bg-blue-600 text-white border-b-2 border-blue-400'
@@ -791,62 +846,6 @@ const AdminDashboard = () => {
 
           {/* Tab Content */}
           <div className="p-8">
-            {/* Overview Tab */}
-            {activeTab === 'overview' && (
-              <div className="space-y-8">
-                <h2 className="text-2xl font-bold text-white">📊 ภาพรวมระบบ</h2>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Recent Summaries */}
-                  <div className="bg-gray-700 rounded-xl p-6 border border-gray-600">
-                    <h3 className="text-xl font-bold text-white mb-4">📚 สรุปล่าสุด</h3>
-                    <div className="space-y-3">
-                      {notes.length === 0 ? (
-                        <p className="text-gray-400 text-center py-4">ยังไม่มีสรุปในระบบ</p>
-                      ) : (
-                        notes.slice(0, 3).map((item) => (
-                          <div key={item.id} className="bg-gray-600 rounded-lg p-4 hover:bg-gray-500 transition-colors">
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="font-bold text-white">{item.title}</p>
-                              <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.status === 'available'
-                                ? 'bg-green-500/30 text-green-300'
-                                : 'bg-yellow-500/30 text-yellow-300'
-                                }`}>
-                                {item.status === 'available' ? '✓ พร้อมขาย' : item.status}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-gray-300 text-sm">
-                              <span>{item.seller_name}</span>
-                              <span>฿{item.price} • {item.exam_term}</span>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Quick Actions */}
-                  <div className="bg-gray-700 rounded-xl p-6 border border-gray-600">
-                    <h3 className="text-xl font-bold text-white mb-4">⚡ การดำเนินการด่วน</h3>
-                    <div className="space-y-3">
-                      <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors">
-                        📊 ดูรายงานการขาย
-                      </button>
-                      <button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg transition-colors">
-                        👥 จัดการผู้ใช้
-                      </button>
-                      <button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition-colors">
-                        💰 ดูการเงิน
-                      </button>
-                      <button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors">
-                        ⚠️ ดูรายงานปัญหา
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Summaries Tab */}
             {activeTab === 'summaries' && (
               <div className="space-y-6">
@@ -895,13 +894,25 @@ const AdminDashboard = () => {
                             </td>
                             <td className="px-4 py-3 text-sm">{item.created_at}</td>
                             <td className="px-4 py-3 flex gap-2">
-                              <button className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors" title="ดู">
+                              <button 
+                                onClick={() => handleViewPDF(item.id)}
+                                className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors" 
+                                title="ดู PDF"
+                              >
                                 <EyeIcon className="w-5 h-5 text-white" />
                               </button>
-                              <button className="p-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors" title="แก้ไข">
+                              <button 
+                                onClick={() => handleEditNote(item.id, item)}
+                                className="p-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors" 
+                                title="แก้ไขราคา"
+                              >
                                 <PencilSquareIcon className="w-5 h-5 text-white" />
                               </button>
-                              <button className="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors" title="ลบ">
+                              <button 
+                                onClick={() => handleDeleteNote(item.id, item.title)}
+                                className="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors" 
+                                title="ลบ"
+                              >
                                 <TrashIcon className="w-5 h-5 text-white" />
                               </button>
                             </td>

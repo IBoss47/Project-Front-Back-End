@@ -34,10 +34,7 @@ export default function UserProfilePage() {
 
   const detailComponent = {
     "ข้อมูลส่วนตัว": <DetailProfile user={user}/>,
-    "ข้อความตอบกลับอัตโนมัติ": <DetailAutoReply />,
     "ประวัติการซื้อ": <MyPurchaseHistory />,
-    "จัดการโปรไฟล์": <DetailManageProfile />,
-    "จัดการบัญชี": <DetailAccount />,
   };
 
   const [activeMenu, setActiveMenu] = useState(tabFromState || "ข้อมูลส่วนตัว");
@@ -63,7 +60,7 @@ export default function UserProfilePage() {
             <h1 className="text-xl font-semibold">ข้อมูลส่วนตัว</h1>
           </div>
 
-          {/* Profile (full width) */}
+          {/* Profile */}
           <UserProfile
             name={user.username}
             memberId={user.id}
@@ -71,7 +68,7 @@ export default function UserProfilePage() {
             onAvatarUpdate={handleAvatarUpdate}
           />
 
-          {/* Menu (left) */}
+          {/* Menu */}
           <div>
             <UserSidebarMenu
               active={activeMenu}
@@ -80,7 +77,7 @@ export default function UserProfilePage() {
           </div>
 
 
-          {/* Detail (right) */}
+          {/* Detail */}
           <div className="col-span-2 bg-white border p-6 rounded">
             {detailComponent[activeMenu]}
           </div>
