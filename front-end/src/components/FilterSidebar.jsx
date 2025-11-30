@@ -20,8 +20,8 @@ export default function FilterSidebar({
     condition: true,
     price: true
   });
-  const [priceMin, setPriceMin] = useState(0);
-  const [priceMax, setPriceMax] = useState(200);
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState(''); // ว่าง = ไม่จำกัด
   const [availableCourses, setAvailableCourses] = useState([]);
 
   // อัพเดทรายการวิชาเมื่อเลือกชั้นปี
@@ -289,28 +289,50 @@ export default function FilterSidebar({
             <div className="flex gap-2 items-center">
               <input
                 type="number"
-                placeholder="Min"
+                min="0"
+                placeholder="ต่ำสุด"
                 value={priceMin}
-                onChange={(e) => setPriceMin(Number(e.target.value))}
+                onChange={(e) => {
+                  let inputValue = e.target.value;
+                  // ถ้าติดลบ เปลี่ยนเป็น 0 ทันที
+                  if (Number(inputValue) < 0) {
+                    inputValue = '0';
+                  }
+                  setPriceMin(inputValue);
+                  // แปลงเป็นตัวเลขสำหรับ filter (ว่าง = 0)
+                  const numValue = inputValue === '' ? 0 : Number(inputValue);
+                  const maxValue = priceMax === '' ? Infinity : Math.max(0, Number(priceMax));
+                  if (onPriceRangeChange) {
+                    onPriceRangeChange(numValue, maxValue);
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-viridian-500"
               />
               <span className="text-gray-500">-</span>
               <input
                 type="number"
-                placeholder="Max"
+                min="0"
+                placeholder="สูงสุด"
                 value={priceMax}
-                onChange={(e) => setPriceMax(Number(e.target.value))}
+                onChange={(e) => {
+                  let inputValue = e.target.value;
+                  // ถ้าติดลบ เปลี่ยนเป็น 0 ทันที
+                  if (Number(inputValue) < 0) {
+                    inputValue = '0';
+                  }
+                  setPriceMax(inputValue);
+                  // แปลงเป็นตัวเลขสำหรับ filter (ว่าง = ไม่จำกัด)
+                  const minValue = priceMin === '' ? 0 : Math.max(0, Number(priceMin));
+                  const numValue = inputValue === '' ? Infinity : Number(inputValue);
+                  if (onPriceRangeChange) {
+                    onPriceRangeChange(minValue, numValue);
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-viridian-500"
               />
             </div>
-            <button
-              onClick={handlePriceChange}
-              className="w-full px-4 py-2 bg-viridian-600 text-white rounded-lg hover:bg-viridian-700 transition-colors font-medium"
-            >
-              ใช้ตัวกรอง
-            </button>
             <div className="text-sm text-gray-600 text-center">
-              ฿{priceMin} - ฿{priceMax}
+              ฿{priceMin === '' ? 0 : priceMin} - {priceMax === '' ? 'ไม่จำกัด' : `฿${priceMax}`}
             </div>
           </div>
         )}
