@@ -3,6 +3,7 @@ package handlers
 import (
 	"back-end/config"
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -770,5 +771,109 @@ func DeleteNote(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Note deleted successfully",
+	})
+}
+
+// UpdateNote godoc
+// @Summary อัปเดตข้อมูลสรุปวิชา (Admin)
+// @Description Admin สามารถอัปเดตราคาและข้อมูลของสรุปวิชาได้
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Note ID"
+// @Param body body object true "ข้อมูลที่ต้องการอัปเดต (price, title, description)"
+// @Success 200 {object} map[string]interface{} "อัปเดตสำเร็จ"
+// @Failure 400 {object} map[string]interface{} "ข้อมูลไม่ถูกต้อง"
+// @Failure 404 {object} map[string]interface{} "ไม่พบสรุปวิชา"
+// @Failure 500 {object} map[string]interface{} "เกิดข้อผิดพลาด"
+// @Router /admin/notes/{id} [put]
+func UpdateNote(c *gin.Context) {
+	noteID := c.Param("id")
+	if noteID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Note ID is required",
+		})
+		return
+	}
+
+	var input struct {
+		Price       *float64 `json:"price"`
+		Title       *string  `json:"title"`
+		Description *string  `json:"description"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid input",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// ตรวจสอบว่ามีอะไรจะอัปเดตบ้าง
+	updates := make(map[string]interface{})
+	if input.Price != nil {
+		if *input.Price < 0 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Price must be positive",
+			})
+			return
+		}
+		updates["price"] = *input.Price
+	}
+	if input.Title != nil {
+		updates["title"] = *input.Title
+	}
+	if input.Description != nil {
+		updates["description"] = *input.Description
+	}
+
+	if len(updates) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "No fields to update",
+		})
+		return
+	}
+
+	// สร้าง query string
+	query := "UPDATE notes_for_sale SET "
+	args := []interface{}{}
+	argIndex := 1
+
+	for field, value := range updates {
+		if argIndex > 1 {
+			query += ", "
+		}
+		query += field + " = $" + fmt.Sprintf("%d", argIndex)
+		args = append(args, value)
+		argIndex++
+	}
+
+	query += " WHERE id = $" + fmt.Sprintf("%d", argIndex)
+	args = append(args, noteID)
+
+	// Execute update
+	result, err := config.DB.Exec(query, args...)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Database error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Note not found",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Note updated successfully",
+		"updates": updates,
 	})
 }
