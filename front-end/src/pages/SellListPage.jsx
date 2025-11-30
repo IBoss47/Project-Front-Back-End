@@ -11,6 +11,7 @@ const SellListPage = () => {
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
   const [selectedSemester, setSelectedSemester] = useState('all');
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedYear, setSelectedYear] = useState('all');
   const [selectedCourseId, setSelectedCourseId] = useState('all');
   const [selectedCondition, setSelectedCondition] = useState('all');
@@ -46,7 +47,7 @@ const SellListPage = () => {
   // Apply filters when filter values change
   useEffect(() => {
     applyFilters();
-  }, [selectedSemester, selectedYear, selectedCourseId, selectedCondition, priceRange, searchTerm, books]);
+  }, [selectedSemester, selectedDepartment, selectedYear, selectedCourseId, selectedCondition, priceRange, searchTerm, books]);
 
   const applyFilters = () => {
     let filtered = [...books];
@@ -54,6 +55,11 @@ const SellListPage = () => {
     // Filter by semester (exam_term)
     if (selectedSemester !== 'all') {
       filtered = filtered.filter(book => book.exam_term === selectedSemester);
+    }
+
+    // Filter by department (major)
+    if (selectedDepartment !== 'all') {
+      filtered = filtered.filter(book => book.course?.major === selectedDepartment);
     }
 
     // Filter by year
@@ -95,6 +101,10 @@ const SellListPage = () => {
 
   const handleSemesterFilter = (semester) => {
     setSelectedSemester(semester);
+  };
+
+  const handleDepartmentFilter = (department) => {
+    setSelectedDepartment(department);
   };
 
   const handleYearFilter = (year) => {
@@ -164,11 +174,13 @@ const SellListPage = () => {
             <div className="sticky top-24">
               <FilterSidebar
                 onSemesterChange={handleSemesterFilter}
+                onDepartmentChange={handleDepartmentFilter}
                 onYearChange={handleYearFilter}
                 onCourseChange={handleCourseFilter}
                 onConditionChange={handleConditionFilter}
                 onPriceRangeChange={handlePriceRangeChange}
                 selectedSemester={selectedSemester}
+                selectedDepartment={selectedDepartment}
                 selectedYear={selectedYear}
                 selectedCourseId={selectedCourseId}
                 selectedCondition={selectedCondition}
@@ -191,11 +203,13 @@ const SellListPage = () => {
               <div className="mb-4 animate-slide-down">
                 <FilterSidebar
                   onSemesterChange={handleSemesterFilter}
+                  onDepartmentChange={handleDepartmentFilter}
                   onYearChange={handleYearFilter}
                   onCourseChange={handleCourseFilter}
                   onConditionChange={handleConditionFilter}
                   onPriceRangeChange={handlePriceRangeChange}
                   selectedSemester={selectedSemester}
+                  selectedDepartment={selectedDepartment}
                   selectedYear={selectedYear}
                   selectedCourseId={selectedCourseId}
                   selectedCondition={selectedCondition}
