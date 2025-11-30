@@ -220,6 +220,24 @@ const SellItemPage = () => {
     if (files.length === 0) newErrors.files = 'กรุณาอัปโหลดไฟล์ PDF อย่างน้อย 1 ไฟล์';
 
     setErrors(newErrors);
+    
+    // ถ้ามี error ให้เลื่อนไปที่ error แรก
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => {
+        const firstErrorField = Object.keys(newErrors)[0];
+        const errorElement = document.querySelector(`[name="${firstErrorField}"]`) || 
+                            document.querySelector(`[data-error="${firstErrorField}"]`);
+        
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Focus field if possible
+          if (errorElement.focus && (errorElement.tagName === 'SELECT' || errorElement.tagName === 'INPUT' || errorElement.tagName === 'TEXTAREA')) {
+            errorElement.focus();
+          }
+        }
+      }, 100);
+    }
+    
     return Object.keys(newErrors).length === 0;
   };
 
@@ -227,7 +245,11 @@ const SellItemPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validate()) return;
+    if (!validate()) {
+      // Scroll to top when validation fails
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
 
     setLoading(true);
     setApiError('');
@@ -242,14 +264,14 @@ const SellItemPage = () => {
       submitData.append('description', formData.description);
       submitData.append('price', formData.price);
 
-      // เพิ่มรูปภาพทั้งหมดตามลำดับ
-      images.forEach((image) => {
-        submitData.append('images', image.file);
-      });
+      // เพิ่มรูปภาพ (รูปเดียว)
+      if (images.length > 0) {
+        submitData.append('image_0', images[0].file);
+      }
 
-      // เพิ่มไฟล์ PDF
+      // เพิ่มไฟล์ PDF (ไฟล์เดียว)
       if (files.length > 0) {
-        submitData.append('pdf', files[0].file);
+        submitData.append('pdf_file', files[0].file);
       }
 
       console.log('📦 Submitting data:', {
@@ -547,7 +569,7 @@ const SellItemPage = () => {
             </div>
 
             {/* อัปโหลดรูปภาพ */}
-            <div>
+            <div data-error="images">
               <label className="block text-sm font-semibold text-gray-700 mb-3">
                 📸 รูปภาพหน้าปก <span className="text-red-500">*</span>
               </label>
@@ -646,7 +668,7 @@ const SellItemPage = () => {
             </div>
 
             {/* อัปโหลดไฟล์เอกสาร */}
-            <div>
+            <div data-error="files">
               <label className="block text-sm font-semibold text-gray-700 mb-3">
                 📄 ไฟล์เอกสาร (PDF) <span className="text-red-500">*</span>
               </label>
