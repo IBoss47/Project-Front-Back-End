@@ -525,6 +525,12 @@ const docTemplate = `{
                         "name": "image",
                         "in": "formData",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Link URL for navigation",
+                        "name": "link_url",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -1365,6 +1371,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/delete-avatar": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ลบรูปภาพ avatar และอัปเดตฐานข้อมูล",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "ลบรูป avatar ของผู้ใช้",
+                "responses": {
+                    "200": {
+                        "description": "ลบสำเร็จ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "ไม่ได้เข้าสู่ระบบ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "เกิดข้อผิดพลาด",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/download/{id}": {
             "get": {
                 "security": [
@@ -1429,6 +1482,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/logout": {
+            "post": {
+                "description": "Revoke the refresh token to log out the user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Logout user",
+                "parameters": [
+                    {
+                        "description": "Refresh token to revoke",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.RefreshTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Logout successful",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Database error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/me": {
             "get": {
                 "security": [
@@ -1465,6 +1571,98 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "User not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Database error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/my-purchases/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update the review text and/or like status for a purchased note",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Purchases"
+                ],
+                "summary": "Update purchase review and like status",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Buyed Note ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Review and like status",
+                        "name": "review",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UpdatePurchaseReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Review updated successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not owner of this purchase",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Purchase not found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1591,7 +1789,7 @@ const docTemplate = `{
         },
         "/api/notes/best-selling": {
             "get": {
-                "description": "Get top 5 best selling notes ordered by purchase count",
+                "description": "Get top 6 best selling notes ordered by purchase count",
                 "consumes": [
                     "application/json"
                 ],
@@ -1627,7 +1825,7 @@ const docTemplate = `{
         },
         "/api/notes/latest": {
             "get": {
-                "description": "Get the 5 most recently added notes for sale",
+                "description": "Get the 6 most recently added notes for sale",
                 "consumes": [
                     "application/json"
                 ],
@@ -1662,7 +1860,12 @@ const docTemplate = `{
         },
         "/api/notes/user/{id}": {
             "get": {
-                "description": "Get all available notes for sale by a specific user/seller",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all available notes for sale by a specific user/seller. If the requester is the owner, pending notes are also included.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1736,6 +1939,109 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Note not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Database error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/notes/{id}/reviews": {
+            "get": {
+                "description": "ดึงรายการรีวิวทั้งหมดของหนังสือ/โน้ตเล่มนั้น",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reviews"
+                ],
+                "summary": "ดึงรีวิวของหนังสือ/โน้ต",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Note ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "รายการรีวิว",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.Review"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid note ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Database error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/notes/{id}/reviews/stats": {
+            "get": {
+                "description": "ดึงสถิติรีวิว (ชอบ/ไม่ชอบ) ของหนังสือ/โน้ตเล่มนั้น",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reviews"
+                ],
+                "summary": "ดึงสถิติรีวิวของหนังสือ/โน้ต",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Note ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "สถิติรีวิว",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ReviewStats"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid note ID",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1933,6 +2239,109 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/sellers/{id}/reviews": {
+            "get": {
+                "description": "ดึงรายการรีวิวทั้งหมดของสินค้าที่ seller คนนั้นขาย",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reviews"
+                ],
+                "summary": "ดึงรีวิวของ seller",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Seller ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "รายการรีวิว",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.Review"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid seller ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Database error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sellers/{id}/reviews/stats": {
+            "get": {
+                "description": "ดึงสถิติรีวิว (ชอบ/ไม่ชอบ) ของสินค้าที่ seller คนนั้นขาย",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reviews"
+                ],
+                "summary": "ดึงสถิติรีวิวของ seller",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Seller ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "สถิติรีวิว",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ReviewStats"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid seller ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Database error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/slider": {
             "get": {
                 "description": "Get all slider images ordered by display order",
@@ -1956,6 +2365,147 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Database error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/update-profile": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "อัปเดตข้อมูลส่วนตัวของผู้ใช้ที่ล็อกอินอยู่",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "อัปเดตข้อมูลโปรไฟล์ผู้ใช้",
+                "parameters": [
+                    {
+                        "description": "ข้อมูลที่ต้องการอัปเดต",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UpdateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "อัปเดตสำเร็จ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "ข้อมูลไม่ถูกต้อง",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "ไม่ได้เข้าสู่ระบบ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Username หรือ Email ซ้ำ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "เกิดข้อผิดพลาด",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/upload-avatar": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "อัปโหลดรูปภาพ avatar และบันทึก URL ลงในฐานข้อมูล",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "อัปโหลดรูป avatar ของผู้ใช้",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "ไฟล์รูปภาพ avatar",
+                        "name": "avatar",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "อัปโหลดสำเร็จ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "ข้อมูลไม่ถูกต้อง",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "ไม่ได้เข้าสู่ระบบ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "เกิดข้อผิดพลาด",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2091,7 +2641,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Notes"
+                    "notes"
                 ],
                 "summary": "ดึงรายการสรุปทั้งหมด",
                 "parameters": [
@@ -2154,7 +2704,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Notes"
+                    "notes"
                 ],
                 "summary": "ดึงสรุปที่ถูกใจมากที่สุด",
                 "responses": {
@@ -2324,6 +2874,10 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "liked_count": {
+                    "type": "integer",
+                    "example": 10
+                },
                 "price": {
                     "type": "number",
                     "example": 99
@@ -2334,6 +2888,10 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "available"
+                },
+                "total_sales": {
+                    "type": "integer",
+                    "example": 5
                 }
             }
         },
@@ -2410,6 +2968,64 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.Review": {
+            "type": "object",
+            "properties": {
+                "buyer_avatar": {
+                    "type": "string"
+                },
+                "buyer_id": {
+                    "type": "integer"
+                },
+                "buyer_name": {
+                    "type": "string"
+                },
+                "course_code": {
+                    "type": "string"
+                },
+                "course_name": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_liked": {
+                    "type": "boolean"
+                },
+                "note_id": {
+                    "type": "integer"
+                },
+                "note_title": {
+                    "type": "string"
+                },
+                "review": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.ReviewStats": {
+            "type": "object",
+            "properties": {
+                "disliked_count": {
+                    "type": "integer"
+                },
+                "disliked_percent": {
+                    "type": "number"
+                },
+                "liked_count": {
+                    "type": "integer"
+                },
+                "liked_percent": {
+                    "type": "number"
+                },
+                "total_reviews": {
+                    "type": "integer"
+                }
+            }
+        },
         "handlers.Seller": {
             "type": "object",
             "properties": {
@@ -2424,6 +3040,37 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "example": "seller1"
+                }
+            }
+        },
+        "handlers.UpdatePurchaseReviewRequest": {
+            "type": "object",
+            "required": [
+                "review"
+            ],
+            "properties": {
+                "is_liked": {
+                    "type": "boolean"
+                },
+                "review": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "fullname": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },
@@ -2474,6 +3121,9 @@ const docTemplate = `{
         "models.User": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },

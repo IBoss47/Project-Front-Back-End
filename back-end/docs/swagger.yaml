@@ -62,6 +62,9 @@ definitions:
         items:
           type: string
         type: array
+      liked_count:
+        example: 10
+        type: integer
       price:
         example: 99
         type: number
@@ -70,6 +73,9 @@ definitions:
       status:
         example: available
         type: string
+      total_sales:
+        example: 5
+        type: integer
     type: object
   handlers.PurchaseHistoryResponse:
     properties:
@@ -119,6 +125,44 @@ definitions:
     required:
     - refresh_token
     type: object
+  handlers.Review:
+    properties:
+      buyer_avatar:
+        type: string
+      buyer_id:
+        type: integer
+      buyer_name:
+        type: string
+      course_code:
+        type: string
+      course_name:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_liked:
+        type: boolean
+      note_id:
+        type: integer
+      note_title:
+        type: string
+      review:
+        type: string
+    type: object
+  handlers.ReviewStats:
+    properties:
+      disliked_count:
+        type: integer
+      disliked_percent:
+        type: number
+      liked_count:
+        type: integer
+      liked_percent:
+        type: number
+      total_reviews:
+        type: integer
+    type: object
   handlers.Seller:
     properties:
       fullname:
@@ -129,6 +173,26 @@ definitions:
         type: integer
       username:
         example: seller1
+        type: string
+    type: object
+  handlers.UpdatePurchaseReviewRequest:
+    properties:
+      is_liked:
+        type: boolean
+      review:
+        type: string
+    required:
+    - review
+    type: object
+  handlers.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      fullname:
+        type: string
+      phone:
+        type: string
+      username:
         type: string
     type: object
   models.LoginRequest:
@@ -164,6 +228,8 @@ definitions:
     type: object
   models.User:
     properties:
+      avatar_url:
+        type: string
       created_at:
         type: string
       email:
@@ -511,6 +577,10 @@ paths:
         name: image
         required: true
         type: file
+      - description: Link URL for navigation
+        in: formData
+        name: link_url
+        type: string
       produces:
       - application/json
       responses:
@@ -1059,6 +1129,36 @@ paths:
       summary: Get all years
       tags:
       - courses
+  /api/delete-avatar:
+    delete:
+      consumes:
+      - application/json
+      description: ลบรูปภาพ avatar และอัปเดตฐานข้อมูล
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ลบสำเร็จ
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: ไม่ได้เข้าสู่ระบบ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: เกิดข้อผิดพลาด
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: ลบรูป avatar ของผู้ใช้
+      tags:
+      - users
   /api/download/{id}:
     get:
       consumes:
@@ -1100,6 +1200,41 @@ paths:
       summary: Download purchased note PDF
       tags:
       - download
+  /api/logout:
+    post:
+      consumes:
+      - application/json
+      description: Revoke the refresh token to log out the user
+      parameters:
+      - description: Refresh token to revoke
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout successful
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Logout user
+      tags:
+      - Authentication
   /api/me:
     get:
       consumes:
@@ -1135,6 +1270,66 @@ paths:
       summary: Get current user profile
       tags:
       - users
+  /api/my-purchases/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Update the review text and/or like status for a purchased note
+      parameters:
+      - description: Buyed Note ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Review and like status
+        in: body
+        name: review
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdatePurchaseReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Review updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Not owner of this purchase
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Purchase not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update purchase review and like status
+      tags:
+      - Purchases
   /api/notes:
     post:
       consumes:
@@ -1241,11 +1436,79 @@ paths:
       summary: Get note by ID
       tags:
       - notes
+  /api/notes/{id}/reviews:
+    get:
+      consumes:
+      - application/json
+      description: ดึงรายการรีวิวทั้งหมดของหนังสือ/โน้ตเล่มนั้น
+      parameters:
+      - description: Note ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: รายการรีวิว
+          schema:
+            items:
+              $ref: '#/definitions/handlers.Review'
+            type: array
+        "400":
+          description: Invalid note ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ดึงรีวิวของหนังสือ/โน้ต
+      tags:
+      - reviews
+  /api/notes/{id}/reviews/stats:
+    get:
+      consumes:
+      - application/json
+      description: ดึงสถิติรีวิว (ชอบ/ไม่ชอบ) ของหนังสือ/โน้ตเล่มนั้น
+      parameters:
+      - description: Note ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: สถิติรีวิว
+          schema:
+            $ref: '#/definitions/handlers.ReviewStats'
+        "400":
+          description: Invalid note ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ดึงสถิติรีวิวของหนังสือ/โน้ต
+      tags:
+      - reviews
   /api/notes/best-selling:
     get:
       consumes:
       - application/json
-      description: Get top 5 best selling notes ordered by purchase count
+      description: Get top 6 best selling notes ordered by purchase count
       produces:
       - application/json
       responses:
@@ -1269,7 +1532,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get the 5 most recently added notes for sale
+      description: Get the 6 most recently added notes for sale
       produces:
       - application/json
       responses:
@@ -1292,7 +1555,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all available notes for sale by a specific user/seller
+      description: Get all available notes for sale by a specific user/seller. If
+        the requester is the owner, pending notes are also included.
       parameters:
       - description: User ID
         in: path
@@ -1314,6 +1578,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Get notes by user ID
       tags:
       - notes
@@ -1432,6 +1698,74 @@ paths:
       summary: Refresh access token
       tags:
       - auth
+  /api/sellers/{id}/reviews:
+    get:
+      consumes:
+      - application/json
+      description: ดึงรายการรีวิวทั้งหมดของสินค้าที่ seller คนนั้นขาย
+      parameters:
+      - description: Seller ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: รายการรีวิว
+          schema:
+            items:
+              $ref: '#/definitions/handlers.Review'
+            type: array
+        "400":
+          description: Invalid seller ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ดึงรีวิวของ seller
+      tags:
+      - reviews
+  /api/sellers/{id}/reviews/stats:
+    get:
+      consumes:
+      - application/json
+      description: ดึงสถิติรีวิว (ชอบ/ไม่ชอบ) ของสินค้าที่ seller คนนั้นขาย
+      parameters:
+      - description: Seller ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: สถิติรีวิว
+          schema:
+            $ref: '#/definitions/handlers.ReviewStats'
+        "400":
+          description: Invalid seller ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ดึงสถิติรีวิวของ seller
+      tags:
+      - reviews
   /api/slider:
     get:
       consumes:
@@ -1454,6 +1788,97 @@ paths:
       summary: Get slider images
       tags:
       - slider
+  /api/update-profile:
+    put:
+      consumes:
+      - application/json
+      description: อัปเดตข้อมูลส่วนตัวของผู้ใช้ที่ล็อกอินอยู่
+      parameters:
+      - description: ข้อมูลที่ต้องการอัปเดต
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: อัปเดตสำเร็จ
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: ข้อมูลไม่ถูกต้อง
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: ไม่ได้เข้าสู่ระบบ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Username หรือ Email ซ้ำ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: เกิดข้อผิดพลาด
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: อัปเดตข้อมูลโปรไฟล์ผู้ใช้
+      tags:
+      - users
+  /api/upload-avatar:
+    post:
+      consumes:
+      - multipart/form-data
+      description: อัปโหลดรูปภาพ avatar และบันทึก URL ลงในฐานข้อมูล
+      parameters:
+      - description: ไฟล์รูปภาพ avatar
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: อัปโหลดสำเร็จ
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: ข้อมูลไม่ถูกต้อง
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: ไม่ได้เข้าสู่ระบบ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: เกิดข้อผิดพลาด
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: อัปโหลดรูป avatar ของผู้ใช้
+      tags:
+      - users
   /api/users/{id}:
     get:
       consumes:
@@ -1572,7 +1997,7 @@ paths:
             type: object
       summary: ดึงรายการสรุปทั้งหมด
       tags:
-      - Notes
+      - notes
   /notes/most-liked:
     get:
       consumes:
@@ -1593,7 +2018,7 @@ paths:
             type: object
       summary: ดึงสรุปที่ถูกใจมากที่สุด
       tags:
-      - Notes
+      - notes
   /register:
     post:
       consumes:

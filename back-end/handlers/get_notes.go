@@ -35,7 +35,7 @@ type Seller struct {
 // GetAllNotes godoc
 // @Summary ดึงรายการสรุปทั้งหมด
 // @Description ดึงรายการสรุปทั้งหมดที่พร้อมขาย พร้อม filter
-// @Tags Notes
+// @Tags notes
 // @Accept json
 // @Produce json
 // @Param major query string false "กรองตามสาขา"
@@ -700,7 +700,7 @@ func GetLatestNotes(c *gin.Context) {
 // GetMostLikedNotes godoc
 // @Summary ดึงสรุปที่ถูกใจมากที่สุด
 // @Description ดึงสรุปที่มี is_like = true มากที่สุดจาก buyed_note
-// @Tags Notes
+// @Tags notes
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{} "รายการสรุปที่ถูกใจมากที่สุด"

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"back-end/config"
-	"database/sql"
 	"net/http"
 	"strconv"
 
@@ -11,17 +10,17 @@ import (
 
 // Review - โครงสร้างข้อมูลรีวิว
 type Review struct {
-	ID            int            `json:"id"`
-	BuyerID       int            `json:"buyer_id"`
-	BuyerName     string         `json:"buyer_name"`
-	BuyerAvatar   sql.NullString `json:"buyer_avatar"`
-	NoteID        int            `json:"note_id"`
-	NoteTitle     string         `json:"note_title"`
-	CourseCode    sql.NullString `json:"course_code"`
-	CourseName    sql.NullString `json:"course_name"`
-	Review        string         `json:"review"`
-	IsLiked       sql.NullBool   `json:"is_liked"`
-	CreatedAt     string         `json:"created_at"`
+	ID            int     `json:"id"`
+	BuyerID       int     `json:"buyer_id"`
+	BuyerName     string  `json:"buyer_name"`
+	BuyerAvatar   *string `json:"buyer_avatar"`
+	NoteID        int     `json:"note_id"`
+	NoteTitle     string  `json:"note_title"`
+	CourseCode    *string `json:"course_code"`
+	CourseName    *string `json:"course_name"`
+	Review        string  `json:"review"`
+	IsLiked       *bool   `json:"is_liked"`
+	CreatedAt     string  `json:"created_at"`
 }
 
 // ReviewStats - สถิติรีวิว
@@ -120,26 +119,26 @@ func GetSellerReviews(c *gin.Context) {
 			"created_at": review.CreatedAt,
 		}
 
-		if review.BuyerAvatar.Valid {
-			reviewMap["buyer_avatar"] = review.BuyerAvatar.String
+		if review.BuyerAvatar != nil {
+			reviewMap["buyer_avatar"] = *review.BuyerAvatar
 		} else {
 			reviewMap["buyer_avatar"] = ""
 		}
 
-		if review.CourseCode.Valid {
-			reviewMap["course_code"] = review.CourseCode.String
+		if review.CourseCode != nil {
+			reviewMap["course_code"] = *review.CourseCode
 		} else {
 			reviewMap["course_code"] = ""
 		}
 
-		if review.CourseName.Valid {
-			reviewMap["course_name"] = review.CourseName.String
+		if review.CourseName != nil {
+			reviewMap["course_name"] = *review.CourseName
 		} else {
 			reviewMap["course_name"] = ""
 		}
 
-		if review.IsLiked.Valid {
-			reviewMap["is_liked"] = review.IsLiked.Bool
+		if review.IsLiked != nil {
+			reviewMap["is_liked"] = *review.IsLiked
 		} else {
 			reviewMap["is_liked"] = nil
 		}
@@ -296,26 +295,26 @@ func GetNoteReviews(c *gin.Context) {
 			"created_at": review.CreatedAt,
 		}
 
-		if review.BuyerAvatar.Valid {
-			reviewMap["buyer_avatar"] = review.BuyerAvatar.String
+		if review.BuyerAvatar != nil {
+			reviewMap["buyer_avatar"] = *review.BuyerAvatar
 		} else {
 			reviewMap["buyer_avatar"] = ""
 		}
 
-		if review.CourseCode.Valid {
-			reviewMap["course_code"] = review.CourseCode.String
+		if review.CourseCode != nil {
+			reviewMap["course_code"] = *review.CourseCode
 		} else {
 			reviewMap["course_code"] = ""
 		}
 
-		if review.CourseName.Valid {
-			reviewMap["course_name"] = review.CourseName.String
+		if review.CourseName != nil {
+			reviewMap["course_name"] = *review.CourseName
 		} else {
 			reviewMap["course_name"] = ""
 		}
 
-		if review.IsLiked.Valid {
-			reviewMap["is_liked"] = review.IsLiked.Bool
+		if review.IsLiked != nil {
+			reviewMap["is_liked"] = *review.IsLiked
 		} else {
 			reviewMap["is_liked"] = nil
 		}
