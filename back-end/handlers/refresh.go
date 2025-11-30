@@ -120,7 +120,17 @@ func RefreshToken(c *gin.Context) {
 	})
 }
 
-// Logout - API สำหรับ logout (revoke refresh token)
+// Logout godoc
+// @Summary Logout user
+// @Description Revoke the refresh token to log out the user
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body RefreshTokenRequest true "Refresh token to revoke"
+// @Success 200 {object} map[string]interface{} "Logout successful"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/logout [post]
 func Logout(c *gin.Context) {
 	var req RefreshTokenRequest
 

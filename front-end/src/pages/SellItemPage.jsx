@@ -77,6 +77,7 @@ const SellItemPage = () => {
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // ข้อมูลจาก API
   const [courses, setCourses] = useState([]);
@@ -210,7 +211,7 @@ const SellItemPage = () => {
     if (!formData.course_id) newErrors.course_id = 'กรุณาเลือกวิชา';
     if (!formData.year) newErrors.year = 'กรุณาเลือกชั้นปี';
     if (!formData.exam_term) newErrors.exam_term = 'กรุณาเลือกภาคเรียน';
-    if (!formData.title.trim()) newErrors.title = 'กรุณากรอกชื่อหนังสือ';
+    if (!formData.title.trim()) newErrors.title = 'กรุณากรอกชื่อสรุป';
     if (!formData.description.trim()) newErrors.description = 'กรุณากรอกรายละเอียด';
     if (!formData.price || parseFloat(formData.price) <= 0) {
       newErrors.price = 'กรุณากรอกราคาที่ถูกต้อง';
@@ -265,10 +266,10 @@ const SellItemPage = () => {
       console.log('✅ Success:', response.data);
       setSuccess(true);
       
-      // รอ 2 วินาทีแล้ว redirect
+      // แสดง modal แทนการ redirect อัตโนมัติ
       setTimeout(() => {
-        navigate('/');
-      }, 2000);
+        setShowSuccessModal(true);
+      }, 1500);
     } catch (error) {
       console.error('❌ Error:', error);
       
@@ -312,6 +313,20 @@ const SellItemPage = () => {
             </button>
             <h1 className="text-3xl font-bold text-gray-800">📝 ลงขายหนังสือ</h1>
             <p className="text-gray-600 mt-2">กรอกข้อมูลหนังสือที่ต้องการขาย</p>
+            <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-blue-700 font-medium">
+                    💡 หมายเหตุ: หลังจากอัปโหลดสรุปวิชาเรียบร้อยแล้ว จะต้องรอการอนุมัติจาก Admin ก่อนที่สรุปจะแสดงในหน้าร้าน
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Form */}
@@ -471,14 +486,14 @@ const SellItemPage = () => {
             {/* ชื่อหนังสือ */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                ชื่อหนังสือ <span className="text-red-500">*</span>
+                ชื่อสรุป <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                placeholder="เช่น หนังสือคณิตศาสตร์ เล่ม 1"
+                placeholder="เช่น database จัดเต็ม"
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.title ? 'border-red-500' : 'border-gray-300'
                 }`}
@@ -497,7 +512,7 @@ const SellItemPage = () => {
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder="อธิบายสภาพหนังสือ ความเก่าใหม่ มีขีดเขียนหรือไม่ ฯลฯ"
+                placeholder="อธิบายรายละเอียดเช่น เน้นเนื้อหาหลัก รูปภาพ ฯลฯ"
                 rows="4"
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.description ? 'border-red-500' : 'border-gray-300'
@@ -800,6 +815,96 @@ const SellItemPage = () => {
             </div>
           </form>
         </div>
+
+        {/* Success Modal */}
+        {showSuccessModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-bounce-in">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white rounded-full p-2">
+                    <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">อัปโหลดสำเร็จ!</h3>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-4">
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-yellow-700 font-medium">
+                        สรุปของคุณกำลังรอการอนุมัติจาก Admin
+                      </p>
+                      <p className="text-xs text-yellow-600 mt-1">
+                        เมื่อได้รับการอนุมัติแล้ว สรุปจะแสดงในหน้าร้านของคุณ
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-gray-600 text-center">คุณต้องการทำอะไรต่อ?</p>
+
+                {/* Buttons */}
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      const user = JSON.parse(localStorage.getItem('user') || '{}');
+                      navigate(`/store/${user.id}`);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold transform hover:scale-105"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    ไปที่ร้านของฉัน
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowSuccessModal(false);
+                      setSuccess(false);
+                      setFormData({
+                        faculty: '',
+                        course_id: '',
+                        year: '',
+                        exam_term: '',
+                        title: '',
+                        description: '',
+                        price: '',
+                      });
+                      setImages([]);
+                      setFiles([]);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="w-full flex items-center justify-center gap-2 bg-white text-blue-600 border-2 border-blue-600 px-6 py-3 rounded-xl hover:bg-blue-50 transition-all duration-300 font-semibold transform hover:scale-105"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    ขายสรุปเพิ่มเติม
+                  </button>
+
+                  <button
+                    onClick={() => navigate('/')}
+                    className="w-full text-gray-500 hover:text-gray-700 px-6 py-2 rounded-xl hover:bg-gray-100 transition-colors font-medium"
+                  >
+                    กลับหน้าหลัก
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DndProvider>
   );

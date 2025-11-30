@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StarIcon } from '@heroicons/react/24/outline';
+import { StarIcon, HandThumbUpIcon, HandThumbDownIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 import BookDetailModal from './BookDetailModal';
 import { useCart } from '../context/CartContext';
@@ -24,7 +24,8 @@ const SaleList = ({ book }) => {
     const statusConfig = {
       available: { text: 'พร้อมขาย', color: 'bg-green-500' },
       sold: { text: 'ขายแล้ว', color: 'bg-gray-500' },
-      reserved: { text: 'จองแล้ว', color: 'bg-yellow-500' }
+      reserved: { text: 'จองแล้ว', color: 'bg-yellow-500' },
+      pending: { text: 'รออนุมัติ', color: 'bg-orange-500' }
     };
     return statusConfig[status] || statusConfig.available;
   };
@@ -120,9 +121,13 @@ const SaleList = ({ book }) => {
             <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium whitespace-nowrap">
               📋 {book.condition || 'สรุปเต็มบท'}
             </span>
-            <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full font-medium whitespace-nowrap">
-              ⭐ {book.reviews || 0} คะแนน
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium whitespace-nowrap flex items-center gap-1">
+                <HandThumbUpIcon className="w-3 h-3" />
+                {book.liked_count || 0}
+              </span>
+
+            </div>
           </div>
 
           {/* Price & Sales */}

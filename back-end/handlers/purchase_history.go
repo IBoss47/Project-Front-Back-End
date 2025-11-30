@@ -155,7 +155,22 @@ type UpdatePurchaseReviewRequest struct {
 	IsLiked bool   `json:"is_liked"`
 }
 
-// UpdatePurchaseReview - อัพเดทรีวิวและการกดใจ
+// UpdatePurchaseReview godoc
+// @Summary Update purchase review and like status
+// @Description Update the review text and/or like status for a purchased note
+// @Tags Purchases
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Buyed Note ID"
+// @Param review body UpdatePurchaseReviewRequest true "Review and like status"
+// @Success 200 {object} map[string]interface{} "Review updated successfully"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 403 {object} map[string]string "Not owner of this purchase"
+// @Failure 404 {object} map[string]string "Purchase not found"
+// @Failure 500 {object} map[string]string "Database error"
+// @Router /api/my-purchases/{id} [put]
 func UpdatePurchaseReview(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {

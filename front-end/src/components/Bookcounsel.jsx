@@ -1,7 +1,6 @@
 import React,{useState,useEffect,} from "react";
 import BookCard from '../components/SaleList';
 import { getAllBooks, filterBooks } from '../data/mockBooksData';
-import axios from "axios";
 const Bookcounsel = () => {
     const [loading,setLoading] = useState(true);
     const [books, setBooks] = useState([]);

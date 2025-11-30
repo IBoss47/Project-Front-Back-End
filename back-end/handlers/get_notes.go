@@ -23,6 +23,7 @@ type NoteResponse struct {
 	Course      Course   `json:"course"`
 	Seller      Seller   `json:"seller"`
 	TotalSales  int      `json:"total_sales" example:"5"`
+	LikedCount  int      `json:"liked_count" example:"10"`
 }
 
 type Seller struct {
@@ -59,7 +60,8 @@ func GetAllNotes(c *gin.Context) {
 			n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
 			c.id, c.code, c.name, c.year, c.major,
 			u.id, u.username, u.fullname,
-			COALESCE(COUNT(b.id), 0) as total_sales
+			COALESCE(COUNT(b.id), 0) as total_sales,
+			COALESCE(SUM(CASE WHEN b.is_liked = true THEN 1 ELSE 0 END), 0) as liked_count
 		FROM notes_for_sale n
 		LEFT JOIN courses c ON n.course_id = c.id
 		LEFT JOIN users u ON n.seller_id = u.id
@@ -121,7 +123,8 @@ func GetAllNotes(c *gin.Context) {
 	for rows.Next() {
 		var note NoteResponse
 		var courseID, sellerID sql.NullInt64
-		var courseCode, courseName, courseYear, courseMajor sql.NullString
+		var courseCode, courseName, courseMajor sql.NullString
+		var courseYear sql.NullInt64
 		var sellerUsername, sellerFullname sql.NullString
 		var examTerm sql.NullString
 
@@ -130,6 +133,7 @@ func GetAllNotes(c *gin.Context) {
 			&courseID, &courseCode, &courseName, &courseYear, &courseMajor,
 			&sellerID, &sellerUsername, &sellerFullname,
 			&note.TotalSales,
+			&note.LikedCount,
 		)
 		if err != nil {
 			continue
@@ -142,11 +146,15 @@ func GetAllNotes(c *gin.Context) {
 
 		// กำหนดค่า course
 		if courseID.Valid {
+			yearStr := ""
+			if courseYear.Valid {
+				yearStr = fmt.Sprintf("%d", courseYear.Int64)
+			}
 			note.Course = Course{
 				ID:    int(courseID.Int64),
 				Code:  courseCode.String,
 				Name:  courseName.String,
-				Year:  courseYear.String,
+				Year:  yearStr,
 				Major: courseMajor.String,
 			}
 		}
@@ -302,10 +310,11 @@ func GetNoteByID(c *gin.Context) {
 
 // GetNotesByUserID godoc
 // @Summary Get notes by user ID
-// @Description Get all available notes for sale by a specific user/seller
+// @Description Get all available notes for sale by a specific user/seller. If the requester is the owner, pending notes are also included.
 // @Tags notes
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path int true "User ID"
 // @Success 200 {array} NoteResponse "List of notes"
 // @Failure 500 {object} map[string]string "Database error"
@@ -313,17 +322,37 @@ func GetNoteByID(c *gin.Context) {
 func GetNotesByUserID(c *gin.Context) {
 	userID := c.Param("id")
 
-	query := `
+	// ตรวจสอบว่าเป็นเจ้าของร้านหรือไม่
+	isOwner := false
+	if userIDFromToken, exists := c.Get("user_id"); exists {
+		if fmt.Sprintf("%v", userIDFromToken) == userID {
+			isOwner = true
+		}
+	}
+
+	// ถ้าเป็นเจ้าของให้แสดง pending ด้วย ถ้าไม่ใช่แสดงแค่ available
+	statusCondition := "n.status = 'available'"
+	if isOwner {
+		statusCondition = "(n.status = 'available' OR n.status = 'pending')"
+	}
+
+	query := fmt.Sprintf(`
 		SELECT 
 			n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
 			c.id, c.code, c.name, c.year, c.major,
-			u.id, u.username, u.fullname
+			u.id, u.username, u.fullname,
+			COALESCE(COUNT(b.id), 0) as total_sales,
+			COALESCE(SUM(CASE WHEN b.is_liked = true THEN 1 ELSE 0 END), 0) as liked_count
 		FROM notes_for_sale n
 		LEFT JOIN courses c ON n.course_id = c.id
 		LEFT JOIN users u ON n.seller_id = u.id
-		WHERE n.seller_id = $1 AND n.status = 'available'
+		LEFT JOIN buyed_note b ON n.id = b.note_id
+		WHERE n.seller_id = $1 AND %s
+		GROUP BY n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
+		         c.id, c.code, c.name, c.year, c.major,
+		         u.id, u.username, u.fullname
 		ORDER BY n.created_at DESC
-	`
+	`, statusCondition)
 
 	rows, err := config.DB.Query(query, userID)
 	if err != nil {
@@ -348,6 +377,8 @@ func GetNotesByUserID(c *gin.Context) {
 			&note.ID, &note.BookTitle, &note.Price, &examTerm, &note.Description, &note.Status, &note.CreatedAt,
 			&courseID, &courseCode, &courseName, &courseYear, &courseMajor,
 			&sellerID, &sellerUsername, &sellerFullname,
+			&note.TotalSales,
+			&note.LikedCount,
 		)
 		if err != nil {
 			continue
@@ -414,7 +445,7 @@ func GetNotesByUserID(c *gin.Context) {
 
 // GetBestSellingNotes godoc
 // @Summary Get best selling notes
-// @Description Get top 5 best selling notes ordered by purchase count
+// @Description Get top 6 best selling notes ordered by purchase count
 // @Tags notes
 // @Accept json
 // @Produce json
@@ -427,7 +458,8 @@ func GetBestSellingNotes(c *gin.Context) {
 			n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
 			c.id, c.code, c.name, c.year, c.major,
 			u.id, u.username, u.fullname,
-			COUNT(b.id) as sold_count
+			COUNT(b.id) as sold_count,
+			COALESCE(SUM(CASE WHEN b.is_liked = true THEN 1 ELSE 0 END), 0) as liked_count
 		FROM notes_for_sale n
 		LEFT JOIN courses c ON n.course_id = c.id
 		LEFT JOIN users u ON n.seller_id = u.id
@@ -438,7 +470,7 @@ func GetBestSellingNotes(c *gin.Context) {
 		         u.id, u.username, u.fullname
 		HAVING COUNT(b.id) > 0
 		ORDER BY sold_count DESC, n.created_at DESC
-		LIMIT 5
+		LIMIT 6
 	`
 
 	rows, err := config.DB.Query(query)
@@ -466,6 +498,7 @@ func GetBestSellingNotes(c *gin.Context) {
 			&courseID, &courseCode, &courseName, &courseYear, &courseMajor,
 			&sellerID, &sellerUsername, &sellerFullname,
 			&soldCount,
+			&note.LikedCount,
 		)
 		if err != nil {
 			continue
@@ -533,7 +566,8 @@ func GetBestSellingNotes(c *gin.Context) {
 			"images":      note.Images,
 			"course":      note.Course,
 			"seller":      note.Seller,
-			"sold_count":  soldCount,
+			"total_sales": soldCount,
+			"liked_count": note.LikedCount,
 		}
 
 		notes = append(notes, noteMap)
@@ -548,7 +582,7 @@ func GetBestSellingNotes(c *gin.Context) {
 
 // GetLatestNotes godoc
 // @Summary Get latest notes
-// @Description Get the 5 most recently added notes for sale
+// @Description Get the 6 most recently added notes for sale
 // @Tags notes
 // @Accept json
 // @Produce json
@@ -561,7 +595,8 @@ func GetLatestNotes(c *gin.Context) {
 			n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
 			c.id, c.code, c.name, c.year, c.major,
 			u.id, u.username, u.fullname,
-			COALESCE(COUNT(b.id), 0) as total_sales
+			COALESCE(COUNT(b.id), 0) as total_sales,
+			COALESCE(SUM(CASE WHEN b.is_liked = true THEN 1 ELSE 0 END), 0) as liked_count
 		FROM notes_for_sale n
 		LEFT JOIN courses c ON n.course_id = c.id
 		LEFT JOIN users u ON n.seller_id = u.id
@@ -571,7 +606,7 @@ func GetLatestNotes(c *gin.Context) {
 		         c.id, c.code, c.name, c.year, c.major,
 		         u.id, u.username, u.fullname
 		ORDER BY n.created_at DESC
-		LIMIT 5
+		LIMIT 6
 	`
 
 	rows, err := config.DB.Query(query)
@@ -598,6 +633,7 @@ func GetLatestNotes(c *gin.Context) {
 			&courseID, &courseCode, &courseName, &courseYear, &courseMajor,
 			&sellerID, &sellerUsername, &sellerFullname,
 			&note.TotalSales,
+			&note.LikedCount,
 		)
 		if err != nil {
 			continue
@@ -676,7 +712,8 @@ func GetMostLikedNotes(c *gin.Context) {
 			n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
 			c.id, c.code, c.name, c.year, c.major,
 			u.id, u.username, u.fullname,
-			COUNT(CASE WHEN b.is_liked = true THEN 1 END) as like_count
+			COALESCE(COUNT(b.id), 0) as total_sales,
+			COALESCE(SUM(CASE WHEN b.is_liked = true THEN 1 ELSE 0 END), 0) as liked_count
 		FROM notes_for_sale n
 		LEFT JOIN courses c ON n.course_id = c.id
 		LEFT JOIN users u ON n.seller_id = u.id
@@ -685,7 +722,7 @@ func GetMostLikedNotes(c *gin.Context) {
 		GROUP BY n.id, n.book_title, n.price, n.exam_term, n.description, n.status, n.created_at,
 		         c.id, c.code, c.name, c.year, c.major,
 		         u.id, u.username, u.fullname
-		ORDER BY like_count DESC, n.created_at DESC
+		ORDER BY liked_count DESC, n.created_at DESC
 		LIMIT 10
 	`
 
@@ -704,22 +741,21 @@ func GetMostLikedNotes(c *gin.Context) {
 	for rows.Next() {
 		var note NoteResponse
 		var courseID, sellerID sql.NullInt64
-		var courseCode, courseName, courseYear, courseMajor sql.NullString
+		var courseCode, courseName, courseMajor sql.NullString
+		var courseYear sql.NullInt64
 		var sellerUsername, sellerFullname sql.NullString
 		var examTerm sql.NullString
-		var likeCount int
 
 		err := rows.Scan(
 			&note.ID, &note.BookTitle, &note.Price, &examTerm, &note.Description, &note.Status, &note.CreatedAt,
 			&courseID, &courseCode, &courseName, &courseYear, &courseMajor,
 			&sellerID, &sellerUsername, &sellerFullname,
-			&likeCount,
+			&note.TotalSales,
+			&note.LikedCount,
 		)
 		if err != nil {
 			continue
 		}
-
-		note.TotalSales = likeCount
 
 		// กำหนดค่า exam_term
 		if examTerm.Valid {
@@ -728,11 +764,15 @@ func GetMostLikedNotes(c *gin.Context) {
 
 		// กำหนดค่า course
 		if courseID.Valid {
+			yearStr := ""
+			if courseYear.Valid {
+				yearStr = fmt.Sprintf("%d", courseYear.Int64)
+			}
 			note.Course = Course{
 				ID:    int(courseID.Int64),
 				Code:  courseCode.String,
 				Name:  courseName.String,
-				Year:  courseYear.String,
+				Year:  yearStr,
 				Major: courseMajor.String,
 			}
 		}

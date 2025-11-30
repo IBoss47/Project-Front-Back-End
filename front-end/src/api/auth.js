@@ -155,6 +155,7 @@ export const authAPI = {
     }
     
     // ลบข้อมูลทั้งหมด
+    localStorage.removeItem('token'); // เพิ่มการลบ token ที่ Login.jsx สร้าง
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');

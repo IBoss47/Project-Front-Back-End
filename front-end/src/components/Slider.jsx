@@ -21,7 +21,7 @@ const Slider = ({slides: propSlides, autoPlay = 5000, useAPI = false}) => {
                             image: `http://localhost:8080/${img.image_path}`,
                             title: '',
                             subtitle: '',
-                            link: null
+                            link: img.link_url?.String || img.link_url || null
                         }));
                         setSlides(apiSlides.length > 0 ? apiSlides : propSlides || []);
                     }

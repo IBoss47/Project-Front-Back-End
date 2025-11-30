@@ -252,7 +252,89 @@ INSERT INTO notes_for_sale (course_id, seller_id, book_title, price, exam_term, 
 (24, 4, 'การออกแบบเว็บเพจ UI/UX', 155.00, 'กลางภาค', 'Figma, Adobe XD มีตัวอย่างการออกแบบ', './uploads/pdfs/note27.pdf', 'available'),
 (27, 4, 'ระบบฐานข้อมูล Database Design', 205.00, 'ปลายภาค', 'ERD, Normalization, SQL Optimization', './uploads/pdfs/note28.pdf', 'available'),
 (32, 4, 'ระบบปฏิบัติการขั้นสูง Advanced OS', 245.00, 'กลางภาค', 'Kernel, Scheduling algorithms, Virtual Memory', './uploads/pdfs/note29.pdf', 'available'),
-(38, 4, 'การคำนวณควอนตัม Quantum Computing', 350.00, 'กลางภาค', 'Quantum Gates, Algorithms เข้าใจง่าย มีตัวอย่างโค้ด', './uploads/pdfs/note30.pdf', 'available')
+(38, 4, 'การคำนวณควอนตัม Quantum Computing', 350.00, 'กลางภาค', 'Quantum Gates, Algorithms เข้าใจง่าย มีตัวอย่างโค้ด', './uploads/pdfs/note30.pdf', 'available'),
+(11, 2, 'OOSD กลางภาคแบบละเอียด', 150.00, 'กลางภาค', 'เจาะลึกหลักการของแต่ละบท', 'uploads/pdfs/1764491676_สรุป OOSD.pdf', 'available'),
+(1, 3, 'สรุปทุกโจท + quiz', 200.00, 'ปลายภาค', 'เฉลยแนวคิดทุกโจท + เฉลย quiz', 'uploads/pdfs/1764491851_สรุป COM1.pdf', 'available')
+ON CONFLICT DO NOTHING;
+
+-- Insert ข้อมูล note_images สำหรับโน้ต 2 ตัวใหม่
+-- Note 31: OOSD กลางภาคแบบละเอียด
+-- Note 32: สรุปทุกโจท + quiz
+INSERT INTO note_images (note_id, image_order, path) VALUES
+(31, 0, 'uploads/images/1764491676_note_31_img_0.png'),
+(32, 0, 'uploads/images/1764491851_note_32_img_0.png')
+ON CONFLICT DO NOTHING;
+
+-- Insert ข้อมูล buyed_note (การซื้อของแต่ละคน)
+-- Seller 1 (user_id=2) ซื้อโน้ตจาก Seller 2 และ 3 (12 รายการ)
+INSERT INTO buyed_note (user_id, note_id, review, is_liked) VALUES
+(2, 11, 'โน้ตดีมาก อธิบายง่าย เข้าใจได้ชัดเจน', true),
+(2, 12, 'OOP กับ Java อธิบายละเอียดมาก คุ้มค่า', true),
+(2, 13, 'ระบบปฏิบัติการสรุปได้ดี แต่อยากให้มีตัวอย่างเพิ่ม', true),
+(2, 14, 'เครือข่ายคอมพิวเตอร์ครบถ้วน ช่วยสอบได้เยอะ', true),
+(2, 16, 'AI และ ML โน้ตเยี่ยม มีโค้ดตัวอย่างดี', true),
+(2, 21, 'โครงสร้างข้อมูลอธิบายเข้าใจง่าย', true),
+(2, 22, 'Full Stack Web โปรเจคตัวอย่างดีมาก', true),
+(2, 23, 'Security ครอบคลุม แต่ค่อนข้างยาก', true),
+(2, 24, 'การจัดการโครงการ มีประโยชน์มาก', true),
+(2, 26, 'Capstone Guide ช่วยทำโครงงานได้เยอะ', true),
+(2, 28, 'Database Design สรุปได้ดีมาก', true),
+(2, 15, 'Mobile App Development ครบทุกอย่าง สุดยอด!', true)
+ON CONFLICT DO NOTHING;
+
+-- Seller 2 (user_id=3) ซื้อโน้ตจาก Seller 1 และ 3 (14 รายการ)
+INSERT INTO buyed_note (user_id, note_id, review, is_liked) VALUES
+(3, 1, 'สรุปการเขียนโปรแกรมดีมาก มีตัวอย่างเยอะ', true),
+(3, 2, 'คณิตศาสตร์ไอที สูตรครบ เข้าใจง่าย', true),
+(3, 3, 'Web Design สวยงาม มี source code ด้วย', true),
+(3, 4, 'โครงสร้างข้อมูลอธิบายละเอียด', true),
+(3, 5, 'SQL Complete ครบทุกอย่างจริงๆ', true),
+(3, 6, 'Design Pattern ช่วยเขียนโค้ดดีขึ้นมาก', true),
+(3, 8, 'Discrete Math สรุปกระชับ ชอบมาก', true),
+(3, 9, 'อัลกอริทึมขั้นสูง โจทย์ยากแต่อธิบายดี', true),
+(3, 21, 'โครงสร้างข้อมูลพื้นฐาน เหมาะมือใหม่', true),
+(3, 24, 'การจัดการโครงการดีมาก เทคนิคใช้ได้จริง', true),
+(3, 25, 'Cloud Computing ครอบคลุมทั้ง AWS Azure', true),
+(3, 27, 'UI/UX Design มีตัวอย่างสวยๆ', true),
+(3, 29, 'Advanced OS ยากแต่อธิบายได้ดี', false),
+(3, 30, 'Quantum Computing เนื้อหาลึกมาก ยากหน่อย', false)
+ON CONFLICT DO NOTHING;
+
+-- Seller 3 (user_id=4) ซื้อโน้ตจาก Seller 1 และ 2 (13 รายการ)
+INSERT INTO buyed_note (user_id, note_id, review, is_liked) VALUES
+(4, 1, 'โน้ตเขียนโปรแกรมดีมาก เริ่มต้นได้ง่าย', true),
+(1, 1, 'มือใหม่อ่านไม่เข้าใจเลย', false),
+(4, 2, 'คณิตศาสตร์ สูตรครบ มีเทคนิคดีๆ', true),
+(4, 4, 'โครงสร้างข้อมูล อธิบายชัดเจนมาก', true),
+(1, 4, 'โครงสร้างข้อมูลมีวิธีที่ง่ายกว่านี้', false),
+(4, 5, 'SQL ฐานข้อมูล ครอบคลุมทุกอย่าง', true),
+(4, 7, 'Python โน้ตดีมาก เริ่มต้นถึงขั้นสูง', true),
+(4, 11, 'ระบบคอมพิวเตอร์ สรุปได้ดี', true),
+(4, 12, 'OOP Java โค้ดตัวอย่างเยอะ', true),
+(4, 14, 'Network ครบถ้วน OSI Model อธิบายดี', true),
+(4, 16, 'AI และ ML เข้าใจง่าย มี Python code', true),
+(4, 17, 'Calculus สำหรับ CS สรุปดีมาก', true),
+(4, 18, 'Computer Architecture ภาพประกอบสวย', true),
+(4, 19, 'AI Advanced ลึกมาก แต่อธิบายได้ดี', true),
+(4, 20, 'Deep Learning โปรเจคจริง เยี่ยมมาก!', true)
+ON CONFLICT DO NOTHING;
+
+-- เพิ่มการซื้อซ้ำ - บางโน้ตขายดีมีคนซื้อหลายคน
+-- Note ยอดนิยมที่มีคนซื้อซ้ำ (แก้ไขเพื่อไม่ให้ซื้อโน้ตของตัวเอง)
+INSERT INTO buyed_note (user_id, note_id, review, is_liked) VALUES
+-- โน้ตที่ 1 (การเขียนโปรแกรม) - ขายดี (seller_id=2, ลบ user_id=2 ออก) - เก็บไว้
+-- โน้ตที่ 5 (SQL) - ลบออก
+-- โน้ตที่ 12 (OOP Java) - ลบออก
+-- โน้ตที่ 16 (AI ML) - ลบออก
+-- โน้ตที่ 22 (Full Stack Web) - ลบออก
+-- โน้ตที่ 31 (OOSD กลางภาคแบบละเอียด) - ขายดี (seller_id=2) - เก็บไว้
+(1, 31, 'สรุปละเอียด เข้าใจง่าย', true),
+(3, 31, 'OOSD สรุปละเอียดมาก เจาะลึกทุกบท ดีมาก', true),
+(4, 31, 'วิศวกรรมซอฟต์แวร์ อธิบายชัดเจน คุ้มค่า', true),
+-- โน้ตที่ 32 (สรุปทุกโจท + quiz) - ขายดี (seller_id=3) - เก็บไว้
+(1, 32, 'อธิบายทุกมุมมองชัดเจน', true),
+(2, 32, 'มีเฉลยทุกโจท quiz ครบ ช่วยสอบได้เยอะ', true),
+(4, 32, 'สรุปโจทย์ดีมาก แนวคิดชัดเจน', true)
 ON CONFLICT DO NOTHING;
 
 
@@ -274,9 +356,16 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 CREATE TABLE IF NOT EXISTS slider_images (
     id SERIAL PRIMARY KEY,
     image_path TEXT NOT NULL,
-    display_order INTEGER NOT NULL DEFAULT 0
+    display_order INTEGER NOT NULL DEFAULT 0,
+    link_url TEXT
 );
 
+-- Insert sample slider images
+INSERT INTO slider_images (image_path, display_order, link_url) VALUES
+('uploads/images/slider_161d72d8-d141-433c-9c73-800f674b96d9.png', 0, '/SellListPage'),
+('uploads/images/slider_c1474ae3-2557-419b-8ebd-c4e1528dedf0.png', 1, '/sell'),
+('uploads/images/slider_303fe25c-ef0f-49d6-aa01-4dc33d064e08.png', 2, '/Help')
+ON CONFLICT DO NOTHING;
 
 
 

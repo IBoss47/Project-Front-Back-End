@@ -75,15 +75,18 @@ const PurchasedNoteModal = ({ purchase, isOpen, onClose, onReviewSubmitted }) =>
       setHasSubmitted(true);
       setPopupMessage('บันทึกรีวิวสำเร็จ!');
       setShowSuccessPopup(true);
-      setTimeout(() => setShowSuccessPopup(false), 3000);
       
-      if (onReviewSubmitted) {
-        onReviewSubmitted();
-      }
+      // รอให้แสดง success popup แล้วปิด modal และรีเฟรช
+      setTimeout(() => {
+        setShowSuccessPopup(false);
+        onClose(); // ปิด modal
+        if (onReviewSubmitted) {
+          onReviewSubmitted(); // รีเฟรชข้อมูล
+        }
+      }, 1500);
     } catch (err) {
       console.error('Error submitting review:', err);
       setError('ไม่สามารถบันทึกรีวิวได้ กรุณาลองใหม่อีกครั้ง');
-    } finally {
       setIsSubmitting(false);
     }
   };

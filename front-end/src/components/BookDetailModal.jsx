@@ -2,18 +2,26 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { XMarkIcon, ShoppingCartIcon, HeartIcon, StarIcon } from '@heroicons/react/24/outline';
-import { HeartIcon as HeartSolidIcon, StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
+import { HeartIcon as HeartSolidIcon, StarIcon as StarSolidIcon, HandThumbUpIcon, HandThumbDownIcon } from '@heroicons/react/24/solid';
 import { useCart } from '../context/CartContext';
 import { ReviewList, ReviewStats } from './Store/ReviewItem';
+import api from '../api/auth';
 
 const BookDetailModal = ({ book, isOpen, onClose }) => {
 
-    const [quantity, setQuantity] = useState(1);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [showErrorPopup, setShowErrorPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState('');
-    const { addToCart } = useCart();
+    const { addToCart, isInCart } = useCart();
     const navigate = useNavigate();
+    
+    // Check if item is already in cart
+    const itemInCart = isInCart(book?.id);
+    
+    // Check ownership and purchase status
+    const [isPurchased, setIsPurchased] = useState(false);
+    const [isOwner, setIsOwner] = useState(false);
+    const [checkingStatus, setCheckingStatus] = useState(true);
     
     // Review states
     const [reviews, setReviews] = useState([]);
@@ -32,6 +40,43 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
         };
     }, [isOpen]);
 
+    // Check purchase status and ownership when modal opens
+    useEffect(() => {
+        if (isOpen && book?.id) {
+            checkPurchaseAndOwnership();
+        }
+    }, [isOpen, book?.id]);
+
+    const checkPurchaseAndOwnership = async () => {
+        setCheckingStatus(true);
+        try {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                
+                // Check if user is the owner
+                if (book.seller?.id === user.id) {
+                    setIsOwner(true);
+                    setCheckingStatus(false);
+                    return;
+                }
+
+                // Check if already purchased
+                try {
+                    const response = await api.get('/my-purchases');
+                    const hasPurchased = response.data.some(purchase => purchase.note_id === book.id);
+                    setIsPurchased(hasPurchased);
+                } catch (error) {
+                    console.error('Error checking purchase status:', error);
+                }
+            }
+        } catch (error) {
+            console.error('Error checking ownership:', error);
+        } finally {
+            setCheckingStatus(false);
+        }
+    };
+
     // Fetch reviews when modal opens
     useEffect(() => {
         if (isOpen && book?.id) {
@@ -43,19 +88,12 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
         setLoadingReviews(true);
         try {
             const [reviewsRes, statsRes] = await Promise.all([
-                fetch(`http://localhost:8080/api/notes/${book.id}/reviews`),
-                fetch(`http://localhost:8080/api/notes/${book.id}/reviews/stats`)
+                api.get(`/notes/${book.id}/reviews`),
+                api.get(`/notes/${book.id}/reviews/stats`)
             ]);
 
-            if (reviewsRes.ok) {
-                const data = await reviewsRes.json();
-                setReviews(data.reviews || []);
-            }
-
-            if (statsRes.ok) {
-                const data = await statsRes.json();
-                setReviewStats(data);
-            }
+            setReviews(reviewsRes.data.reviews || []);
+            setReviewStats(statsRes.data);
         } catch (error) {
             console.error('Error fetching reviews:', error);
         } finally {
@@ -69,12 +107,9 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
 
     const handleAddToCart = async () => {
         try {
-            for (let i = 0; i < quantity; i++) {
-                await addToCart(book);
-            }
-            setPopupMessage(`เพิ่ม "${book.book_title}" จำนวน ${quantity} ชุด เข้าตะกร้าแล้ว!`);
+            await addToCart(book);
+            setPopupMessage(`เพิ่ม "${book.book_title}" เข้าตะกร้าแล้ว!`);
             setShowSuccessPopup(true);
-            setQuantity(1);
             setTimeout(() => setShowSuccessPopup(false), 3000);
         } catch (error) {
             if (error.response?.status === 401) {
@@ -242,15 +277,23 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                 </div>
 
                                 {/* Reviews */}
-                                <div className="flex items-center gap-2 bg-yellow-50 p-3 rounded-xl">
-                                    <div className="flex items-center gap-1">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <StarSolidIcon key={star} className="w-4 h-4 text-yellow-400" />
-                                        ))}
-                                    </div>
-                                    <span className="text-sm text-gray-700 font-bold">
-                                        ({book.reviews || 0} คะแนน)
-                                    </span>
+                                <div className="flex items-center gap-3">
+                                    {reviewStats && (
+                                        <>
+                                            <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-xl border border-green-200">
+                                                <HandThumbUpIcon className="w-5 h-5 text-green-600" />
+                                                <span className="text-sm text-green-700 font-bold">
+                                                    {reviewStats.liked_count || 0} ชอบ
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 bg-red-50 px-3 py-2 rounded-xl border border-red-200">
+                                                <HandThumbDownIcon className="w-5 h-5 text-red-600" />
+                                                <span className="text-sm text-red-700 font-bold">
+                                                    {reviewStats.disliked_count || 0} ไม่ชอบ
+                                                </span>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
 
 
@@ -301,43 +344,46 @@ const BookDetailModal = ({ book, isOpen, onClose }) => {
                                     </div>
                                 </div>
 
-                                {/* Quantity Selector */}
-                                {book.status === 'available' && (
-                                    <div>
-                                        <p className="text-xs text-gray-600 mb-2 font-semibold">จำนวน</p>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                                className="w-8 h-8 border border-gray-300 rounded-lg hover:bg-gray-100 font-bold text-base text-gray-700 transition-all hover:scale-110"
-                                            >
-                                                -
-                                            </button>
-                                            <input
-                                                type="number"
-                                                value={quantity}
-                                                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                                                className="w-16 h-8 border border-gray-300 rounded-lg text-center font-bold text-base"
-                                                min="1"
-                                            />
-                                            <button
-                                                onClick={() => setQuantity(quantity + 1)}
-                                                className="w-8 h-8 border border-gray-300 rounded-lg hover:bg-gray-100 font-bold text-base text-gray-700 transition-all hover:scale-110"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
                                 {/* Add to Cart Button */}
                                 {book.status === 'available' ? (
-                                    <button
-                                        onClick={handleAddToCart}
-                                        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-sm transform hover:scale-105"
-                                    >
-                                        <ShoppingCartIcon className="w-4 h-4" />
-                                        + เพิ่มลงตะกร้า
-                                    </button>
+                                    checkingStatus ? (
+                                        <div className="w-full bg-gray-100 text-gray-500 px-4 py-3 rounded-xl text-center font-bold text-sm flex items-center justify-center gap-2">
+                                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                            </svg>
+                                            กำลังตรวจสอบ...
+                                        </div>
+                                    ) : isOwner ? (
+                                        <div className="w-full bg-gradient-to-r from-gray-100 to-gray-200 border-2 border-gray-300 text-gray-600 px-4 py-3 rounded-xl text-center font-bold text-sm flex items-center justify-center gap-2">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                            </svg>
+                                            นี่คือสรุปของคุณ
+                                        </div>
+                                    ) : isPurchased ? (
+                                        <div className="w-full bg-gradient-to-r from-blue-100 to-indigo-100 border-2 border-blue-300 text-blue-700 px-4 py-3 rounded-xl text-center font-bold text-sm flex items-center justify-center gap-2">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            คุณซื้อสรุปนี้แล้ว
+                                        </div>
+                                    ) : itemInCart ? (
+                                        <div className="w-full bg-gradient-to-r from-green-100 to-emerald-100 border-2 border-green-300 text-green-700 px-4 py-3 rounded-xl text-center font-bold text-sm flex items-center justify-center gap-2">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            มีอยู่ในตะกร้าแล้ว
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={handleAddToCart}
+                                            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-sm transform hover:scale-105"
+                                        >
+                                            <ShoppingCartIcon className="w-4 h-4" />
+                                            + เพิ่มลงตะกร้า
+                                        </button>
+                                    )
                                 ) : (
                                     <div className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-center font-bold text-sm">
                                         {book.status === 'sold' ? 'สินค้าขายแล้ว' : 'สินค้าถูกจองแล้ว'}

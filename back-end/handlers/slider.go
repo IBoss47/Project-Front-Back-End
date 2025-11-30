@@ -26,7 +26,7 @@ import (
 // @Router /api/slider [get]
 func GetSliderImages(c *gin.Context) {
 	rows, err := config.DB.Query(`
-		SELECT id, image_path, display_order
+		SELECT id, image_path, display_order, link_url
 		FROM slider_images
 		ORDER BY display_order ASC
 	`)
@@ -41,15 +41,16 @@ func GetSliderImages(c *gin.Context) {
 	defer rows.Close()
 
 	type SliderImage struct {
-		ID           int    `json:"id"`
-		ImagePath    string `json:"image_path"`
-		DisplayOrder int    `json:"display_order"`
+		ID           int            `json:"id"`
+		ImagePath    string         `json:"image_path"`
+		DisplayOrder int            `json:"display_order"`
+		LinkURL      sql.NullString `json:"link_url"`
 	}
 
 	var images []SliderImage
 	for rows.Next() {
 		var img SliderImage
-		if err := rows.Scan(&img.ID, &img.ImagePath, &img.DisplayOrder); err != nil {
+		if err := rows.Scan(&img.ID, &img.ImagePath, &img.DisplayOrder, &img.LinkURL); err != nil {
 			continue
 		}
 		images = append(images, img)
@@ -69,6 +70,7 @@ func GetSliderImages(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param image formData file true "Image file (jpg, jpeg, png, gif, webp)"
+// @Param link_url formData string false "Link URL for navigation"
 // @Success 200 {object} map[string]interface{} "Upload successful with image info"
 // @Failure 400 {object} map[string]string "Invalid file"
 // @Failure 401 {object} map[string]string "Unauthorized"
@@ -85,6 +87,9 @@ func UploadSliderImage(c *gin.Context) {
 		})
 		return
 	}
+
+	// รับ link_url จาก form (optional)
+	linkURL := c.PostForm("link_url")
 
 	// ตรวจสอบประเภทไฟล์
 	ext := strings.ToLower(filepath.Ext(file.Filename))
@@ -142,11 +147,26 @@ func UploadSliderImage(c *gin.Context) {
 
 	// บันทึกข้อมูลลงฐานข้อมูล
 	var imageID int
-	err = config.DB.QueryRow(`
-		INSERT INTO slider_images (image_path, display_order)
-		VALUES ($1, $2)
-		RETURNING id
-	`, filePath, nextOrder).Scan(&imageID)
+	var query string
+	var args []interface{}
+
+	if linkURL != "" {
+		query = `
+			INSERT INTO slider_images (image_path, display_order, link_url)
+			VALUES ($1, $2, $3)
+			RETURNING id
+		`
+		args = []interface{}{filePath, nextOrder, linkURL}
+	} else {
+		query = `
+			INSERT INTO slider_images (image_path, display_order)
+			VALUES ($1, $2)
+			RETURNING id
+		`
+		args = []interface{}{filePath, nextOrder}
+	}
+
+	err = config.DB.QueryRow(query, args...).Scan(&imageID)
 
 	if err != nil {
 		// ลบไฟล์ถ้าบันทึก DB ไม่สำเร็จ
@@ -166,6 +186,7 @@ func UploadSliderImage(c *gin.Context) {
 			"id":            imageID,
 			"image_path":    filePath,
 			"display_order": nextOrder,
+			"link_url":      linkURL,
 		},
 	})
 }
@@ -185,8 +206,9 @@ func UploadSliderImage(c *gin.Context) {
 // @Router /api/admin/slider/order [put]
 func UpdateSliderOrder(c *gin.Context) {
 	type OrderUpdate struct {
-		ID    int `json:"id"`
-		Order int `json:"order"`
+		ID      int     `json:"id"`
+		Order   int     `json:"order"`
+		LinkURL *string `json:"link_url,omitempty"`
 	}
 
 	var updates []OrderUpdate
@@ -221,11 +243,22 @@ func UpdateSliderOrder(c *gin.Context) {
 
 	// อัปเดตลำดับแต่ละรายการ
 	for _, update := range updates {
-		_, err := tx.Exec(`
-			UPDATE slider_images 
-			SET display_order = $1
-			WHERE id = $2
-		`, update.Order, update.ID)
+		var err error
+		if update.LinkURL != nil {
+			// Update both order and link
+			_, err = tx.Exec(`
+				UPDATE slider_images 
+				SET display_order = $1, link_url = $2
+				WHERE id = $3
+			`, update.Order, *update.LinkURL, update.ID)
+		} else {
+			// Update only order
+			_, err = tx.Exec(`
+				UPDATE slider_images 
+				SET display_order = $1
+				WHERE id = $2
+			`, update.Order, update.ID)
+		}
 		
 		if err != nil {
 			tx.Rollback()

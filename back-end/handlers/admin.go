@@ -46,6 +46,7 @@ type DashboardStats struct {
 	TotalOrders      int     `json:"total_orders"`
 	PendingApprovals int     `json:"pending_approvals"`
 	ReportedIssues   int     `json:"reported_issues"`
+	TotalSalesAmount float64 `json:"total_sales_amount"`
 }
 
 // GetAllSellers godoc
@@ -298,6 +299,16 @@ func GetDashboardStats(c *gin.Context) {
 	err = config.DB.QueryRow("SELECT COUNT(*) FROM notes_for_sale WHERE status = 'pending'").Scan(&stats.PendingApprovals)
 	if err != nil {
 		stats.PendingApprovals = 0
+	}
+
+	// คำนวณยอดขายทั้งหมดจาก buyed_note
+	err = config.DB.QueryRow(`
+		SELECT COALESCE(SUM(n.price), 0) 
+		FROM buyed_note b
+		INNER JOIN notes_for_sale n ON b.note_id = n.id
+	`).Scan(&stats.TotalSalesAmount)
+	if err != nil {
+		stats.TotalSalesAmount = 0
 	}
 
 	// สำหรับ reported issues (mock ไว้ก่อน)
